@@ -38,10 +38,11 @@
     <div id="nav-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden opacity-0">
         <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
             <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
-            <div class="flex flex-col gap-4">
+            <div id="nav-modal-content" class="flex flex-col gap-4">
                 <a id="nav-waze-link" href="#" target="_blank" class="block w-full text-center bg-[#33ccff] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#00bfff] transition text-lg"><i class="fa-brands fa-waze"></i> Waze</a>
                 <a id="nav-gmaps-link" href="#" target="_blank" class="block w-full text-center bg-[#4285F4] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#3367D6] transition text-lg"><i class="fa-solid fa-map-location-dot"></i> Google Maps</a>
             </div>
+            <p id="nav-modal-message" class="text-slate-600 hidden"></p>
             <button id="nav-modal-close" class="mt-6 text-slate-500 hover:text-slate-700">סגור</button>
         </div>
     </div>
@@ -77,6 +78,11 @@
             <section class="text-center">
                 <h2 class="text-4xl font-extrabold text-slate-800">ההרפתקה הגדולה שלנו מחוף לחוף</h2>
                 <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">זהו מרכז הבקרה של הטיול שלנו! כאן נמצאים כל הלו"זים, המפות, והפרטים החשובים למסע של פעם בחיים.</p>
+                <div class="mt-8">
+                    <button id="go-to-current-day-btn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full hover:bg-blue-700 transition-transform transform hover:scale-105 text-lg shadow-lg">
+                        <i class="fas fa-calendar-day mr-2"></i> קפוץ ללו"ז של היום
+                    </button>
+                </div>
             </section>
 
             <!-- Trip Overview Map -->
@@ -156,41 +162,16 @@
                 menu: [
                     { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
                     { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [
-                        { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, 
-                        { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, 
-                        { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' },
-                        { id: 'day-01-01', label: '01/01' }
+                        { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' }
                     ]},
-                    { id: 'niagara', page: 'niagara.html', title: '❄️ מפלי הניאגרה', emoji: '❄️', days: [ 
-                        { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } 
-                    ]},
-                    { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ 
-                        { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } 
-                    ]},
-                    { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ 
-                        { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, 
-                        { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } 
-                    ]},
-                    { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ 
-                        { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, 
-                        { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } 
-                    ]},
-                    { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ 
-                        { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, 
-                        { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } 
-                    ]},
-                    { id: 'houston', page: 'houston.html', title: '🚀 יוסטון', emoji: '🚀', days: [ 
-                        { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, 
-                        { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' } 
-                    ]},
-                    { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ 
-                        { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, 
-                        { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } 
-                    ]},
-                    { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ 
-                        { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, 
-                        { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } 
-                    ]},
+                    { id: 'niagara', page: 'niagara.html', title: '❄️ מפלי הניאגרה', emoji: '❄️', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
+                    { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
+                    { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
+                    { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
+                    { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
+                    { id: 'houston', page: 'houston.html', title: '🚀 יוסטון', emoji: '🚀', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' } ]},
+                    { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
+                    { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
                 ],
                 hotels: [
                     { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23-30.12", price: "₪9,800", kitchen: true, breakfast: "לא להסתמך", link: "https://www.marriott.com/en-us/hotels/nyctp-towneplace-suites-new-york-manhattan-chelsea/overview/", address: "140 W 28th St, New York, NY 10001" },
@@ -237,15 +218,28 @@
             const mainMenu = document.getElementById('main-menu');
             const navModal = document.getElementById('nav-modal');
             const navModalClose = document.getElementById('nav-modal-close');
+            const goToCurrentDayBtn = document.getElementById('go-to-current-day-btn');
 
             // --- Functions ---
             function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
             
-            function openNavModal(address, name) {
-                const encodedAddress = encodeURIComponent(address);
-                document.getElementById('nav-modal-title').textContent = `נווט אל ${name}`;
-                document.getElementById('nav-waze-link').href = `https://waze.com/ul?q=${encodedAddress}`;
-                document.getElementById('nav-gmaps-link').href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+            function openNavModal(title, address, message) {
+                document.getElementById('nav-modal-title').textContent = title;
+                const navContent = document.getElementById('nav-modal-content');
+                const navMessage = document.getElementById('nav-modal-message');
+
+                if (address) {
+                    const encodedAddress = encodeURIComponent(address);
+                    document.getElementById('nav-waze-link').href = `https://waze.com/ul?q=${encodedAddress}`;
+                    document.getElementById('nav-gmaps-link').href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                    navContent.classList.remove('hidden');
+                    navMessage.classList.add('hidden');
+                } else {
+                    navContent.classList.add('hidden');
+                    navMessage.textContent = message;
+                    navMessage.classList.remove('hidden');
+                }
+
                 navModal.classList.remove('hidden');
                 setTimeout(() => navModal.classList.remove('opacity-0'), 10);
             }
@@ -253,6 +247,48 @@
             function closeNavModal() {
                 navModal.classList.add('opacity-0');
                 setTimeout(() => navModal.classList.add('hidden'), 300);
+            }
+
+            function goToCurrentDay() {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Normalize today's date for accurate comparison
+
+                let allDays = [];
+                siteData.menu.forEach(destination => {
+                    destination.days.forEach(day => {
+                        const [_, d, m] = day.id.split('-').map(Number);
+                        const year = m === 12 ? 2025 : 2026;
+                        const date = new Date(year, m - 1, d);
+                        date.setHours(0, 0, 0, 0);
+                        allDays.push({ date, page: destination.page, id: day.id });
+                    });
+                });
+
+                allDays.sort((a, b) => a.date - b.date);
+
+                // Case 1: Before the trip starts
+                if (today < allDays[0].date) {
+                    const firstDay = allDays[0];
+                    window.location.href = `${firstDay.page}#${firstDay.id}`;
+                    return;
+                }
+
+                let targetDay = null;
+                // Find the latest day that has already started
+                for (let i = allDays.length - 1; i >= 0; i--) {
+                    if (allDays[i].date <= today) {
+                        targetDay = allDays[i];
+                        break;
+                    }
+                }
+
+                // Case 2: During the trip
+                if (targetDay) {
+                    window.location.href = `${targetDay.page}#${targetDay.id}`;
+                } else {
+                    // Case 3: After the trip (or if something went wrong)
+                    openNavModal('המסע הסתיים', null, 'מקווים שנהניתם, הטיול הגיע לסיומו!');
+                }
             }
 
             function buildMenu() {
@@ -283,6 +319,7 @@
             function buildHotelCards() {
                 const container = document.querySelector('#hotel-summary .grid');
                 if (!container) return;
+                container.innerHTML = ''; // Clear existing cards
                 siteData.hotels.forEach(hotel => {
                     let kitchenIcon, breakfastIcon;
                     if (hotel.kitchen === "הכל כלול") {
@@ -319,6 +356,7 @@
             function buildCostTables() {
                 const transportBody = document.getElementById('transport-table-body');
                 if (!transportBody) return;
+                transportBody.innerHTML = ''; // Clear existing rows
                 let totalTransport = siteData.transport.reduce((sum, item) => sum + item.cost, 0);
                 
                 siteData.transport.forEach(item => {
@@ -349,6 +387,7 @@
             function buildMainChecklists() {
                 const container = document.getElementById('checklists-container');
                 if (!container) return;
+                container.innerHTML = ''; // Clear existing lists
                 siteData.checklists.forEach((list, index) => {
                     const details = document.createElement('details');
                     details.className = "group";
@@ -399,16 +438,14 @@
             closeSidebarBtn.addEventListener('click', toggleSidebar);
             overlay.addEventListener('click', toggleSidebar);
             navModalClose.addEventListener('click', closeNavModal);
-            navModal.addEventListener('click', (e) => {
-                if (e.target.id === 'nav-modal') closeNavModal();
-            });
+            goToCurrentDayBtn.addEventListener('click', goToCurrentDay);
 
             document.querySelector('#hotel-summary').addEventListener('click', function(e) {
                 const navBtn = e.target.closest('.nav-btn');
                 if (navBtn) {
                     const address = navBtn.dataset.address;
                     const name = navBtn.dataset.name;
-                    openNavModal(address, name);
+                    openNavModal(`נווט אל ${name}`, address);
                 }
             });
 
