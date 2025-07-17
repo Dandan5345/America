@@ -20,6 +20,9 @@
         #map-container { height: 400px; border-radius: 1rem; z-index: 0; }
         .leaflet-div-icon { background: transparent; border: none; }
         
+        /* Modal Styles */
+        #nav-modal { transition: opacity 0.3s ease; }
+        
         /* Custom styles for interactive checklist */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
@@ -27,26 +30,14 @@
             text-decoration: line-through;
             color: #9ca3af; /* gray-400 */
         }
-        .checklist-item input:checked + label .fa-circle {
-            display: none;
-        }
-        .checklist-item input:checked + label .fa-check-circle {
-            display: inline-block;
-            color: #22c55e; /* green-500 */
-        }
-        .fa-check-circle {
-            display: none;
-        }
+        .checklist-item input:checked + label .fa-circle { display: none; }
+        .checklist-item input:checked + label .fa-check-circle { display: inline-block; color: #22c55e; /* green-500 */ }
+        .fa-check-circle { display: none; }
+        
+        /* Nav Buttons in Schedule */
         .nav-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: white;
-            transition: background-color 0.2s;
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem;
+            border-radius: 9999px; font-size: 0.875rem; font-weight: 600; color: white; transition: background-color 0.2s;
         }
         .nav-button.waze { background-color: #33ccff; }
         .nav-button.waze:hover { background-color: #00bfff; }
@@ -55,6 +46,19 @@
     </style>
 </head>
 <body class="bg-slate-50">
+
+    <!-- Navigation Modal -->
+    <div id="nav-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
+            <div id="nav-modal-content" class="flex flex-col gap-4">
+                <a id="nav-waze-link" href="#" target="_blank" class="block w-full text-center bg-[#33ccff] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#00bfff] transition text-lg"><i class="fa-brands fa-waze"></i> Waze</a>
+                <a id="nav-gmaps-link" href="#" target="_blank" class="block w-full text-center bg-[#4285F4] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#3367D6] transition text-lg"><i class="fa-solid fa-map-location-dot"></i> Google Maps</a>
+            </div>
+             <p id="nav-modal-message" class="text-slate-600 hidden"></p>
+            <button id="nav-modal-close" class="mt-6 text-slate-500 hover:text-slate-700">סגור</button>
+        </div>
+    </div>
 
     <!-- Sidebar (Full Navigation Menu) -->
     <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
@@ -73,10 +77,20 @@
         <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
-                    <h1 class="text-xl font-bold text-slate-800">✨ מסע חלומות: יום היציאה ✨</h1>
-                    <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none">
-                        <i class="fas fa-bars fa-lg"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                         <h1 class="text-lg sm:text-xl font-bold text-slate-800">✨ מסע חלומות: יום היציאה ✨</h1>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" aria-label="דף הבית">
+                            <i class="fas fa-house fa-lg"></i>
+                        </a>
+                        <button id="navigate-hotel-btn" class="p-2 text-slate-600 hover:text-blue-600" aria-label="נווט למלון">
+                            <i class="fas fa-hotel fa-lg"></i>
+                        </button>
+                        <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none">
+                            <i class="fas fa-bars fa-lg"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -169,6 +183,19 @@
                     { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
                     { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
                 ],
+                hotels: [
+                    { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23-30.12", address: "140 W 28th St, New York, NY 10001" },
+                    { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", address: "105 W 28th St, New York, NY 10001" },
+                    { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01-04.01", address: "6732 Fallsview Blvd, Niagara Falls, ON L2G 3W6, Canada" },
+                    { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04-07.01", address: "1310 New Hampshire Ave NW, Washington, DC 20036" },
+                    { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07-12.01", address: "5801 Universal Blvd, Orlando, FL 32819" },
+                    { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12-15.01", address: "2216 Park Ave, Miami Beach, FL 33139" },
+                    { name: "Fortune House Hotel Suites", dest: "מיאמי", dates: "15-18.01", address: "185 SE 14th Terrace, Miami, FL 33131" },
+                    { name: "Majestic Mirage Punta Cana", dest: "פונטה קאנה", dates: "18-22.01", address: "Playa Arena Gorda, Bavaro, Punta Cana" },
+                    { name: "Hilton University of Houston", dest: "יוסטון", dates: "22-26.01", address: "4450 University Dr, Houston, TX 77204" },
+                    { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "26.01-01.02", address: "S Hope St, Los Angeles, CA" },
+                    { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01-05.02", address: "1200 Sutter St, San Francisco, CA 94109" }
+                ],
                 checklist: [
                     { id: 'passports', text: 'דרכונים (ישראלי, צרפתי, גרמני) בתוקף' },
                     { id: 'esta', text: 'אישורי כניסה (ESTA) בתוקף' },
@@ -181,18 +208,19 @@
                 ]
             };
             
-            // --- Sidebar and Menu Script ---
+            // --- UI Elements ---
             const sidebar = document.getElementById('sidebar');
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const closeSidebarBtn = document.getElementById('close-sidebar-btn');
             const overlay = document.getElementById('overlay');
             const mainMenu = document.getElementById('main-menu');
+            const navModal = document.getElementById('nav-modal');
+            const navModalClose = document.getElementById('nav-modal-close');
+            const navigateHotelBtn = document.getElementById('navigate-hotel-btn');
 
+            // --- Sidebar and Menu Functions ---
             function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
-            hamburgerBtn.addEventListener('click', toggleSidebar);
-            closeSidebarBtn.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', toggleSidebar);
-
+            
             function buildMenu() {
                 siteData.menu.forEach(destination => {
                     const destinationDiv = document.createElement('div');
@@ -217,8 +245,89 @@
                     mainMenu.appendChild(destinationDiv);
                 });
             }
-            
-            // --- Build Checklist ---
+
+            // --- Smart Navigation Functions ---
+            function openNavModal(title, address, message) {
+                document.getElementById('nav-modal-title').textContent = title;
+                const navLinks = document.getElementById('nav-modal-content');
+                const navMessage = document.getElementById('nav-modal-message');
+
+                if (address) {
+                    const encodedAddress = encodeURIComponent(address);
+                    document.getElementById('nav-waze-link').href = `https://waze.com/ul?q=${encodedAddress}`;
+                    document.getElementById('nav-gmaps-link').href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                    navLinks.classList.remove('hidden');
+                    navMessage.classList.add('hidden');
+                } else {
+                    navLinks.classList.add('hidden');
+                    navMessage.textContent = message;
+                    navMessage.classList.remove('hidden');
+                }
+                
+                navModal.classList.remove('hidden');
+                setTimeout(() => navModal.classList.remove('opacity-0'), 10);
+            }
+
+            function closeNavModal() {
+                navModal.classList.add('opacity-0');
+                setTimeout(() => navModal.classList.add('hidden'), 300);
+            }
+
+            function parseDateRange(dateString) {
+                const year2025 = 2025;
+                const year2026 = 2026;
+                let startDate, endDate;
+
+                const parts = dateString.split('-');
+                
+                try {
+                    if (parts.length === 2 && parts[0].includes('.') && parts[1].includes('.')) { // "DD.MM-DD.MM"
+                        const startParts = parts[0].split('.').map(Number);
+                        const endParts = parts[1].split('.').map(Number);
+                        const startYear = startParts[1] === 12 ? year2025 : year2026;
+                        const endYear = endParts[1] === 12 ? year2025 : year2026;
+                        startDate = new Date(startYear, startParts[1] - 1, startParts[0]);
+                        endDate = new Date(endYear, endParts[1] - 1, endParts[0]);
+                    } else if (parts.length === 2) { // "DD-DD.MM"
+                        const startDay = parseInt(parts[0]);
+                        const [endDay, month] = parts[1].split('.').map(Number);
+                        const year = month === 12 ? year2025 : year2026;
+                        startDate = new Date(year, month - 1, startDay);
+                        endDate = new Date(year, month - 1, endDay);
+                    }
+                    if (endDate) endDate.setHours(23, 59, 59, 999);
+                    return { start: startDate, end: endDate };
+                } catch (e) {
+                    console.error("Could not parse date string:", dateString, e);
+                    return { start: null, end: null };
+                }
+            }
+
+            function navigateToCurrentHotel() {
+                const today = new Date();
+                // For testing: uncomment and set a date
+                // const today = new Date('2026-01-09T10:00:00'); 
+                
+                let targetHotel = null;
+
+                for (const hotel of siteData.hotels) {
+                    const range = parseDateRange(hotel.dates);
+                    if (range.start && range.end) {
+                        if (today <= range.end) {
+                            targetHotel = hotel;
+                            break;
+                        }
+                    }
+                }
+
+                if (targetHotel) {
+                    openNavModal(`נווט אל: ${targetHotel.name}`, targetHotel.address);
+                } else {
+                    openNavModal('המסע הסתיים', null, 'מקווים שנהניתם, הטיול הגיע לסיומו!');
+                }
+            }
+
+            // --- Page Specific Functions ---
             function buildChecklist() {
                 const container = document.getElementById('checklist');
                 siteData.checklist.forEach(item => {
@@ -226,8 +335,7 @@
                         <div class="checklist-item">
                             <input type="checkbox" id="${item.id}" class="hidden">
                             <label for="${item.id}" class="flex items-center gap-3 text-lg text-slate-700 cursor-pointer transition-colors">
-                                <i class="far fa-circle text-sky-500"></i>
-                                <i class="fas fa-check-circle"></i>
+                                <i class="far fa-circle text-sky-500"></i><i class="fas fa-check-circle"></i>
                                 <span>${item.text}</span>
                             </label>
                         </div>
@@ -236,12 +344,11 @@
                 });
             }
 
-            // --- Map Script for Dec 22 ---
             function buildMap() {
                 const mapContainer = document.getElementById('map-container');
                 if (!mapContainer || mapContainer._leaflet_id) return;
                 const homeCoords = [31.7630, 35.2045];
-                const shoppingCoords = [31.7875, 35.1800]; // Osher Ad, Givat Shaul
+                const shoppingCoords = [31.7875, 35.1800];
                 const airportCoords = [32.0095, 34.8863];
                 
                 const map = L.map('map-container').setView([31.85, 35.0], 9);
@@ -259,7 +366,13 @@
                 map.fitBounds([homeCoords, shoppingCoords, airportCoords], { padding: [50, 50] });
             }
 
-            // --- Initial Load ---
+            // --- Event Listeners & Initial Load ---
+            hamburgerBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
+            navModalClose.addEventListener('click', closeNavModal);
+            navigateHotelBtn.addEventListener('click', navigateToCurrentHotel);
+
             buildMenu();
             buildChecklist();
             buildMap();
