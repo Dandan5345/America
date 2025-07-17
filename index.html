@@ -16,7 +16,7 @@
         body { font-family: 'Assistant', sans-serif; background-color: #f8fafc; }
         #sidebar { transition: transform 0.3s ease-in-out; }
         .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
-        .submenu.open { max-height: 1000px; }
+        .submenu.open { max-height: 1200px; /* Increased for more items */ }
         #trip-map-container { height: 450px; border-radius: 1rem; z-index: 0; }
         .leaflet-div-icon { background: transparent; border: none; font-size: 1.5rem; text-align: center; }
     </style>
@@ -53,7 +53,7 @@
             <!-- Welcome Section -->
             <section class="text-center">
                 <h2 class="text-4xl font-extrabold text-slate-800">ההרפתקה הגדולה שלנו מחוף לחוף</h2>
-                <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">זהו מרכז הבקרה של הטיול שלנו! כאן נמצאים כל הלו"זים, המפות, והפרטים החשובים למסע של פעם בחיים, מניו יורק המושלגת ועד לחופים הזהובים של קליפורניה.</p>
+                <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">זהו מרכז הבקרה של הטיול שלנו! כאן נמצאים כל הלו"זים, המפות, והפרטים החשובים למסע של פעם בחיים.</p>
             </section>
 
             <!-- Trip Overview Map -->
@@ -68,12 +68,50 @@
             <section class="bg-sky-100/50 border border-sky-200 p-6 rounded-2xl">
                 <h3 class="text-2xl font-bold text-slate-800 mb-3"><i class="fa-solid fa-circle-info text-sky-500"></i> איך האתר עובד?</h3>
                 <p class="text-slate-700">
-                    פשוט מאוד: לחצו על כפתור התפריט <i class="fas fa-bars"></i> בפינה השמאלית למעלה.
-                    <br>
-                    בתפריט שייפתח, בחרו את היעד הרצוי, ולאחר מכן לחצו על התאריך הספציפי שתרצו לראות.
-                    <br>
-                    הלחיצה תוביל אתכם לעמוד של אותו יעד, ישירות ללו"ז המתוכנן לאותו היום.
+                    לחצו על כפתור התפריט <i class="fas fa-bars"></i> ובחרו את היעד והתאריך הרצויים כדי לקפוץ ישירות ללו"ז המלא של אותו היום.
                 </p>
+            </section>
+
+            <!-- Hotel Summary Section -->
+            <section id="hotel-summary">
+                <h3 class="text-2xl font-bold text-slate-800 mb-6 text-center">🏨 סיכום המלונות שלנו</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Hotel cards will be injected by JS -->
+                </div>
+            </section>
+
+            <!-- Cost Summary Section -->
+            <section>
+                <h3 class="text-2xl font-bold text-slate-800 mb-6 text-center">📊 סיכומי עלויות</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Transportation Costs -->
+                    <div>
+                        <h4 class="font-bold text-xl text-slate-700 mb-4">✈️🚂🚗 עלויות תחבורה (לזוג)</h4>
+                        <div class="bg-white p-4 rounded-2xl shadow-lg overflow-x-auto">
+                            <table class="w-full text-sm text-right">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th class="p-3 font-semibold">קטע</th>
+                                        <th class="p-3 font-semibold">אמצעי</th>
+                                        <th class="p-3 font-semibold">עלות (₪)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transport-table-body" class="divide-y divide-slate-200">
+                                    <!-- Transport rows will be injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Final Summary -->
+                    <div>
+                        <h4 class="font-bold text-xl text-slate-700 mb-4">💰 השורה התחתונה (לזוג)</h4>
+                        <div class="bg-white p-6 rounded-2xl shadow-lg">
+                            <table id="final-summary-table" class="w-full">
+                                <!-- Final summary rows will be injected by JS -->
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -81,98 +119,193 @@
     <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
 
     <script>
-        // --- DATA: The single source of truth for the menu ---
-        const menuStructure = [
-            { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
-            { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [
-                { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' },
-                { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' },
-                { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' }
-            ]},
-            { id: 'niagara', page: 'niagara.html', title: '❄️ מפלי הניאגרה', emoji: '❄️', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
-            // ... other destinations would go here
-        ];
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- DATA: The single source of truth for the entire site ---
+            const siteData = {
+                menu: [
+                    { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
+                    { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [
+                        { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }
+                    ]},
+                    { id: 'niagara', page: 'niagara.html', title: '❄️ מפלי הניאגרה', emoji: '❄️', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
+                    { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
+                    { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
+                    { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
+                    { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
+                    { id: 'houston', page: 'houston.html', title: '🚀 יוסטון', emoji: '🚀', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' } ]},
+                    { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
+                    { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
+                ],
+                hotels: [
+                    { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23-30.12", price: "₪9,800", kitchen: true, breakfast: "לא להסתמך", link: "https://www.marriott.com/en-us/hotels/nyctp-towneplace-suites-new-york-manhattan-chelsea/overview/" },
+                    { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", price: "₪4,403", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/nycox-moxy-nyc-chelsea/overview/" },
+                    { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01-04.01", price: "₪2,772", kitchen: false, breakfast: false, link: "https://www.fallsvierhotel.com/" },
+                    { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04-07.01", price: "₪1,876", kitchen: false, breakfast: false, link: "https://www.hotelmadera.com/" },
+                    { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07-12.01", price: "₪2,688", kitchen: true, breakfast: true, link: "https://www.marriott.com/en-us/hotels/mcots-towneplace-suites-orlando-southwest-near-universal/overview/" },
+                    { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12-15.01", price: "₪2,755", kitchen: false, breakfast: false, link: "https://www.upsunhotel.com/" },
+                    { name: "Fortune House Hotel Suites", dest: "מיאמי", dates: "15-18.01", price: "₪3,349", kitchen: true, breakfast: false, link: "https://www.fortunehousehotel.com/" },
+                    { name: "Majestic Mirage Punta Cana", dest: "פונטה קאנה", dates: "18-22.01", price: "₪7,157", kitchen: "הכל כלול", breakfast: "הכל כלול", link: "https://www.majestic-resorts.com/en/hotels/majestic-mirage-punta-cana/" },
+                    { name: "Hilton University of Houston", dest: "יוסטון", dates: "22-26.01", price: "₪3,370", kitchen: false, breakfast: true, link: "https://www.hilton.com/en/hotels/houuhhf-hilton-university-of-houston/" },
+                    { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "26.01-01.02", price: "₪4,143", kitchen: true, breakfast: false, link: "#" }, // Placeholder link
+                    { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01-05.02", price: "₪3,210", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/sfovc-marriott-vacation-club-pulse-san-francisco/overview/" }
+                ],
+                transport: [
+                    { segment: "טיסות ארוכות", means: "✈️", cost: 4088 * 2 },
+                    { segment: "ניו יורק → באפלו", means: "✈️", cost: 413 * 2 },
+                    { segment: "באפלו → וושינגטון", means: "✈️", cost: 773 * 2 },
+                    { segment: "וושינגטון → אורלנדו", means: "✈️", cost: 397 * 2 },
+                    { segment: "אורלנדו → מיאמי", means: "🚂", cost: 180 * 2 },
+                    { segment: "מיאמי → פונטה קאנה", means: "✈️", cost: 522 * 2 },
+                    { segment: "פונטה קאנה → יוסטון", means: "✈️", cost: 971 * 2 },
+                    { segment: "יוסטון → לוס אנג'לס", means: "✈️", cost: 394 * 2 },
+                    { segment: "לוס אנג'לס → סן פרנסיסקו", means: "✈️", cost: 394 * 2 },
+                    { segment: "השכרת רכב - LA", means: "🚗", cost: 1600 }
+                ],
+                locations: {
+                    jerusalem: { coords: [31.77, 35.21], name: "ירושלים" }, nyc: { coords: [40.71, -74.00], name: "ניו יורק" }, niagara: { coords: [43.08, -79.07], name: "ניאגרה" }, dc: { coords: [38.90, -77.03], name: "וושינגטון" }, orlando: { coords: [28.53, -81.37], name: "אורלנדו" }, miami: { coords: [25.76, -80.19], name: "מיאמי" }, puntaCana: { coords: [18.58, -68.40], name: "פונטה קאנה" }, houston: { coords: [29.76, -95.36], name: "יוסטון" }, la: { coords: [34.05, -118.24], name: "לוס אנג'לס" }, sf: { coords: [37.77, -122.41], name: "סן פרנסיסקו" }
+                }
+            };
 
-        // --- Sidebar Toggle Script ---
-        const sidebar = document.getElementById('sidebar');
-        const hamburgerBtn = document.getElementById('hamburger-btn');
-        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-        const overlay = document.getElementById('overlay');
-        const mainMenu = document.getElementById('main-menu');
+            // --- Sidebar Toggle Script ---
+            const sidebar = document.getElementById('sidebar');
+            const hamburgerBtn = document.getElementById('hamburger-btn');
+            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+            const overlay = document.getElementById('overlay');
+            const mainMenu = document.getElementById('main-menu');
 
-        function toggleSidebar() {
-            sidebar.classList.toggle('translate-x-full');
-            overlay.classList.toggle('hidden');
-        }
+            function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
+            hamburgerBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
 
-        hamburgerBtn.addEventListener('click', toggleSidebar);
-        closeSidebarBtn.addEventListener('click', toggleSidebar);
-        overlay.addEventListener('click', toggleSidebar);
+            // --- Build Menu Function ---
+            function buildMenu() {
+                siteData.menu.forEach(destination => {
+                    const destinationDiv = document.createElement('div');
+                    const button = document.createElement('button');
+                    button.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center transition-colors';
+                    button.innerHTML = `<span>${destination.title}</span> <i class="fas fa-chevron-down transition-transform duration-300"></i>`;
+                    
+                    const submenu = document.createElement('div');
+                    submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
+                    
+                    destination.days.forEach(day => {
+                        const dayLink = document.createElement('a');
+                        dayLink.href = `${destination.page}#${day.id}`;
+                        dayLink.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md transition-colors';
+                        dayLink.textContent = `${destination.title.split(' ')[1]} ${day.label} ${destination.emoji}`;
+                        submenu.appendChild(dayLink);
+                    });
 
-        // --- Build Menu Function ---
-        function buildMenu() {
-            menuStructure.forEach(destination => {
-                const destinationDiv = document.createElement('div');
-                const button = document.createElement('button');
-                button.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center transition-colors';
-                button.innerHTML = `<span>${destination.title}</span> <i class="fas fa-chevron-down transition-transform duration-300"></i>`;
-                
-                const submenu = document.createElement('div');
-                submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
-                
-                destination.days.forEach(day => {
-                    const dayLink = document.createElement('a');
-                    dayLink.href = `${destination.page}#${day.id}`;
-                    dayLink.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md transition-colors';
-                    dayLink.textContent = `${destination.title.split(' ')[1]} ${day.label} ${destination.emoji}`;
-                    submenu.appendChild(dayLink);
+                    button.addEventListener('click', () => { submenu.classList.toggle('open'); button.querySelector('i').classList.toggle('rotate-180'); });
+                    destinationDiv.appendChild(button);
+                    destinationDiv.appendChild(submenu);
+                    mainMenu.appendChild(destinationDiv);
                 });
+            }
+            
+            // --- Build Hotel Cards ---
+            function buildHotelCards() {
+                const container = document.querySelector('#hotel-summary .grid');
+                if (!container) return;
+                siteData.hotels.forEach(hotel => {
+                    let kitchenIcon, breakfastIcon;
+                    if (hotel.kitchen === "הכל כלול") {
+                        kitchenIcon = `<i class="fa-solid fa-star fa-fw text-amber-500"></i> <strong>הכל כלול</strong>`;
+                        breakfastIcon = ``;
+                    } else {
+                        kitchenIcon = hotel.kitchen ? `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-green-500"></i> <strong>מטבחון:</strong> כן</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-red-500"></i> <strong>מטבחון:</strong> אין</li>`;
+                        if (typeof hotel.breakfast === 'string') {
+                            breakfastIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-yellow-500"></i> <strong>א. בוקר:</strong> ${hotel.breakfast}</li>`;
+                        } else {
+                            breakfastIcon = hotel.breakfast ? `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-green-500"></i> <strong>א. בוקר:</strong> כלולה</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-red-500"></i> <strong>א. בוקר:</strong> אין</li>`;
+                        }
+                    }
 
-                button.addEventListener('click', () => {
-                    submenu.classList.toggle('open');
-                    button.querySelector('i').classList.toggle('rotate-180');
+                    const cardHTML = `
+                        <div class="bg-white p-5 rounded-2xl shadow-lg flex flex-col">
+                            <h4 class="font-bold text-lg text-slate-800">${hotel.name}</h4>
+                            <p class="text-sm text-slate-500 mb-3">${hotel.dest} | ${hotel.dates}</p>
+                            <ul class="space-y-2 text-slate-600 text-sm mb-4">
+                                ${kitchenIcon}
+                                ${breakfastIcon}
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-tag fa-fw text-blue-500"></i> <strong>מחיר:</strong> ${hotel.price}</li>
+                            </ul>
+                            <a href="${hotel.link}" target="_blank" class="mt-auto inline-block w-full text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition">לאתר המלון <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>
+                        </div>
+                    `;
+                    container.innerHTML += cardHTML;
                 });
+            }
 
-                destinationDiv.appendChild(button);
-                destinationDiv.appendChild(submenu);
-                mainMenu.appendChild(destinationDiv);
-            });
-        }
-        
-        buildMenu();
+            // --- Build Cost Tables ---
+            function buildCostTables() {
+                const transportBody = document.getElementById('transport-table-body');
+                if (!transportBody) return;
+                let totalTransport = siteData.transport.reduce((sum, item) => sum + item.cost, 0);
+                
+                siteData.transport.forEach(item => {
+                    const row = `
+                        <tr class="text-slate-600">
+                            <td class="p-3">${item.segment}</td>
+                            <td class="p-3 text-center">${item.means}</td>
+                            <td class="p-3 font-mono text-left">${item.cost.toLocaleString()}</td>
+                        </tr>
+                    `;
+                    transportBody.innerHTML += row;
+                });
+                transportBody.innerHTML += `
+                    <tr class="font-bold bg-slate-100 text-slate-800">
+                        <td class="p-3">סה"כ</td>
+                        <td class="p-3"></td>
+                        <td class="p-3 font-mono text-left">${totalTransport.toLocaleString()}</td>
+                    </tr>
+                `;
 
-        // --- Trip Overview Map Script ---
-        const locations = {
-            jerusalem: { coords: [31.77, 35.21], name: "ירושלים" },
-            nyc: { coords: [40.71, -74.00], name: "ניו יורק" },
-            niagara: { coords: [43.08, -79.07], name: "ניאגרה" },
-            dc: { coords: [38.90, -77.03], name: "וושינגטון" },
-            orlando: { coords: [28.53, -81.37], name: "אורלנדו" },
-            miami: { coords: [25.76, -80.19], name: "מיאמי" },
-            puntaCana: { coords: [18.58, -68.40], name: "פונטה קאנה" },
-            houston: { coords: [29.76, -95.36], name: "יוסטון" },
-            la: { coords: [34.05, -118.24], name: "לוס אנג'לס" },
-            sf: { coords: [37.77, -122.41], name: "סן פרנסיסקו" }
-        };
+                const summaryBody = document.getElementById('final-summary-table');
+                if (!summaryBody) return;
+                const totalHotels = 45523;
+                const subTotal = totalHotels + totalTransport;
+                const cashback = -3068;
+                const finalTotal = subTotal + cashback;
+                const perPerson = Math.round(finalTotal / 2);
 
-        const tripMap = L.map('trip-map-container').setView([35, -90], 3);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
-        }).addTo(tripMap);
+                summaryBody.innerHTML = `
+                    <tbody class="divide-y divide-slate-200 text-slate-700">
+                        <tr><td class="py-3 pr-2">🏨 סה"כ מלונות</td><td class="py-3 pl-2 text-left font-mono">${totalHotels.toLocaleString()} ₪</td></tr>
+                        <tr><td class="py-3 pr-2">✈️ סה"כ תחבורה</td><td class="py-3 pl-2 text-left font-mono">${totalTransport.toLocaleString()} ₪</td></tr>
+                        <tr class="font-semibold"><td class="py-3 pr-2">סה"כ (לפני החזר)</td><td class="py-3 pl-2 text-left font-mono">${subTotal.toLocaleString()} ₪</td></tr>
+                        <tr><td class="py-3 pr-2 text-green-600">💸 החזר כספי (TopCashback)</td><td class="py-3 pl-2 text-left font-mono text-green-600">${cashback.toLocaleString()} ₪</td></tr>
+                        <tr class="text-xl font-bold bg-slate-100 rounded-lg"><td class="p-4">סה"כ סופי</td><td class="p-4 text-left font-mono">${finalTotal.toLocaleString()} ₪</td></tr>
+                        <tr class="text-lg font-bold"><td class="pt-4 pr-2">עלות לאדם</td><td class="pt-4 pl-2 text-left font-mono">~${perPerson.toLocaleString()} ₪</td></tr>
+                    </tbody>
+                `;
+            }
 
-        const icon = (emoji) => L.divIcon({ className: 'leaflet-div-icon', html: emoji });
-        const pathCoords = [];
+            // --- Trip Overview Map Script ---
+            function buildTripMap() {
+                const mapContainer = document.getElementById('trip-map-container');
+                if (!mapContainer || mapContainer._leaflet_id) return; // Prevent re-initialization
 
-        Object.values(locations).forEach(loc => {
-            L.marker(loc.coords, { icon: icon('📍') }).addTo(tripMap).bindTooltip(loc.name, {permanent: true, direction: 'top', offset: [0, -10]}).openTooltip();
-            pathCoords.push(loc.coords);
+                const tripMap = L.map('trip-map-container').setView([38, -95], 3);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 20
+                }).addTo(tripMap);
+                
+                const pathCoords = Object.values(siteData.locations).map(loc => loc.coords);
+                Object.values(siteData.locations).forEach(loc => {
+                    L.marker(loc.coords, { icon: L.divIcon({ className: 'leaflet-div-icon', html: '📍' }) })
+                    .addTo(tripMap).bindTooltip(loc.name, {permanent: true, direction: 'top', offset: [0, -10]}).openTooltip();
+                });
+                L.polyline(pathCoords, { color: '#38bdf8', weight: 3, opacity: 0.7, dashArray: '5, 10' }).addTo(tripMap);
+            }
+
+            // --- Initial Load ---
+            buildMenu();
+            buildHotelCards();
+            buildCostTables();
+            buildTripMap();
         });
-        
-        L.polyline(pathCoords, { color: '#38bdf8', weight: 3, opacity: 0.7, dashArray: '5, 10' }).addTo(tripMap);
-
     </script>
 </body>
 </html>
-
