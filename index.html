@@ -16,12 +16,35 @@
         body { font-family: 'Assistant', sans-serif; background-color: #f8fafc; }
         #sidebar { transition: transform 0.3s ease-in-out; }
         .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
-        .submenu.open { max-height: 1200px; /* Increased for more items */ }
+        .submenu.open { max-height: 1200px; }
         #trip-map-container { height: 450px; border-radius: 1rem; z-index: 0; }
         .leaflet-div-icon { background: transparent; border: none; font-size: 1.5rem; text-align: center; }
+        
+        /* Modal Styles */
+        #nav-modal { transition: opacity 0.3s ease; }
+        
+        /* Checklist Styles */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        .checklist-item input:checked + label { text-decoration: line-through; color: #9ca3af; }
+        .checklist-item input:checked + label .fa-circle { display: none; }
+        .checklist-item input:checked + label .fa-check-circle { display: inline-block; color: #22c55e; }
+        .fa-check-circle { display: none; }
     </style>
 </head>
 <body class="bg-slate-50">
+
+    <!-- Navigation Modal -->
+    <div id="nav-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
+            <div class="flex flex-col gap-4">
+                <a id="nav-waze-link" href="#" target="_blank" class="block w-full text-center bg-[#33ccff] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#00bfff] transition text-lg"><i class="fa-brands fa-waze"></i> Waze</a>
+                <a id="nav-gmaps-link" href="#" target="_blank" class="block w-full text-center bg-[#4285F4] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#3367D6] transition text-lg"><i class="fa-solid fa-map-location-dot"></i> Google Maps</a>
+            </div>
+            <button id="nav-modal-close" class="mt-6 text-slate-500 hover:text-slate-700">סגור</button>
+        </div>
+    </div>
 
     <!-- Sidebar (Full Navigation Menu) -->
     <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
@@ -62,14 +85,6 @@
                 <div class="bg-white p-4 rounded-2xl shadow-lg">
                     <div id="trip-map-container"></div>
                 </div>
-            </section>
-
-            <!-- How to Use Section -->
-            <section class="bg-sky-100/50 border border-sky-200 p-6 rounded-2xl">
-                <h3 class="text-2xl font-bold text-slate-800 mb-3"><i class="fa-solid fa-circle-info text-sky-500"></i> איך האתר עובד?</h3>
-                <p class="text-slate-700">
-                    לחצו על כפתור התפריט <i class="fas fa-bars"></i> ובחרו את היעד והתאריך הרצויים כדי לקפוץ ישירות ללו"ז המלא של אותו היום.
-                </p>
             </section>
 
             <!-- Hotel Summary Section -->
@@ -113,6 +128,22 @@
                     </div>
                 </div>
             </section>
+            
+            <!-- Checklists Section -->
+            <section>
+                <h3 class="text-2xl font-bold text-slate-800 mb-6 text-center">📋 רשימות וצ'ק-ליסטים</h3>
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <details id="main-checklist" class="group">
+                        <summary class="text-xl font-bold text-slate-700 cursor-pointer flex justify-between items-center">
+                            <span>פתח את כל הרשימות</span>
+                            <i class="fa-solid fa-chevron-down transition-transform duration-300 group-open:rotate-180"></i>
+                        </summary>
+                        <div id="checklists-container" class="mt-6 space-y-6 border-t pt-6">
+                            <!-- Checklists will be injected here -->
+                        </div>
+                    </details>
+                </div>
+            </section>
         </main>
     </div>
     
@@ -137,20 +168,20 @@
                     { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
                 ],
                 hotels: [
-                    { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23-30.12", price: "₪9,800", kitchen: true, breakfast: "לא להסתמך", link: "https://www.marriott.com/en-us/hotels/nyctp-towneplace-suites-new-york-manhattan-chelsea/overview/" },
-                    { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", price: "₪4,403", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/nycox-moxy-nyc-chelsea/overview/" },
-                    { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01-04.01", price: "₪2,772", kitchen: false, breakfast: false, link: "https://www.fallsvierhotel.com/" },
-                    { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04-07.01", price: "₪1,876", kitchen: false, breakfast: false, link: "https://www.hotelmadera.com/" },
-                    { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07-12.01", price: "₪2,688", kitchen: true, breakfast: true, link: "https://www.marriott.com/en-us/hotels/mcots-towneplace-suites-orlando-southwest-near-universal/overview/" },
-                    { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12-15.01", price: "₪2,755", kitchen: false, breakfast: false, link: "https://www.upsunhotel.com/" },
-                    { name: "Fortune House Hotel Suites", dest: "מיאמי", dates: "15-18.01", price: "₪3,349", kitchen: true, breakfast: false, link: "https://www.fortunehousehotel.com/" },
-                    { name: "Majestic Mirage Punta Cana", dest: "פונטה קאנה", dates: "18-22.01", price: "₪7,157", kitchen: "הכל כלול", breakfast: "הכל כלול", link: "https://www.majestic-resorts.com/en/hotels/majestic-mirage-punta-cana/" },
-                    { name: "Hilton University of Houston", dest: "יוסטון", dates: "22-26.01", price: "₪3,370", kitchen: false, breakfast: true, link: "https://www.hilton.com/en/hotels/houuhhf-hilton-university-of-houston/" },
-                    { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "26.01-01.02", price: "₪4,143", kitchen: true, breakfast: false, link: "#" }, // Placeholder link
-                    { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01-05.02", price: "₪3,210", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/sfovc-marriott-vacation-club-pulse-san-francisco/overview/" }
+                    { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23-30.12", price: "₪9,800", kitchen: true, breakfast: "לא להסתמך", link: "https://www.marriott.com/en-us/hotels/nyctp-towneplace-suites-new-york-manhattan-chelsea/overview/", address: "140 W 28th St, New York, NY 10001" },
+                    { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", price: "₪4,403", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/nycox-moxy-nyc-chelsea/overview/", address: "105 W 28th St, New York, NY 10001" },
+                    { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01-04.01", price: "₪2,772", kitchen: false, breakfast: false, link: "https://www.fallsvierhotel.com/", address: "6732 Fallsview Blvd, Niagara Falls, ON L2G 3W6, Canada" },
+                    { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04-07.01", price: "₪1,876", kitchen: false, breakfast: false, link: "https://www.hotelmadera.com/", address: "1310 New Hampshire Ave NW, Washington, DC 20036" },
+                    { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07-12.01", price: "₪2,688", kitchen: true, breakfast: true, link: "https://www.marriott.com/en-us/hotels/mcots-towneplace-suites-orlando-southwest-near-universal/overview/", address: "5801 Universal Blvd, Orlando, FL 32819" },
+                    { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12-15.01", price: "₪2,755", kitchen: false, breakfast: false, link: "https://www.upsunhotel.com/", address: "2216 Park Ave, Miami Beach, FL 33139" },
+                    { name: "Fortune House Hotel Suites", dest: "מיאמי", dates: "15-18.01", price: "₪3,349", kitchen: true, breakfast: false, link: "https://www.fortunehousehotel.com/", address: "185 SE 14th Terrace, Miami, FL 33131" },
+                    { name: "Majestic Mirage Punta Cana", dest: "פונטה קאנה", dates: "18-22.01", price: "₪7,157", kitchen: "הכל כלול", breakfast: "הכל כלול", link: "https://www.majestic-resorts.com/en/hotels/majestic-mirage-punta-cana/", address: "Playa Arena Gorda, Bavaro, Punta Cana" },
+                    { name: "Hilton University of Houston", dest: "יוסטון", dates: "22-26.01", price: "₪3,370", kitchen: false, breakfast: true, link: "https://www.hilton.com/en/hotels/houuhhf-hilton-university-of-houston/", address: "4450 University Dr, Houston, TX 77204" },
+                    { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "26.01-01.02", price: "₪4,178", kitchen: true, breakfast: false, link: "#", address: "S Hope St, Los Angeles, CA" },
+                    { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01-05.02", price: "₪3,210", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/sfovc-marriott-vacation-club-pulse-san-francisco/overview/", address: "1200 Sutter St, San Francisco, CA 94109" }
                 ],
                 transport: [
-                    { segment: "טיסות ארוכות", means: "✈️", cost: 4088 * 2 },
+                    { segment: "טיסות ארוכות", means: "✈️", cost: 7745 },
                     { segment: "ניו יורק → באפלו", means: "✈️", cost: 413 * 2 },
                     { segment: "באפלו → וושינגטון", means: "✈️", cost: 773 * 2 },
                     { segment: "וושינגטון → אורלנדו", means: "✈️", cost: 397 * 2 },
@@ -163,22 +194,42 @@
                 ],
                 locations: {
                     jerusalem: { coords: [31.77, 35.21], name: "ירושלים" }, nyc: { coords: [40.71, -74.00], name: "ניו יורק" }, niagara: { coords: [43.08, -79.07], name: "ניאגרה" }, dc: { coords: [38.90, -77.03], name: "וושינגטון" }, orlando: { coords: [28.53, -81.37], name: "אורלנדו" }, miami: { coords: [25.76, -80.19], name: "מיאמי" }, puntaCana: { coords: [18.58, -68.40], name: "פונטה קאנה" }, houston: { coords: [29.76, -95.36], name: "יוסטון" }, la: { coords: [34.05, -118.24], name: "לוס אנג'לס" }, sf: { coords: [37.77, -122.41], name: "סן פרנסיסקו" }
-                }
+                },
+                checklists: [
+                    { title: "👕 ציוד לבוש - דורון", items: ["10 חולצות T", "2 סווטשירטים", "1 מעיל חורף", "3 זוגות ג'ינס", "בגדי ספורט", "בגד ים", "פיג'מה"] },
+                    { title: "👚 ציוד לבוש - רוני", items: ["10 חולצות", "3 סוודרים", "1 מעיל חורף", "4 זוגות מכנסיים", "שמלות", "בגד ים", "פיג'מה"] },
+                    { title: "📄 מסמכים", items: ["דרכונים", "אישורי ESTA", "רישיונות נהיגה", "ביטוח נסיעות", "כרטיסי טיסה", "אישורי מלונות"] },
+                    { title: "🛒 קניות אוכל לדרך", items: ["חטיפי אנרגיה", "קרקרים", "אגוזים ושקדים", "בקבוקי מים רב פעמיים", "קפה נמס/תה"] },
+                    { title: "🛍️ קניות נוספות", items: ["מתאם חשמל אוניברסלי", "סוללה ניידת", "כרית צוואר", "תרופות אישיות", "קרם הגנה"] }
+                ]
             };
 
-            // --- Sidebar Toggle Script ---
+            // --- UI Elements ---
             const sidebar = document.getElementById('sidebar');
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const closeSidebarBtn = document.getElementById('close-sidebar-btn');
             const overlay = document.getElementById('overlay');
             const mainMenu = document.getElementById('main-menu');
+            const navModal = document.getElementById('nav-modal');
+            const navModalClose = document.getElementById('nav-modal-close');
 
+            // --- Functions ---
             function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
-            hamburgerBtn.addEventListener('click', toggleSidebar);
-            closeSidebarBtn.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', toggleSidebar);
+            
+            function openNavModal(address, name) {
+                const encodedAddress = encodeURIComponent(address);
+                document.getElementById('nav-modal-title').textContent = `נווט אל ${name}`;
+                document.getElementById('nav-waze-link').href = `https://waze.com/ul?q=${encodedAddress}`;
+                document.getElementById('nav-gmaps-link').href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                navModal.classList.remove('hidden');
+                setTimeout(() => navModal.classList.remove('opacity-0'), 10);
+            }
 
-            // --- Build Menu Function ---
+            function closeNavModal() {
+                navModal.classList.add('opacity-0');
+                setTimeout(() => navModal.classList.add('hidden'), 300);
+            }
+
             function buildMenu() {
                 siteData.menu.forEach(destination => {
                     const destinationDiv = document.createElement('div');
@@ -204,7 +255,6 @@
                 });
             }
             
-            // --- Build Hotel Cards ---
             function buildHotelCards() {
                 const container = document.querySelector('#hotel-summary .grid');
                 if (!container) return;
@@ -216,55 +266,44 @@
                     } else {
                         kitchenIcon = hotel.kitchen ? `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-green-500"></i> <strong>מטבחון:</strong> כן</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-red-500"></i> <strong>מטבחון:</strong> אין</li>`;
                         if (typeof hotel.breakfast === 'string') {
-                            breakfastIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-yellow-500"></i> <strong>א. בוקר:</strong> ${hotel.breakfast}</li>`;
+                             breakfastIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-yellow-500"></i> <strong>א. בוקר:</strong> ${hotel.breakfast}</li>`;
                         } else {
-                            breakfastIcon = hotel.breakfast ? `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-green-500"></i> <strong>א. בוקר:</strong> כלולה</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-red-500"></i> <strong>א. בוקר:</strong> אין</li>`;
+                             breakfastIcon = hotel.breakfast ? `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-green-500"></i> <strong>א. בוקר:</strong> כלולה</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-red-500"></i> <strong>א. בוקר:</strong> אין</li>`;
                         }
                     }
 
-                    const cardHTML = `
-                        <div class="bg-white p-5 rounded-2xl shadow-lg flex flex-col">
-                            <h4 class="font-bold text-lg text-slate-800">${hotel.name}</h4>
-                            <p class="text-sm text-slate-500 mb-3">${hotel.dest} | ${hotel.dates}</p>
-                            <ul class="space-y-2 text-slate-600 text-sm mb-4">
-                                ${kitchenIcon}
-                                ${breakfastIcon}
-                                <li class="flex items-center gap-2"><i class="fa-solid fa-tag fa-fw text-blue-500"></i> <strong>מחיר:</strong> ${hotel.price}</li>
-                            </ul>
-                            <a href="${hotel.link}" target="_blank" class="mt-auto inline-block w-full text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition">לאתר המלון <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-5 rounded-2xl shadow-lg flex flex-col";
+                    card.innerHTML = `
+                        <h4 class="font-bold text-lg text-slate-800">${hotel.name}</h4>
+                        <p class="text-sm text-slate-500 mb-3">${hotel.dest} | ${hotel.dates}</p>
+                        <ul class="space-y-2 text-slate-600 text-sm mb-4">
+                            ${kitchenIcon}
+                            ${breakfastIcon}
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-tag fa-fw text-blue-500"></i> <strong>מחיר:</strong> ${hotel.price}</li>
+                        </ul>
+                        <div class="mt-auto grid grid-cols-2 gap-2">
+                            <a href="${hotel.link}" target="_blank" class="text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition">לאתר <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>
+                            <button data-address="${hotel.address}" data-name="${hotel.name}" class="nav-btn text-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition">נווט <i class="fa-solid fa-diamond-turn-right text-xs"></i></button>
                         </div>
                     `;
-                    container.innerHTML += cardHTML;
+                    container.appendChild(card);
                 });
             }
 
-            // --- Build Cost Tables ---
             function buildCostTables() {
                 const transportBody = document.getElementById('transport-table-body');
                 if (!transportBody) return;
                 let totalTransport = siteData.transport.reduce((sum, item) => sum + item.cost, 0);
                 
                 siteData.transport.forEach(item => {
-                    const row = `
-                        <tr class="text-slate-600">
-                            <td class="p-3">${item.segment}</td>
-                            <td class="p-3 text-center">${item.means}</td>
-                            <td class="p-3 font-mono text-left">${item.cost.toLocaleString()}</td>
-                        </tr>
-                    `;
-                    transportBody.innerHTML += row;
+                    transportBody.innerHTML += `<tr class="text-slate-600"><td class="p-3">${item.segment}</td><td class="p-3 text-center">${item.means}</td><td class="p-3 font-mono text-left">${item.cost.toLocaleString()}</td></tr>`;
                 });
-                transportBody.innerHTML += `
-                    <tr class="font-bold bg-slate-100 text-slate-800">
-                        <td class="p-3">סה"כ</td>
-                        <td class="p-3"></td>
-                        <td class="p-3 font-mono text-left">${totalTransport.toLocaleString()}</td>
-                    </tr>
-                `;
+                transportBody.innerHTML += `<tr class="font-bold bg-slate-100 text-slate-800"><td class="p-3">סה"כ</td><td class="p-3"></td><td class="p-3 font-mono text-left">${totalTransport.toLocaleString()}</td></tr>`;
 
                 const summaryBody = document.getElementById('final-summary-table');
                 if (!summaryBody) return;
-                const totalHotels = 45523;
+                const totalHotels = siteData.hotels.reduce((sum, hotel) => sum + parseFloat(hotel.price.replace(/[^0-9.-]+/g,"")), 0);
                 const subTotal = totalHotels + totalTransport;
                 const cashback = -3068;
                 const finalTotal = subTotal + cashback;
@@ -272,20 +311,50 @@
 
                 summaryBody.innerHTML = `
                     <tbody class="divide-y divide-slate-200 text-slate-700">
-                        <tr><td class="py-3 pr-2">🏨 סה"כ מלונות</td><td class="py-3 pl-2 text-left font-mono">${totalHotels.toLocaleString()} ₪</td></tr>
+                        <tr><td class="py-3 pr-2">🏨 סה"כ מלונות</td><td class="py-3 pl-2 text-left font-mono">${Math.round(totalHotels).toLocaleString()} ₪</td></tr>
                         <tr><td class="py-3 pr-2">✈️ סה"כ תחבורה</td><td class="py-3 pl-2 text-left font-mono">${totalTransport.toLocaleString()} ₪</td></tr>
-                        <tr class="font-semibold"><td class="py-3 pr-2">סה"כ (לפני החזר)</td><td class="py-3 pl-2 text-left font-mono">${subTotal.toLocaleString()} ₪</td></tr>
+                        <tr class="font-semibold"><td class="py-3 pr-2">סה"כ (לפני החזר)</td><td class="py-3 pl-2 text-left font-mono">${Math.round(subTotal).toLocaleString()} ₪</td></tr>
                         <tr><td class="py-3 pr-2 text-green-600">💸 החזר כספי (TopCashback)</td><td class="py-3 pl-2 text-left font-mono text-green-600">${cashback.toLocaleString()} ₪</td></tr>
-                        <tr class="text-xl font-bold bg-slate-100 rounded-lg"><td class="p-4">סה"כ סופי</td><td class="p-4 text-left font-mono">${finalTotal.toLocaleString()} ₪</td></tr>
+                        <tr class="text-xl font-bold bg-slate-100 rounded-lg"><td class="p-4">סה"כ סופי</td><td class="p-4 text-left font-mono">${Math.round(finalTotal).toLocaleString()} ₪</td></tr>
                         <tr class="text-lg font-bold"><td class="pt-4 pr-2">עלות לאדם</td><td class="pt-4 pl-2 text-left font-mono">~${perPerson.toLocaleString()} ₪</td></tr>
                     </tbody>
                 `;
             }
 
-            // --- Trip Overview Map Script ---
+            function buildMainChecklists() {
+                const container = document.getElementById('checklists-container');
+                if (!container) return;
+                siteData.checklists.forEach((list, index) => {
+                    const details = document.createElement('details');
+                    details.className = "group";
+                    
+                    let itemsHTML = '';
+                    list.items.forEach((item, itemIndex) => {
+                        const uniqueId = `cl-${index}-${itemIndex}`;
+                        itemsHTML += `
+                            <div class="checklist-item">
+                                <input type="checkbox" id="${uniqueId}" class="hidden">
+                                <label for="${uniqueId}" class="flex items-center gap-3 text-lg text-slate-700 cursor-pointer transition-colors">
+                                    <i class="far fa-circle text-sky-500"></i><i class="fas fa-check-circle"></i><span>${item}</span>
+                                </label>
+                            </div>
+                        `;
+                    });
+
+                    details.innerHTML = `
+                        <summary class="text-lg font-semibold text-slate-700 cursor-pointer flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                            <span>${list.title}</span>
+                            <i class="fa-solid fa-chevron-down transition-transform duration-300 group-open:rotate-180"></i>
+                        </summary>
+                        <div class="mt-3 space-y-3 pr-4 border-r-2 border-slate-200 mr-4">${itemsHTML}</div>
+                    `;
+                    container.appendChild(details);
+                });
+            }
+
             function buildTripMap() {
                 const mapContainer = document.getElementById('trip-map-container');
-                if (!mapContainer || mapContainer._leaflet_id) return; // Prevent re-initialization
+                if (!mapContainer || mapContainer._leaflet_id) return;
 
                 const tripMap = L.map('trip-map-container').setView([38, -95], 3);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', {
@@ -295,15 +364,34 @@
                 const pathCoords = Object.values(siteData.locations).map(loc => loc.coords);
                 Object.values(siteData.locations).forEach(loc => {
                     L.marker(loc.coords, { icon: L.divIcon({ className: 'leaflet-div-icon', html: '📍' }) })
-                    .addTo(tripMap).bindTooltip(loc.name, {permanent: true, direction: 'top', offset: [0, -10]}).openTooltip();
+                     .addTo(tripMap).bindTooltip(loc.name, {permanent: true, direction: 'top', offset: [0, -10]}).openTooltip();
                 });
                 L.polyline(pathCoords, { color: '#38bdf8', weight: 3, opacity: 0.7, dashArray: '5, 10' }).addTo(tripMap);
             }
+
+            // --- Event Listeners ---
+            hamburgerBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
+            navModalClose.addEventListener('click', closeNavModal);
+            navModal.addEventListener('click', (e) => {
+                if (e.target.id === 'nav-modal') closeNavModal();
+            });
+
+            document.querySelector('#hotel-summary').addEventListener('click', function(e) {
+                const navBtn = e.target.closest('.nav-btn');
+                if (navBtn) {
+                    const address = navBtn.dataset.address;
+                    const name = navBtn.dataset.name;
+                    openNavModal(address, name);
+                }
+            });
 
             // --- Initial Load ---
             buildMenu();
             buildHotelCards();
             buildCostTables();
+            buildMainChecklists();
             buildTripMap();
         });
     </script>
