@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מסע חלומות 🌴 מיאמי</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Assistant', sans-serif; background-color: #f8fafc; }
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+        .submenu.open { max-height: 1200px; }
+        #nav-modal { transition: opacity 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <!-- Navigation Modal -->
+    <div id="nav-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
+            <div id="nav-modal-content" class="flex flex-col gap-4">
+                <a id="nav-waze-link" href="#" target="_blank" class="block w-full text-center bg-[#33ccff] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#00bfff] transition text-lg"><i class="fa-brands fa-waze"></i> Waze</a>
+                <a id="nav-gmaps-link" href="#" target="_blank" class="block w-full text-center bg-[#4285F4] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#3367D6] transition text-lg"><i class="fa-solid fa-map-location-dot"></i> Google Maps</a>
+            </div>
+            <p id="nav-modal-message" class="text-slate-600 hidden"></p>
+            <button id="nav-modal-close" class="mt-6 text-slate-500 hover:text-slate-700">סגור</button>
+        </div>
+    </div>
+
+    <!-- Sidebar (Full Navigation Menu) -->
+    <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
+        <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
+            <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
+            <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <nav id="main-menu" class="p-4 space-y-2">
+            <!-- Menu will be built by JavaScript -->
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div id="main-content" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-800">✨ מסע חלומות: מיאמי ✨</h1>
+                    <div class="flex items-center gap-2">
+                        <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" aria-label="דף הבית">
+                            <i class="fas fa-house fa-lg"></i>
+                        </a>
+                        <button id="navigate-hotel-btn" class="p-2 text-slate-600 hover:text-blue-600" aria-label="נווט למלון">
+                            <i class="fas fa-hotel fa-lg"></i>
+                        </button>
+                        <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none">
+                            <i class="fas fa-bars fa-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Itinerary Display Area -->
+        <main id="content-area" class="p-4 sm:p-6 lg:p-8">
+            <!-- Content will be injected here based on URL hash -->
+        </main>
+    </div>
+    
+    <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
+
+    <script>
+        // --- DATA ---
+        const siteData = {
+            menu: [
+                { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
+                { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [
+                    { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' }
+                ]},
+                { id: 'niagara', page: 'niagara.html', title: '❄️ מפלי הניאגרה', emoji: '❄️', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
+                { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
+                { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
+                { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
+                { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
+                { id: 'houston', page: 'houston.html', title: '🚀 יוסטון', emoji: '🚀', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' } ]},
+                { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
+                { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
+            ],
+            hotels: [
+                { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23.12-30.12", address: "140 W 28th St, New York, NY 10001" },
+                { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", address: "105 W 28th St, New York, NY 10001" },
+                { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01.01-04.01", address: "6732 Fallsview Blvd, Niagara Falls, ON L2G 3W6, Canada" },
+                { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04.01-07.01", address: "1310 New Hampshire Ave NW, Washington, DC 20036" },
+                { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07.01-12.01", address: "5801 Universal Blvd, Orlando, FL 32819" },
+                { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12.01-15.01", address: "2216 Park Ave, Miami Beach, FL 33139" },
+                { name: "Fortune House Hotel Suites", dest: "מיאמי", dates: "15.01-18.01", address: "185 SE 14th Terrace, Miami, FL 33131" },
+                { name: "Majestic Mirage Punta Cana", dest: "פונטה קאנה", dates: "18.01-22.01", address: "Playa Arena Gorda, Bavaro, Punta Cana" },
+                { name: "Hilton University of Houston", dest: "יוסטון", dates: "22.01-26.01", address: "4450 University Dr, Houston, TX 77204" },
+                { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "26.01-01.02", address: "S Hope St, Los Angeles, CA" },
+                { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01.02-05.02", address: "1200 Sutter St, San Francisco, CA 94109" }
+            ]
+        };
+
+        // --- UI Elements ---
+        const sidebar = document.getElementById('sidebar');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const overlay = document.getElementById('overlay');
+        const mainMenu = document.getElementById('main-menu');
+        const navModal = document.getElementById('nav-modal');
+        const navModalClose = document.getElementById('nav-modal-close');
+        const navigateHotelBtn = document.getElementById('navigate-hotel-btn');
+
+        // --- Sidebar and Menu Functions ---
+        function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
+
+        function buildMenu() {
+            siteData.menu.forEach(destination => {
+                const destinationDiv = document.createElement('div');
+                const button = document.createElement('button');
+                button.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center transition-colors';
+                button.innerHTML = `<span>${destination.title}</span> <i class="fas fa-chevron-down transition-transform duration-300"></i>`;
+                
+                const submenu = document.createElement('div');
+                submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
+                
+                destination.days.forEach(day => {
+                    const dayLink = document.createElement('a');
+                    dayLink.href = `${destination.page}#${day.id}`;
+                    dayLink.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md transition-colors';
+                    dayLink.textContent = `${destination.title.split(' ')[1]} ${day.label} ${destination.emoji}`;
+                    submenu.appendChild(dayLink);
+                });
+
+                button.addEventListener('click', () => { submenu.classList.toggle('open'); button.querySelector('i').classList.toggle('rotate-180'); });
+                destinationDiv.appendChild(button);
+                destinationDiv.appendChild(submenu);
+                mainMenu.appendChild(destinationDiv);
+            });
+        }
+        
+        // --- Smart Navigation Functions ---
+        function openNavModal(title, address, message) {
+            document.getElementById('nav-modal-title').textContent = title;
+            const navLinks = document.getElementById('nav-modal-content');
+            const navMessage = document.getElementById('nav-modal-message');
+
+            if (address) {
+                const encodedAddress = encodeURIComponent(address);
+                document.getElementById('nav-waze-link').href = `https://waze.com/ul?q=${encodedAddress}`;
+                document.getElementById('nav-gmaps-link').href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                navLinks.classList.remove('hidden');
+                navMessage.classList.add('hidden');
+            } else {
+                navLinks.classList.add('hidden');
+                navMessage.textContent = message;
+                navMessage.classList.remove('hidden');
+            }
+            
+            navModal.classList.remove('hidden');
+            setTimeout(() => navModal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeNavModal() {
+            navModal.classList.add('opacity-0');
+            setTimeout(() => navModal.classList.add('hidden'), 300);
+        }
+
+        function parseDateRange(dateString) {
+            const year2025 = 2025;
+            const year2026 = 2026;
+            let startDate, endDate;
+            
+            const parts = dateString.split('-');
+            
+            try {
+                const startParts = parts[0].split('.').map(Number);
+                const endParts = parts[1].split('.').map(Number);
+                const startYear = startParts[1] === 12 ? year2025 : year2026;
+                const endYear = endParts[1] === 12 ? year2025 : year2026;
+                startDate = new Date(startYear, startParts[1] - 1, startParts[0]);
+                endDate = new Date(endYear, endParts[1] - 1, endParts[0]);
+                
+                if (endDate) endDate.setHours(23, 59, 59, 999);
+                return { start: startDate, end: endDate };
+            } catch (e) {
+                console.error("Could not parse date string:", dateString, e);
+                return { start: null, end: null };
+            }
+        }
+
+        function navigateToCurrentHotel() {
+            const today = new Date();
+            // const today = new Date('2026-01-14T10:00:00'); 
+            
+            let targetHotel = null;
+
+            for (const hotel of siteData.hotels) {
+                const range = parseDateRange(hotel.dates);
+                if (range.start && range.end) {
+                    if (today <= range.end) {
+                        targetHotel = hotel;
+                        break;
+                    }
+                }
+            }
+
+            if (targetHotel) {
+                openNavModal(`נווט אל: ${targetHotel.name}`, targetHotel.address);
+            } else {
+                openNavModal('המסע הסתיים', null, 'מקווים שנהניתם, הטיול הגיע לסיומו!');
+            }
+        }
+
+        // --- Content Loader based on URL Hash ---
+        function loadContent() {
+            const hash = window.location.hash.substring(1) || siteData.menu.find(d => d.id === 'miami').days[0].id;
+            const contentArea = document.getElementById('content-area');
+            
+            let dayLabel = '';
+            const destData = siteData.menu.find(d => d.id === 'miami');
+            if (destData) {
+                const dayData = destData.days.find(d => d.id === hash);
+                if (dayData) {
+                    dayLabel = dayData.label;
+                }
+            }
+
+            contentArea.innerHTML = `
+                <section id="${hash}">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-6">כאן יהיה הלו"ז והמפה של מיאמי ${dayLabel} 🌴</h2>
+                    <div class="bg-white p-6 rounded-2xl shadow-md min-h-[300px]">
+                        <p class="text-center text-slate-400 pt-16">...בקרוב נבנה את התוכן...</p>
+                    </div>
+                </section>
+            `;
+        }
+
+        // --- Event Listeners & Initial Load ---
+        hamburgerBtn.addEventListener('click', toggleSidebar);
+        closeSidebarBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+        navModalClose.addEventListener('click', closeNavModal);
+        navigateHotelBtn.addEventListener('click', navigateToCurrentHotel);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            buildMenu();
+            loadContent();
+            const currentPageId = 'miami';
+            const menuIndex = siteData.menu.findIndex(d => d.id === currentPageId);
+            if (menuIndex !== -1) {
+                const activeMenuButton = document.querySelector(`#main-menu > div:nth-child(${menuIndex + 1}) > button`);
+                if(activeMenuButton) {
+                    activeMenuButton.click();
+                }
+            }
+        });
+        window.addEventListener('hashchange', loadContent);
+
+    </script>
+</body>
+</html>
