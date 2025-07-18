@@ -7,6 +7,8 @@
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
 
@@ -17,6 +19,16 @@
         .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
         .submenu.open { max-height: 1200px; }
         #nav-modal { transition: opacity 0.3s ease; }
+        .map-container { height: 400px; border-radius: 1rem; z-index: 0; }
+        .leaflet-div-icon { background: transparent; border: none; }
+        .nav-button {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem;
+            border-radius: 9999px; font-size: 0.875rem; font-weight: 600; color: white; transition: background-color 0.2s;
+        }
+        .nav-button.waze { background-color: #33ccff; }
+        .nav-button.waze:hover { background-color: #00bfff; }
+        .nav-button.gmaps { background-color: #4285F4; }
+        .nav-button.gmaps:hover { background-color: #3367D6; }
     </style>
 </head>
 <body class="bg-slate-50">
@@ -68,8 +80,8 @@
         </header>
 
         <!-- Itinerary Display Area -->
-        <main id="content-area" class="p-4 sm:p-6 lg:p-8">
-            <!-- Content will be injected here based on URL hash -->
+        <main id="content-area" class="p-4 sm:p-6 lg:p-8 space-y-8">
+            <!-- Content will be injected here -->
         </main>
     </div>
     
@@ -105,6 +117,31 @@
                 { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "26.01-01.02", address: "S Hope St, Los Angeles, CA" },
                 { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01.02-05.02", address: "1200 Sutter St, San Francisco, CA 94109" }
             ]
+        };
+
+        const itineraryData = {
+            'day-23-12': {
+                title: '23 בדצמבר: נחיתה בקצב של מנהטן!',
+                schedule: [
+                    { time: '06:30', icon: 'fa-solid fa-plane-arrival', title: 'נחיתה בניוארק (EWR)', desc: 'ברוכים הבאים! קחו את הזמן למעבר בביקורת הדרכונים ואיסוף המזוודות. התהליך לוקח כשעה-שעתיים.' },
+                    { time: '08:30', icon: 'fa-solid fa-train-subway', title: 'נסיעה למנהטן (מומלץ ברכבת)', desc: 'עקבו אחר השלטים ל-AirTrain שתיקח אתכם לתחנת הרכבת. משם, קחו רכבת NJ Transit ל-Penn Station. סה"כ כשעה נסיעה.', nav: { waze: 'https://waze.com/ul?q=Penn%20Station%20New%20York', gmaps: 'https://www.google.com/maps/search/?api=1&query=Penn+Station+New+York' } },
+                    { time: '10:30', icon: 'fa-solid fa-person-walking', title: 'הגעה למלון והתרעננות', desc: 'הליכה קצרה של 10 דקות מתחנת Penn למלון TownePlace Suites. משאירים את הציוד ויוצאים לדרך!', nav: { waze: 'https://waze.com/ul?q=TownePlace%20Suites%20by%20Marriott%20New%20York%20Manhattan/Chelsea', gmaps: 'https://www.google.com/maps/search/?api=1&query=TownePlace+Suites+by+Marriott+New+York+Manhattan/Chelsea' } },
+                    { time: '11:00', icon: 'fa-solid fa-pizza-slice', title: 'ארוחת צהריים ב-Eataly', desc: 'הולכים לשוק האוכל האיטלקי המדהים Eataly Flatiron לארוחת פסטה/פיצה אותנטית וטעימה.', nav: { waze: 'https://waze.com/ul?q=Eataly%20NYC%20Flatiron', gmaps: 'https://www.google.com/maps/search/?api=1&query=Eataly+NYC+Flatiron' } },
+                    { time: '13:00', icon: 'fa-solid fa-cart-shopping', title: 'הצטיידות ב-Trader Joe\'s', desc: 'קופצים לסופר המעולה ליד יוניון סקוור לקנות כל מה שצריך לחדר. יש שם המון מוצרים מיוחדים וכשרים.', nav: { waze: 'https://waze.com/ul?q=Trader%20Joe\'s%20Union%20Square', gmaps: 'https://www.google.com/maps/search/?api=1&query=Trader+Joe\'s+Union+Square' } },
+                    { time: '15:00', icon: 'fa-solid fa-bed', title: 'צ\'ק-אין ומנוחה קצרה', desc: 'חוזרים למלון, מקבלים את החדר ומתארגנים. זמן למקלחת ושעה של מנוחה (לא להירדם!) כדי לאגור כוח להמשך.' },
+                    { time: '17:00', icon: 'fa-solid fa-tree', title: 'ערב קסום ב-Bryant Park Winter Village', desc: 'נוסעים בסאבוויי לפארק בראיינט ונהנים משוק חג המולד, דוכנים, ואווירה קסומה סביב משטח ההחלקה על הקרח.', nav: { waze: 'https://waze.com/ul?q=Bryant%20Park', gmaps: 'https://www.google.com/maps/search/?api=1&query=Bryant+Park' } },
+                    { time: '21:00', icon: 'fa-solid fa-utensils', title: 'ארוחת ערב ב-Le Marais', desc: 'חוויה קולינרית לסיום היום בסטייקהאוס הצרפתי הכשר והמפורסם בלב אזור התיאטראות.', nav: { waze: 'https://waze.com/ul?q=Le%20Marais%20Restaurant', gmaps: 'https://www.google.com/maps/search/?api=1&query=Le+Marais+Restaurant' } }
+                ],
+                locations: [
+                    { coords: [40.6895, -74.1745], name: '✈️ נמל תעופה ניוארק (EWR)' },
+                    { coords: [40.7465, -73.9936], name: '🏨 מלון TownePlace Suites' },
+                    { coords: [40.7420, -73.9897], name: '🍝 Eataly Flatiron' },
+                    { coords: [40.7359, -73.9906], name: '🛒 Trader Joe\'s' },
+                    { coords: [40.7536, -73.9832], name: '🎄 Bryant Park' },
+                    { coords: [40.7595, -73.9868], name: '🥩 Le Marais' }
+                ]
+            }
+            // ... Add other days for NY here
         };
 
         // --- UI Elements ---
@@ -180,7 +217,6 @@
             const parts = dateString.split('-');
             
             try {
-                // Handles "DD.MM-DD.MM" format
                 const startParts = parts[0].split('.').map(Number);
                 const endParts = parts[1].split('.').map(Number);
                 const startYear = startParts[1] === 12 ? year2025 : year2026;
@@ -198,7 +234,6 @@
 
         function navigateToCurrentHotel() {
             const today = new Date();
-            // For testing: uncomment and set a date
             // const today = new Date('2025-12-27T10:00:00'); 
             
             let targetHotel = null;
@@ -220,37 +255,133 @@
             }
         }
 
-        // --- Content Loader based on URL Hash ---
+        // --- Page Specific Functions ---
+        function buildMap(locations) {
+            const mapId = 'map-container';
+            const mapContainer = document.getElementById(mapId);
+            if (!mapContainer) return;
+            if (mapContainer._leaflet_id) {
+                mapContainer._leaflet_id = null;
+            }
+
+            const map = L.map(mapId).setView(locations[0].coords, 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            }).addTo(map);
+
+            const bounds = [];
+            locations.forEach(loc => {
+                L.marker(loc.coords).addTo(map).bindPopup(`<b>${loc.name}</b>`);
+                bounds.push(loc.coords);
+            });
+
+            if (bounds.length > 1) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        function buildCosts() {
+            const costsId = 'costs-container';
+            const costsContainer = document.getElementById(costsId);
+            if (!costsContainer) return;
+
+            costsContainer.innerHTML = `
+                <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded-r-lg shadow-md mb-6">
+                    <div class="flex">
+                        <div class="py-1"><i class="fa-solid fa-ticket fa-2x mr-3"></i></div>
+                        <div>
+                            <p class="font-bold">טיפ תחבורה ציבורית</p>
+                            <p class="text-sm">הדבר הראשון שכדאי לעשות הוא לקנות כרטיס <strong>7-Day Unlimited MetroCard</strong>. הוא עולה כ-$34 לאדם ומאפשר נסיעה חופשית בסאבוויי ובאוטובוסים למשך שבוע שלם. הכי משתלם!</p>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="text-xl font-bold text-slate-700 mb-4">💰 עלויות עיקריות (הערכה)</h3>
+                <div class="bg-white p-4 rounded-2xl shadow-lg">
+                    <table class="w-full text-sm text-right">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="p-3 font-semibold">קטגוריה</th>
+                                <th class="p-3 font-semibold text-left">עלות (לאדם)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            <tr><td class="p-3">🚆 רכבת מנמל התעופה</td><td class="p-3 font-mono text-left">~$16</td></tr>
+                            <tr><td class="p-3">🚇 כרטיס שבועי לסאבוויי</td><td class="p-3 font-mono text-left">$34</td></tr>
+                            <tr><td class="p-3">🍝 ארוחת צהריים (Eataly)</td><td class="p-3 font-mono text-left">~$40</td></tr>
+                            <tr><td class="p-3">🥩 ארוחת ערב (Le Marais)</td><td class="p-3 font-mono text-left">~$100</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
         function loadContent() {
-            const hash = window.location.hash.substring(1);
+            const hash = window.location.hash.substring(1) || siteData.menu.find(d => d.id === 'new-york').days[0].id;
             const contentArea = document.getElementById('content-area');
-            
-            if (!hash) {
+            const data = itineraryData[hash];
+
+            if (!data) {
+                let dayLabel = '';
+                const nyData = siteData.menu.find(d => d.id === 'new-york');
+                if (nyData) {
+                    const dayData = nyData.days.find(d => d.id === hash);
+                    if (dayData) dayLabel = dayData.label;
+                }
                 contentArea.innerHTML = `
-                    <div class="text-center bg-white p-8 rounded-2xl shadow">
-                        <h2 class="text-2xl font-bold text-slate-700">ברוכים הבאים לניו יורק!</h2>
-                        <p class="text-slate-500 mt-2">אנא בחרו יום מהתפריט כדי לראות את הלו"ז המתוכנן.</p>
-                    </div>`;
+                    <section id="${hash}">
+                        <h2 class="text-3xl font-bold text-slate-800 mb-6">הלו"ז לניו יורק ${dayLabel} 🗽</h2>
+                        <div class="bg-white p-6 rounded-2xl shadow-md min-h-[300px]">
+                            <p class="text-center text-slate-400 pt-16">...הלו"ז ליום זה יתווסף בקרוב...</p>
+                        </div>
+                    </section>`;
                 return;
             }
 
-            let dayLabel = '';
-            const nyData = siteData.menu.find(d => d.id === 'new-york');
-            if (nyData) {
-                const dayData = nyData.days.find(d => d.id === hash);
-                if (dayData) {
-                    dayLabel = dayData.label;
+            let scheduleHtml = '';
+            data.schedule.forEach(item => {
+                let navHtml = '';
+                if (item.nav) {
+                    navHtml = `
+                        <div class="flex gap-2 mt-2">
+                            <a href="${item.nav.waze}" target="_blank" class="nav-button waze"><i class="fa-brands fa-waze"></i> Waze</a>
+                            <a href="${item.nav.gmaps}" target="_blank" class="nav-button gmaps"><i class="fa-solid fa-map-location-dot"></i> Google</a>
+                        </div>`;
                 }
-            }
+                scheduleHtml += `
+                    <li class="flex items-start gap-4">
+                        <div class="flex flex-col items-center">
+                            <span class="font-bold text-lg text-slate-800">${item.time}</span>
+                            <i class="${item.icon} text-blue-500 text-xl mt-1"></i>
+                        </div>
+                        <div class="flex-grow pb-6 border-r-2 border-slate-200 pr-6">
+                            <h4 class="font-bold text-lg text-slate-700">${item.title}</h4>
+                            <p class="text-slate-600">${item.desc}</p>
+                            ${navHtml}
+                        </div>
+                    </li>`;
+            });
 
             contentArea.innerHTML = `
                 <section id="${hash}">
-                    <h2 class="text-3xl font-bold text-slate-800 mb-6">כאן יהיה הלו"ז והמפה של ניו יורק ${dayLabel} 🗽</h2>
-                    <div class="bg-white p-6 rounded-2xl shadow-md min-h-[300px]">
-                        <p class="text-center text-slate-400 pt-16">...בקרוב נבנה את התוכן...</p>
+                    <h2 class="text-3xl font-bold text-slate-800 mb-6">${data.title}</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-md">
+                            <h3 class="text-xl font-bold text-slate-700 mb-4">לו"ז מפורט</h3>
+                            <ul class="space-y-2">${scheduleHtml}</ul>
+                        </div>
+                        <div class="lg:col-span-1 space-y-8">
+                            <div class="bg-white p-4 rounded-2xl shadow-md">
+                                <h3 class="text-xl font-bold text-slate-700 mb-4">🗺️ מפת היום</h3>
+                                <div id="map-container" class="map-container"></div>
+                            </div>
+                            <div id="costs-container"></div>
+                        </div>
                     </div>
                 </section>
             `;
+
+            buildMap(data.locations);
+            buildCosts();
         }
 
         // --- Event Listeners & Initial Load ---
@@ -263,7 +394,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             buildMenu();
             loadContent();
-            // Open the correct submenu on page load
             const currentPageId = 'new-york';
             const menuIndex = siteData.menu.findIndex(d => d.id === currentPageId);
             if (menuIndex !== -1) {
