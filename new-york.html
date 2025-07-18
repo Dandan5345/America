@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
 
@@ -29,6 +30,12 @@
         .nav-button.waze:hover { background-color: #00bfff; }
         .nav-button.gmaps { background-color: #4285F4; }
         .nav-button.gmaps:hover { background-color: #3367D6; }
+        
+        /* Interactive Itinerary Styles */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details > summary .chevron-icon { transition: transform 0.3s ease-out; }
+        details[open] > summary .chevron-icon { transform: rotate(180deg); }
     </style>
 </head>
 <body class="bg-slate-50">
@@ -123,13 +130,12 @@
             'day-23-12': {
                 title: '23 בדצמבר: נחיתה בקצב של מנהטן!',
                 schedule: [
-                    { time: '06:30', icon: 'fa-solid fa-plane-arrival', title: 'נחיתה בניוארק (EWR)', desc: 'ברוכים הבאים! קחו את הזמן למעבר בביקורת הדרכונים ואיסוף המזוודות. התהליך לוקח כשעה-שעתיים.' },
-                    { time: '08:30', icon: 'fa-solid fa-train-subway', title: 'נסיעה למנהטן (מומלץ ברכבת)', desc: 'עקבו אחר השלטים ל-AirTrain שתיקח אתכם לתחנת הרכבת. משם, קחו רכבת NJ Transit ל-Penn Station. סה"כ כשעה נסיעה.', nav: { waze: 'https://waze.com/ul?q=Penn%20Station%20New%20York', gmaps: 'https://www.google.com/maps/search/?api=1&query=Penn+Station+New+York' } },
-                    { time: '10:30', icon: 'fa-solid fa-person-walking', title: 'הגעה למלון והתרעננות', desc: 'הליכה קצרה של 10 דקות מתחנת Penn למלון TownePlace Suites. משאירים את הציוד ויוצאים לדרך!', nav: { waze: 'https://waze.com/ul?q=TownePlace%20Suites%20by%20Marriott%20New%20York%20Manhattan/Chelsea', gmaps: 'https://www.google.com/maps/search/?api=1&query=TownePlace+Suites+by+Marriott+New+York+Manhattan/Chelsea' } },
-                    { time: '11:00', icon: 'fa-solid fa-pizza-slice', title: 'ארוחת צהריים ב-Eataly', desc: 'הולכים לשוק האוכל האיטלקי המדהים Eataly Flatiron לארוחת פסטה/פיצה אותנטית וטעימה.', nav: { waze: 'https://waze.com/ul?q=Eataly%20NYC%20Flatiron', gmaps: 'https://www.google.com/maps/search/?api=1&query=Eataly+NYC+Flatiron' } },
+                    { time: '06:30-10:30', icon: 'fa-solid fa-plane-arrival', title: 'הגעה לניו יורק והגעה למלון', desc: 'נחיתה בניוארק (EWR), מעבר בביקורת דרכונים, ואיסוף כבודה. האופציה המומלצת להגעה למנהטן היא באמצעות רכבת: AirTrain חינם לתחנת הרכבות, ומשם רכבת NJ Transit ל-Penn Station. מהתחנה, המלון במרחק 10 דקות הליכה.', nav: { waze: 'https://waze.com/ul?q=TownePlace%20Suites%20by%20Marriott%20New%20York%20Manhattan/Chelsea', gmaps: 'https://www.google.com/maps/search/?api=1&query=TownePlace+Suites+by+Marriott+New+York+Manhattan/Chelsea' } },
+                    { time: '11:00', icon: 'fa-solid fa-pizza-slice', title: 'ארוחת צהריים ב-Eataly', desc: 'לאחר השארת המזוודות במלון, הולכים לשוק האוכל האיטלקי המדהים Eataly Flatiron לארוחת פסטה/פיצה אותנטית וטעימה.', nav: { waze: 'https://waze.com/ul?q=Eataly%20NYC%20Flatiron', gmaps: 'https://www.google.com/maps/search/?api=1&query=Eataly+NYC+Flatiron' } },
                     { time: '13:00', icon: 'fa-solid fa-cart-shopping', title: 'הצטיידות ב-Trader Joe\'s', desc: 'קופצים לסופר המעולה ליד יוניון סקוור לקנות כל מה שצריך לחדר. יש שם המון מוצרים מיוחדים וכשרים.', nav: { waze: 'https://waze.com/ul?q=Trader%20Joe\'s%20Union%20Square', gmaps: 'https://www.google.com/maps/search/?api=1&query=Trader+Joe\'s+Union+Square' } },
                     { time: '15:00', icon: 'fa-solid fa-bed', title: 'צ\'ק-אין ומנוחה קצרה', desc: 'חוזרים למלון, מקבלים את החדר ומתארגנים. זמן למקלחת ושעה של מנוחה (לא להירדם!) כדי לאגור כוח להמשך.' },
-                    { time: '17:00', icon: 'fa-solid fa-tree', title: 'ערב קסום ב-Bryant Park Winter Village', desc: 'נוסעים בסאבוויי לפארק בראיינט ונהנים משוק חג המולד, דוכנים, ואווירה קסומה סביב משטח ההחלקה על הקרח.', nav: { waze: 'https://waze.com/ul?q=Bryant%20Park', gmaps: 'https://www.google.com/maps/search/?api=1&query=Bryant+Park' } },
+                    { time: '17:00', icon: 'fa-solid fa-tree', title: 'סיור ערב: Bryant Park וטיימס סקוור', desc: 'מתחילים ב-Bryant Park Winter Village, נהנים משוק חג המולד והאווירה, וממשיכים משם להליכה קצרה אל האורות המסנוורים של טיימס סקוור.', nav: { waze: 'https://waze.com/ul?q=Times%20Square', gmaps: 'https://www.google.com/maps/search/?api=1&query=Times+Square' } },
+                    { time: '19:30', icon: 'fa-solid fa-gift', title: 'שוק החג בכיכר קולומבוס', desc: 'ממשיכים צפונה לשוק חג מולד נוסף ומקסים בכניסה לסנטרל פארק - Columbus Circle Holiday Market.', nav: { waze: 'https://waze.com/ul?q=Columbus%20Circle', gmaps: 'https://www.google.com/maps/search/?api=1&query=Columbus+Circle' } },
                     { time: '21:00', icon: 'fa-solid fa-utensils', title: 'ארוחת ערב ב-Le Marais', desc: 'חוויה קולינרית לסיום היום בסטייקהאוס הצרפתי הכשר והמפורסם בלב אזור התיאטראות.', nav: { waze: 'https://waze.com/ul?q=Le%20Marais%20Restaurant', gmaps: 'https://www.google.com/maps/search/?api=1&query=Le+Marais+Restaurant' } }
                 ],
                 locations: [
@@ -138,10 +144,11 @@
                     { coords: [40.7420, -73.9897], name: '🍝 Eataly Flatiron' },
                     { coords: [40.7359, -73.9906], name: '🛒 Trader Joe\'s' },
                     { coords: [40.7536, -73.9832], name: '🎄 Bryant Park' },
+                    { coords: [40.7580, -73.9855], name: '✨ טיימס סקוור' },
+                    { coords: [40.7680, -73.9819], name: '🎁 כיכר קולומבוס' },
                     { coords: [40.7595, -73.9868], name: '🥩 Le Marais' }
                 ]
             }
-            // ... Add other days for NY here
         };
 
         // --- UI Elements ---
@@ -275,6 +282,17 @@
                 bounds.push(loc.coords);
             });
 
+            const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#8b5cf6', '#ec4899', '#14b8a6'];
+            for (let i = 0; i < locations.length - 1; i++) {
+                const color = colors[i % colors.length];
+                const polyline = L.polyline([locations[i].coords, locations[i+1].coords], { color: color }).addTo(map);
+                L.polylineDecorator(polyline, {
+                    patterns: [
+                        { offset: '50%', repeat: 0, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, color: color } }) }
+                    ]
+                }).addTo(map);
+            }
+
             if (bounds.length > 1) {
                 map.fitBounds(bounds, { padding: [50, 50] });
             }
@@ -348,26 +366,30 @@
                         </div>`;
                 }
                 scheduleHtml += `
-                    <li class="flex items-start gap-4">
-                        <div class="flex flex-col items-center">
-                            <span class="font-bold text-lg text-slate-800">${item.time}</span>
-                            <i class="${item.icon} text-blue-500 text-xl mt-1"></i>
-                        </div>
-                        <div class="flex-grow pb-6 border-r-2 border-slate-200 pr-6">
-                            <h4 class="font-bold text-lg text-slate-700">${item.title}</h4>
+                    <details class="group bg-white rounded-lg shadow-sm border border-slate-200">
+                        <summary class="flex items-center justify-between p-4 cursor-pointer list-none">
+                            <div class="flex items-center gap-4">
+                                <i class="${item.icon} text-blue-500 text-xl w-6 text-center"></i>
+                                <div>
+                                    <h4 class="font-bold text-lg text-slate-800">${item.title}</h4>
+                                    <p class="text-sm text-slate-500">${item.time}</p>
+                                </div>
+                            </div>
+                            <i class="fas fa-chevron-down text-slate-400 chevron-icon"></i>
+                        </summary>
+                        <div class="p-4 pt-0 pl-12">
                             <p class="text-slate-600">${item.desc}</p>
                             ${navHtml}
                         </div>
-                    </li>`;
+                    </details>`;
             });
 
             contentArea.innerHTML = `
                 <section id="${hash}">
                     <h2 class="text-3xl font-bold text-slate-800 mb-6">${data.title}</h2>
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-md">
-                            <h3 class="text-xl font-bold text-slate-700 mb-4">לו"ז מפורט</h3>
-                            <ul class="space-y-2">${scheduleHtml}</ul>
+                        <div class="lg:col-span-2 space-y-4">
+                            ${scheduleHtml}
                         </div>
                         <div class="lg:col-span-1 space-y-8">
                             <div class="bg-white p-4 rounded-2xl shadow-md">
