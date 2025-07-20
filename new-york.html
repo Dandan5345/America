@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מסע חלומות 🗽 ניו יורק</title>
     
-    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -40,7 +39,6 @@
 </head>
 <body class="bg-slate-50">
 
-    <!-- Navigation Modal -->
     <div id="nav-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden opacity-0">
         <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
             <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
@@ -53,22 +51,18 @@
         </div>
     </div>
 
-    <!-- Sidebar (Full Navigation Menu) -->
     <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
         <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
             <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
             <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
         </div>
         <nav id="main-menu" class="p-4 space-y-2">
-            <!-- Menu will be built by JavaScript -->
-        </nav>
+            </nav>
     </aside>
 
-    <!-- Main Content -->
     <div id="main-content" class="min-h-screen">
-        <!-- Header -->
         <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
-            <div class="container mx-auto px-4 sm:px-6 lg/px-8">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <h1 class="text-lg sm:text-xl font-bold text-slate-800">✨ מסע חלומות: ניו יורק ✨</h1>
                     <div class="flex items-center gap-2">
@@ -86,10 +80,8 @@
             </div>
         </header>
 
-        <!-- Itinerary Display Area -->
         <main id="content-area" class="p-4 sm:p-6 lg:p-8 space-y-8">
-            <!-- Content will be injected here -->
-        </main>
+            </main>
     </div>
     
     <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
@@ -150,24 +142,22 @@
                 ]
             },
             'day-24-12': {
-                title: '24 בדצמבר: חברים, המבורגרים ונוף עוצר נשימה!',
+                title: '24 בדצמבר: חברים, קרח ואורות!',
                 schedule: [
-                    { time: '10:00', icon: 'fa-solid fa-couch', title: 'The FRIENDS Experience', desc: 'מתחילים את הבוקר בביקור בדירה הכי מפורסמת בניו יורק! חוויה אינטראקטיבית וכיפית שתיקח אתכם ישירות לסט של "חברים". <strong>חובה להזמין כרטיסים מראש!</strong><br><a href="https://www.friendstheexperience.com/new-york/" target="_blank" class="inline-block mt-3 bg-amber-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-amber-600 transition">להזמנת כרטיסים ותיאום שעה <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>', nav: { waze: 'https://waze.com/ul?q=The%20FRIENDS%20Experience%20New%20York', gmaps: 'https://www.google.com/maps/search/?api=1&query=The+FRIENDS+Experience+New+York' } },
-                    { time: '12:00', icon: 'fa-solid fa-camera', title: 'צילומים בפארק מדיסון סקוור', desc: 'הליכה קצרה דרומה אל בניין הפלאטירון האייקוני ופארק מדיסון סקוור היפהפה. הזדמנות מעולה לתמונות קלאסיות.', nav: { waze: 'https://waze.com/ul?q=Madison%20Square%20Park', gmaps: 'https://www.google.com/maps/search/?api=1&query=Madison+Square+Park' } },
-                    { time: '13:00', icon: 'fa-solid fa-hamburger', title: 'צהריים: Shake Shack המקורי!', desc: 'בתוך הפארק נמצא הסניף הראשון והמקורי של שייק שאק. נתפנק בהמבורגרים והמילקשייקים הכי מפורסמים בעיר.', nav: { waze: 'https://waze.com/ul?q=Shake%20Shack%20Madison%20Square%20Park', gmaps: 'https://www.google.com/maps/search/?api=1&query=Shake+Shack+Madison+Square+Park' } },
-                    { time: '14:30', icon: 'fa-solid fa-store', title: 'שיטוט בצ\'לסי מרקט והיי-ליין', desc: 'נסיעה קצרה באוטובוס/סאבוויי לצ\'לסי מרקט - שוק אוכל מקורה ומגניב. אחרי שנשנשש משהו, נעלה לפארק היי-ליין, טיילת ירוקה ויפהפייה על פסי רכבת ישנים.', nav: { waze: 'https://waze.com/ul?q=Chelsea%20Market', gmaps: 'https://www.google.com/maps/search/?api=1&query=Chelsea+Market' } },
-                    { time: '16:00', icon: 'fa-solid fa-leaf', title: 'ביקור ב-Little Island', desc: 'נרד מההיי-ליין ישירות אל Little Island, פארק צף וחדשני על המים עם נוף מרהיב. מקום מושלם להירגע וליהנות מהשקיעה.', nav: { waze: 'https://waze.com/ul?q=Little%20Island', gmaps: 'https://www.google.com/maps/search/?api=1&query=Little+Island' } },
-                    { time: '18:30', icon: 'fa-solid fa-city', title: 'תצפית מה-Top of the Rock', desc: 'נוסעים למרכז רוקפלר כדי לעלות לתצפית המדהימה "Top of the Rock". מומלץ להגיע קצת לפני השקיעה כדי לראות את העיר נדלקת באורותיה.', nav: { waze: 'https://waze.com/ul?q=Top%20of%20the%20Rock', gmaps: 'https://www.google.com/maps/search/?api=1&query=Top+of+the+Rock' } },
-                    { time: '21:00', icon: 'fa-solid fa-utensils', title: 'ארוחת ערב כשרה ב-Mr. Broadway', desc: 'אחרי התצפית, נלך לארוחת ערב במסעדת "מיסטר ברודווי" המציעה מגוון רחב של אוכל כשר וטעים באווירה ניו-יורקית.', nav: { waze: 'https://waze.com/ul?q=Mr.%20Broadway%20Kosher%20Restaurant', gmaps: 'https://www.google.com/maps/search/?api=1&query=Mr.+Broadway+Kosher+Restaurant' } }
+                    { time: '08:30-10:00', icon: 'fa-solid fa-mug-saucer', title: 'בוקר רגוע', desc: 'קמים בנחת, מתארגנים ונהנים מארוחת בוקר במלון או בבית קפה סמוך.' },
+                    { time: '10:30', icon: 'fa-solid fa-tv', title: 'The FRIENDS™ Experience', desc: 'ביקור במוזיאון האינטראקטיבי של הסדרה האייקונית, כולל שחזורים של הסטים המפורסמים. נמצא במרחק הליכה קצרה מהמלון. **חובה להזמין כרטיסים מראש!**', nav: { waze: 'https://waze.com/ul?q=The%20FRIENDS%20Experience%20New%20York', gmaps: 'https://www.google.com/maps/search/?api=1&query=כנפי%20נשרים%2024%2C%20ירושלים8' }, ticketLink: 'https://www.friendstheexperience.com/new-york/' },
+                    { time: '12:00', icon: 'fa-solid fa-utensils', title: 'ארוחת צהריים ומנוחה במלון', desc: 'חוזרים למלון לארוחת צהריים קלילה ומנוחה קצרה כדי לאגור כוח להמשך היום.' },
+                    { time: '13:30', icon: 'fa-solid fa-tree-city', title: 'רוקפלר סנטר והשדרה החמישית', desc: 'נוסעים בסאבוויי למרכז רוקפלר. מתרשמים מעץ חג המולד העצום, חנויות הדגל וקתדרלת סנט פטריק המרשימה.', nav: { waze: 'https://waze.com/ul?q=Rockefeller%20Center', gmaps: 'https://www.google.com/maps/search/?api=1&query=כנפי%20נשרים%2024%2C%20ירושלים9' } },
+                    { time: '17:30', icon: 'fa-solid fa-icicles', title: 'החלקה על הקרח ב-Bryant Park', desc: 'מגיעים ל-Winter Village ועולים על משטח ההחלקה המפורסם לאורות הערב הקסומים.', nav: { waze: 'https://waze.com/ul?q=Bryant%20Park', gmaps: 'https://www.google.com/maps/search/?api=1&query=Bryant+Park' } },
+                    { time: '18:30', icon: 'fa-solid fa-star', title: 'טיימס סקוור', desc: 'חווים את שיא האורות, הפרסומות והאנרגיה הניו-יורקית במקום הכי מפורסם בעולם.', nav: { waze: 'https://waze.com/ul?q=Times%20Square', gmaps: 'https://www.google.com/maps/search/?api=1&query=Times+Square' } },
+                    { time: '20:30', icon: 'fa-solid fa-utensils', title: 'ארוחת ערב חגיגית', desc: 'בערב חג המולד, מסעדות כשרות הן אופציה מצוינת ופתוחה. נבדוק אפשרויות באזור התיאטראות.' }
                 ],
                 locations: [
-                    { coords: [40.7394, -73.9848], name: '🛋️ The FRIENDS Experience' },
-                    { coords: [40.7411, -73.9897], name: '🏙️ בניין הפלאטירון' },
-                    { coords: [40.7412, -73.9878], name: '🍔 Shake Shack המקורי' },
-                    { coords: [40.7425, -74.0060], name: '🛍️ צ\'לסי מרקט' },
-                    { coords: [40.7408, -74.0113], name: '🌳 Little Island' },
-                    { coords: [40.7591, -73.9798], name: '🌇 Top of the Rock' },
-                    { coords: [40.7523, -73.9880], name: '🍽️ Mr. Broadway' }
+                    { coords: [40.7465, -73.9936], name: '🏨 מלון' },
+                    { coords: [40.7398, -73.9865], name: '📺 The FRIENDS™ Experience' },
+                    { coords: [40.7587, -73.9787], name: '🎄 רוקפלר סנטר' },
+                    { coords: [40.7536, -73.9832], name: '⛸️ Bryant Park' },
+                    { coords: [40.7580, -73.9855], name: '✨ טיימס סקוור' }
                 ]
             }
         };
@@ -294,7 +284,7 @@
 
             const map = L.map(mapId).setView(locations[0].coords, 12);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO'
+                attribution: '© OpenStreetMap © CARTO'
             }).addTo(map);
 
             const bounds = [];
@@ -319,39 +309,64 @@
             }
         }
 
-        function buildCosts() {
-            const costsId = 'costs-container';
-            const costsContainer = document.getElementById(costsId);
+        function buildCosts(dayId) {
+            const costsContainer = document.getElementById('costs-container');
             if (!costsContainer) return;
 
-            costsContainer.innerHTML = `
-                <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded-r-lg shadow-md mb-6">
-                    <div class="flex">
-                        <div class="py-1"><i class="fa-solid fa-ticket fa-2x mr-3"></i></div>
-                        <div>
-                            <p class="font-bold">טיפ תחבורה ציבורית</p>
-                            <p class="text-sm">הדבר הראשון שכדאי לעשות הוא לקנות כרטיס <strong>7-Day Unlimited MetroCard</strong>. הוא עולה כ-$34 לאדם ומאפשר נסיעה חופשית בסאבוויי ובאוטובוסים למשך שבוע שלם. הכי משתלם!</p>
+            let content = '';
+            if (dayId === 'day-23-12') {
+                content = `
+                    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded-r-lg shadow-md mb-6">
+                        <div class="flex">
+                            <div class="py-1"><i class="fa-solid fa-ticket fa-2x mr-3"></i></div>
+                            <div>
+                                <p class="font-bold">טיפ תחבורה ציבורית</p>
+                                <p class="text-sm">הדבר הראשון שכדאי לעשות הוא לקנות כרטיס <strong>7-Day Unlimited MetroCard</strong>. הוא עולה כ-$34 לאדם ומאפשר נסיעה חופשית בסאבוויי ובאוטובוסים למשך שבוע שלם. הכי משתלם!</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <h3 class="text-xl font-bold text-slate-700 mb-4">💰 עלויות עיקריות (הערכה)</h3>
-                <div class="bg-white p-4 rounded-2xl shadow-lg">
-                    <table class="w-full text-sm text-right">
-                        <thead class="bg-slate-50">
-                            <tr>
-                                <th class="p-3 font-semibold">קטגוריה</th>
-                                <th class="p-3 font-semibold text-left">עלות (לאדם)</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200">
-                            <tr><td class="p-3">🚆 רכבת מנמל התעופה</td><td class="p-3 font-mono text-left">~$16</td></tr>
-                            <tr><td class="p-3">🚇 כרטיס שבועי לסאבוויי</td><td class="p-3 font-mono text-left">$34</td></tr>
-                            <tr><td class="p-3">🍝 ארוחת צהריים (Eataly)</td><td class="p-3 font-mono text-left">~$40</td></tr>
-                            <tr><td class="p-3">🥩 ארוחת ערב (Le Marais)</td><td class="p-3 font-mono text-left">~$100</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            `;
+                    <h3 class="text-xl font-bold text-slate-700 mb-4">💰 עלויות עיקריות (הערכה)</h3>
+                    <div class="bg-white p-4 rounded-2xl shadow-lg">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="p-3 font-semibold">קטגוריה</th>
+                                    <th class="p-3 font-semibold text-left">עלות (לאדם)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr><td class="p-3">🚆 רכבת מנמל התעופה</td><td class="p-3 font-mono text-left">~$16</td></tr>
+                                <tr><td class="p-3">🚇 כרטיס שבועי לסאבוויי</td><td class="p-3 font-mono text-left">$34</td></tr>
+                                <tr><td class="p-3">🍝 ארוחת צהריים (Eataly)</td><td class="p-3 font-mono text-left">~$40</td></tr>
+                                <tr><td class="p-3">🥩 ארוחת ערב (Le Marais)</td><td class="p-3 font-mono text-left">~$100</td></tr>
+                            </tbody>
+                        </table>
+                    </div>`;
+            } else if (dayId === 'day-24-12') {
+                content = `
+                    <h3 class="text-xl font-bold text-slate-700 mb-4">📊 הערכת עלויות ליום (לאדם)</h3>
+                    <div class="bg-white p-4 rounded-2xl shadow-lg">
+                        <table class="w-full text-sm text-right">
+                             <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="p-3 font-semibold">קטגוריה</th>
+                                    <th class="p-3 font-semibold text-left">עלות ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr><td class="p-3">The FRIENDS™ Experience</td><td class="p-3 font-mono text-left">~45</td></tr>
+                                <tr><td class="p-3">החלקה על הקרח (שכירות)</td><td class="p-3 font-mono text-left">~35</td></tr>
+                                <tr><td class="p-3">ארוחת ערב ושתיה</td><td class="p-3 font-mono text-left">~90</td></tr>
+                                <tr><td class="p-3">שופינג ופינוקים</td><td class="p-3 font-mono text-left">~100</td></tr>
+                                <tr class="font-bold bg-slate-100 text-slate-800">
+                                    <td class="p-3">סה"כ מוערך</td>
+                                    <td class="p-3 font-mono text-left">~$270</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>`;
+            }
+            costsContainer.innerHTML = content;
         }
 
         function loadContent() {
@@ -386,6 +401,9 @@
                             <a href="${item.nav.gmaps}" target="_blank" class="nav-button gmaps"><i class="fa-solid fa-map-location-dot"></i> Google</a>
                         </div>`;
                 }
+                if (item.ticketLink) {
+                    navHtml += `<div class="mt-2"><a href="${item.ticketLink}" target="_blank" class="inline-block bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition text-sm"><i class="fa-solid fa-ticket mr-2"></i>הזמנת כרטיסים וקביעת מועד</a></div>`;
+                }
                 scheduleHtml += `
                     <details class="group bg-white rounded-lg shadow-sm border border-slate-200">
                         <summary class="flex items-center justify-between p-4 cursor-pointer list-none">
@@ -399,7 +417,7 @@
                             <i class="fas fa-chevron-down text-slate-400 chevron-icon"></i>
                         </summary>
                         <div class="p-4 pt-0 pl-12">
-                            <div class="text-slate-600">${item.desc}</div>
+                            <p class="text-slate-600">${item.desc}</p>
                             ${navHtml}
                         </div>
                     </details>`;
@@ -424,7 +442,7 @@
             `;
 
             buildMap(data.locations);
-            buildCosts();
+            buildCosts(hash);
         }
 
         // --- Event Listeners & Initial Load ---
