@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מסע חלומות 🗽 ניו יורק</title>
     
+    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -30,15 +31,24 @@
         .nav-button.gmaps { background-color: #4285F4; }
         .nav-button.gmaps:hover { background-color: #3367D6; }
         
-        /* Interactive Itinerary Styles */
+        /* Interactive Itinerary & Map Legend Styles */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
         details > summary .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
+        .map-legend a {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 0.5rem;
+            transition: background-color 0.2s; text-decoration: none; color: #334155;
+        }
+        .map-legend a:hover { background-color: #f1f5f9; }
+        .map-legend .legend-color-box {
+            width: 1rem; height: 1rem; border-radius: 0.25rem; flex-shrink: 0;
+        }
     </style>
 </head>
 <body class="bg-slate-50">
 
+    <!-- Navigation Modal -->
     <div id="nav-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden opacity-0">
         <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
             <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
@@ -51,16 +61,20 @@
         </div>
     </div>
 
+    <!-- Sidebar (Full Navigation Menu) -->
     <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
         <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
             <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
             <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
         </div>
         <nav id="main-menu" class="p-4 space-y-2">
-            </nav>
+            <!-- Menu will be built by JavaScript -->
+        </nav>
     </aside>
 
+    <!-- Main Content -->
     <div id="main-content" class="min-h-screen">
+        <!-- Header -->
         <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
@@ -80,8 +94,10 @@
             </div>
         </header>
 
+        <!-- Itinerary Display Area -->
         <main id="content-area" class="p-4 sm:p-6 lg:p-8 space-y-8">
-            </main>
+            <!-- Content will be injected here -->
+        </main>
     </div>
     
     <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
@@ -131,33 +147,54 @@
                     { time: '21:00', icon: 'fa-solid fa-utensils', title: 'ארוחת ערב ב-Le Marais', desc: 'חוויה קולינרית לסיום היום בסטייקהאוס הצרפתי הכשר והמפורסם בלב אזור התיאטראות.', nav: { waze: 'https://waze.com/ul?q=Le%20Marais%20Restaurant', gmaps: 'https://www.google.com/maps/search/?api=1&query=Le+Marais+Restaurant' } }
                 ],
                 locations: [
-                    { coords: [40.6895, -74.1745], name: '✈️ נמל תעופה ניוארק (EWR)' },
-                    { coords: [40.7465, -73.9936], name: '🏨 מלון TownePlace Suites' },
-                    { coords: [40.7420, -73.9897], name: '🍝 Eataly Flatiron' },
-                    { coords: [40.7359, -73.9906], name: '🛒 Trader Joe\'s' },
-                    { coords: [40.7536, -73.9832], name: '🎄 Bryant Park' },
-                    { coords: [40.7580, -73.9855], name: '✨ טיימס סקוור' },
-                    { coords: [40.7680, -73.9819], name: '🎁 כיכר קולומבוס' },
-                    { coords: [40.7595, -73.9868], name: '🥩 Le Marais' }
+                    { coords: [40.6895, -74.1745], name: '✈️ נמל תעופה ניוארק (EWR)', name_en: 'Newark Airport (EWR)' },
+                    { coords: [40.7465, -73.9936], name: '🏨 מלון TownePlace Suites', name_en: 'TownePlace Suites Hotel' },
+                    { coords: [40.7420, -73.9897], name: '🍝 Eataly Flatiron', name_en: 'Eataly Flatiron' },
+                    { coords: [40.7359, -73.9906], name: '🛒 Trader Joe\'s', name_en: 'Trader Joe\'s' },
+                    { coords: [40.7465, -73.9936], name: '🏨 מלון (חזרה)', name_en: 'Hotel (Return)' },
+                    { coords: [40.7536, -73.9832], name: '🎄 Bryant Park', name_en: 'Bryant Park' },
+                    { coords: [40.7580, -73.9855], name: '✨ טיימס סקוור', name_en: 'Times Square' },
+                    { coords: [40.7680, -73.9819], name: '🎁 כיכר קולומבוס', name_en: 'Columbus Circle' },
+                    { coords: [40.7595, -73.9868], name: '🥩 Le Marais', name_en: 'Le Marais' }
                 ]
             },
             'day-24-12': {
                 title: '24 בדצמבר: חברים, קרח ואורות!',
                 schedule: [
                     { time: '08:30-10:00', icon: 'fa-solid fa-mug-saucer', title: 'בוקר רגוע', desc: 'קמים בנחת, מתארגנים ונהנים מארוחת בוקר במלון או בבית קפה סמוך.' },
-                    { time: '10:30', icon: 'fa-solid fa-tv', title: 'The FRIENDS™ Experience', desc: 'ביקור במוזיאון האינטראקטיבי של הסדרה האייקונית, כולל שחזורים של הסטים המפורסמים. נמצא במרחק הליכה קצרה מהמלון. **חובה להזמין כרטיסים מראש!**', nav: { waze: 'https://waze.com/ul?q=The%20FRIENDS%20Experience%20New%20York', gmaps: 'https://www.google.com/maps/search/?api=1&query=כנפי%20נשרים%2024%2C%20ירושלים8' }, ticketLink: 'https://www.friendstheexperience.com/new-york/' },
+                    { time: '10:30', icon: 'fa-solid fa-tv', title: 'The FRIENDS™ Experience', desc: 'ביקור במוזיאון האינטראקטיבי של הסדרה האייקונית, כולל שחזורים של הסטים המפורסמים. נמצא במרחק הליכה קצרה מהמלון. **חובה להזמין כרטיסים מראש!**', nav: { waze: 'https://waze.com/ul?q=The%20FRIENDS%20Experience%20New%20York', gmaps: 'https://www.google.com/maps/search/?api=1&query=The+FRIENDS+Experience+New+York' }, ticketLink: 'https://www.friendstheexperience.com/new-york/' },
                     { time: '12:00', icon: 'fa-solid fa-utensils', title: 'ארוחת צהריים ומנוחה במלון', desc: 'חוזרים למלון לארוחת צהריים קלילה ומנוחה קצרה כדי לאגור כוח להמשך היום.' },
-                    { time: '13:30', icon: 'fa-solid fa-tree-city', title: 'רוקפלר סנטר והשדרה החמישית', desc: 'נוסעים בסאבוויי למרכז רוקפלר. מתרשמים מעץ חג המולד העצום, חנויות הדגל וקתדרלת סנט פטריק המרשימה.', nav: { waze: 'https://waze.com/ul?q=Rockefeller%20Center', gmaps: 'https://www.google.com/maps/search/?api=1&query=כנפי%20נשרים%2024%2C%20ירושלים9' } },
+                    { time: '13:30', icon: 'fa-solid fa-tree-city', title: 'רוקפלר סנטר והשדרה החמישית', desc: 'נוסעים בסאבוויי למרכז רוקפלר. מתרשמים מעץ חג המולד העצום, חנויות הדגל וקתדרלת סנט פטריק המרשימה.', nav: { waze: 'https://waze.com/ul?q=Rockefeller%20Center', gmaps: 'https://www.google.com/maps/search/?api=1&query=Rockefeller+Center' } },
                     { time: '17:30', icon: 'fa-solid fa-icicles', title: 'החלקה על הקרח ב-Bryant Park', desc: 'מגיעים ל-Winter Village ועולים על משטח ההחלקה המפורסם לאורות הערב הקסומים.', nav: { waze: 'https://waze.com/ul?q=Bryant%20Park', gmaps: 'https://www.google.com/maps/search/?api=1&query=Bryant+Park' } },
                     { time: '18:30', icon: 'fa-solid fa-star', title: 'טיימס סקוור', desc: 'חווים את שיא האורות, הפרסומות והאנרגיה הניו-יורקית במקום הכי מפורסם בעולם.', nav: { waze: 'https://waze.com/ul?q=Times%20Square', gmaps: 'https://www.google.com/maps/search/?api=1&query=Times+Square' } },
                     { time: '20:30', icon: 'fa-solid fa-utensils', title: 'ארוחת ערב חגיגית', desc: 'בערב חג המולד, מסעדות כשרות הן אופציה מצוינת ופתוחה. נבדוק אפשרויות באזור התיאטראות.' }
                 ],
                 locations: [
-                    { coords: [40.7465, -73.9936], name: '🏨 מלון' },
-                    { coords: [40.7398, -73.9865], name: '📺 The FRIENDS™ Experience' },
-                    { coords: [40.7587, -73.9787], name: '🎄 רוקפלר סנטר' },
-                    { coords: [40.7536, -73.9832], name: '⛸️ Bryant Park' },
-                    { coords: [40.7580, -73.9855], name: '✨ טיימס סקוור' }
+                    { coords: [40.7465, -73.9936], name: '🏨 מלון', name_en: 'Hotel' },
+                    { coords: [40.7398, -73.9865], name: '📺 The FRIENDS™ Experience', name_en: 'The FRIENDS™ Experience' },
+                    { coords: [40.7465, -73.9936], name: '🏨 מלון (חזרה)', name_en: 'Hotel (Return)' },
+                    { coords: [40.7587, -73.9787], name: '🎄 רוקפלר סנטר', name_en: 'Rockefeller Center' },
+                    { coords: [40.7536, -73.9832], name: '⛸️ Bryant Park', name_en: 'Bryant Park' },
+                    { coords: [40.7580, -73.9855], name: '✨ טיימס סקוור', name_en: 'Times Square' }
+                ]
+            },
+            'day-25-12': {
+                title: '25 בדצמבר: ניו יורק הריקה, ואתם בתוכה',
+                schedule: [
+                    { time: '09:00-10:30', icon: 'fa-solid fa-bread-slice', title: 'ארוחת בוקר רגועה במלון', desc: 'מתעוררים בנחת ומכינים ארוחת בוקר מפנקת במטבחון של החדר עם המצרכים שקניתם מראש. זמן איכות עם מוזיקת חג ברקע.' },
+                    { time: '10:30', icon: 'fa-solid fa-person-walking', title: 'טיול בוקר ב-High Line', desc: 'יוצאים רגלית מהמלון מערבה לכיוון פארק ה-High Line. נהנים מהליכה על הטיילת המוגבהת, מהנופים האורבניים ומהשקט היחסי.', nav: { waze: 'https://waze.com/ul?q=High%20Line', gmaps: 'https://www.google.com/maps/search/?api=1&query=High+Line' } },
+                    { time: '12:00', icon: 'fa-solid fa-building-columns', title: 'ביקור ב-Hudson Yards', desc: 'מגיעים לקצה הצפוני של ההיי-ליין, אל מתחם Hudson Yards. עוצרים להצטלם ליד מבנה ה-Vessel המרשים ונהנים מהאדריכלות המודרנית.', nav: { waze: 'https://waze.com/ul?q=Hudson%20Yards', gmaps: 'https://www.google.com/maps/search/?api=1&query=Hudson+Yards' } },
+                    { time: '13:00', icon: 'fa-solid fa-sandwich', title: 'ארוחת צהריים ומנוחה במלון', desc: 'חוזרים למלון לארוחת צהריים קלילה שהכנתם. זמן למנוחה, קפה או אפילו תנומה קצרה.' },
+                    { time: '14:30', icon: 'fa-solid fa-leaf', title: 'אחר הצהריים בסנטרל פארק', desc: 'יוצאים שוב צפונה אל סנטרל פארק. עושים מסלול הליכה קלאסי ועוצרים בנקודות אייקוניות: Bethesda Terrace, Bow Bridge ו-Strawberry Fields.', nav: { waze: 'https://waze.com/ul?q=Central%20Park', gmaps: 'https://www.google.com/maps/search/?api=1&query=Central+Park' } },
+                    { time: '17:30', icon: 'fa-solid fa-film', title: 'ערב סרט חמים וביתי', desc: 'חוזרים למלון, מכינים ארוחת ערב טעימה במטבחון, ומתכרבלים מול סרט טוב עם פופקורן ושוקו חם.' }
+                ],
+                locations: [
+                    { coords: [40.7465, -73.9936], name: '🏨 מלון', name_en: 'Hotel' },
+                    { coords: [40.7479, -74.0048], name: '🚶‍♂️ High Line', name_en: 'High Line' },
+                    { coords: [40.7538, -74.0011], name: '🏙️ Hudson Yards', name_en: 'Hudson Yards' },
+                    { coords: [40.7465, -73.9936], name: '🏨 מלון (חזרה)', name_en: 'Hotel (Return)' },
+                    { coords: [40.7792, -73.9692], name: '🌳 סנטרל פארק', name_en: 'Central Park' },
+                    { coords: [40.7465, -73.9936], name: '🏨 מלון (חזרה לערב)', name_en: 'Hotel (Return for evening)' }
                 ]
             }
         };
@@ -274,7 +311,7 @@
         }
 
         // --- Page Specific Functions ---
-        function buildMap(locations) {
+        function buildMap(locations, dayId) {
             const mapId = 'map-container';
             const mapContainer = document.getElementById(mapId);
             if (!mapContainer) return;
@@ -289,14 +326,20 @@
 
             const bounds = [];
             locations.forEach(loc => {
-                L.marker(loc.coords).addTo(map).bindPopup(`<b>${loc.name}</b>`);
+                L.marker(loc.coords).addTo(map).bindPopup(`<b>${loc.name_en || loc.name}</b>`);
                 bounds.push(loc.coords);
             });
 
-            const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#8b5cf6', '#ec4899', '#14b8a6'];
+            const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b'];
             for (let i = 0; i < locations.length - 1; i++) {
                 const color = colors[i % colors.length];
-                const polyline = L.polyline([locations[i].coords, locations[i+1].coords], { color: color }).addTo(map);
+                const from = locations[i];
+                const to = locations[i+1];
+                const polyline = L.polyline([from.coords, to.coords], { color: color, weight: 5 }).addTo(map);
+                
+                const popupText = `<b>${from.name_en || from.name} → ${to.name_en || to.name}</b>`;
+                polyline.bindPopup(popupText);
+
                 L.polylineDecorator(polyline, {
                     patterns: [
                         { offset: '50%', repeat: 0, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, color: color } }) }
@@ -307,6 +350,25 @@
             if (bounds.length > 1) {
                 map.fitBounds(bounds, { padding: [50, 50] });
             }
+            buildMapLegend(locations, dayId, colors);
+        }
+        
+        function buildMapLegend(locations, dayId, colors) {
+            const legendContainer = document.getElementById('map-legend-container');
+            if (!legendContainer) return;
+            let legendHtml = '<h4 class="font-bold text-slate-700">Map Legend:</h4><div class="space-y-1">';
+            for (let i = 0; i < locations.length - 1; i++) {
+                const color = colors[i % colors.length];
+                const from = locations[i];
+                const to = locations[i+1];
+                legendHtml += `
+                    <a href="#schedule-item-${dayId}-${i+1}" class="text-sm">
+                        <span class="legend-color-box" style="background-color: ${color};"></span>
+                        <span>${from.name_en} → ${to.name_en}</span>
+                    </a>`;
+            }
+            legendHtml += '</div>';
+            legendContainer.innerHTML = legendHtml;
         }
 
         function buildCosts(dayId) {
@@ -365,6 +427,17 @@
                             </tbody>
                         </table>
                     </div>`;
+            } else if (dayId === 'day-25-12') {
+                content = `
+                    <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-r-lg shadow-md mb-6">
+                        <div class="flex">
+                            <div class="py-1"><i class="fa-solid fa-store fa-2x mr-3"></i></div>
+                            <div>
+                                <p class="font-bold">תזכורת קניות ל-24.12</p>
+                                <p class="text-sm">אל תשכחו לקנות מראש את כל האוכל והשתיה ליום הזה! ב-25.12 הכל סגור. הצטיידו באוכל לבוקר, צהריים, ערב ונשנושים.</p>
+                            </div>
+                        </div>
+                    </div>`;
             }
             costsContainer.innerHTML = content;
         }
@@ -392,7 +465,7 @@
             }
 
             let scheduleHtml = '';
-            data.schedule.forEach(item => {
+            data.schedule.forEach((item, index) => {
                 let navHtml = '';
                 if (item.nav) {
                     navHtml = `
@@ -405,7 +478,7 @@
                     navHtml += `<div class="mt-2"><a href="${item.ticketLink}" target="_blank" class="inline-block bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition text-sm"><i class="fa-solid fa-ticket mr-2"></i>הזמנת כרטיסים וקביעת מועד</a></div>`;
                 }
                 scheduleHtml += `
-                    <details class="group bg-white rounded-lg shadow-sm border border-slate-200">
+                    <details id="schedule-item-${hash}-${index+1}" class="group bg-white rounded-lg shadow-sm border border-slate-200">
                         <summary class="flex items-center justify-between p-4 cursor-pointer list-none">
                             <div class="flex items-center gap-4">
                                 <i class="${item.icon} text-blue-500 text-xl w-6 text-center"></i>
@@ -432,8 +505,9 @@
                         </div>
                         <div class="lg:col-span-1 space-y-8">
                             <div class="bg-white p-4 rounded-2xl shadow-md">
-                                <h3 class="text-xl font-bold text-slate-700 mb-4">🗺️ מפת היום</h3>
+                                <h3 class="text-xl font-bold text-slate-700 mb-4">🗺️ Map of the Day</h3>
                                 <div id="map-container" class="map-container"></div>
+                                <div id="map-legend-container" class="mt-4 map-legend"></div>
                             </div>
                             <div id="costs-container"></div>
                         </div>
@@ -441,7 +515,7 @@
                 </section>
             `;
 
-            buildMap(data.locations);
+            buildMap(data.locations, hash);
             buildCosts(hash);
         }
 
