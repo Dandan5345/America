@@ -36,11 +36,14 @@
         details > summary::-webkit-details-marker { display: none; }
         details > summary .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
-        .map-legend a {
+        
+        .map-legend-item {
             display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 0.5rem;
             transition: background-color 0.2s; text-decoration: none; color: #334155;
+            cursor: pointer;
         }
-        .map-legend a:hover { background-color: #f1f5f9; }
+        .map-legend-item:hover { background-color: #f1f5f9; }
+        .map-legend-item.highlighted { background-color: #e0f2fe; font-weight: 600; }
         .map-legend .legend-color-box {
             width: 1rem; height: 1rem; border-radius: 0.25rem; flex-shrink: 0;
         }
@@ -314,7 +317,7 @@
         function buildMap(locations, dayId) {
             const mapId = 'map-container';
             const mapContainer = document.getElementById(mapId);
-            if (!mapContainer) return;
+            if (!mapContainer) return { map: null, polylines: [] };
             if (mapContainer._leaflet_id) {
                 mapContainer._leaflet_id = null;
             }
@@ -330,12 +333,13 @@
                 bounds.push(loc.coords);
             });
 
+            const polylines = [];
             const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b'];
             for (let i = 0; i < locations.length - 1; i++) {
                 const color = colors[i % colors.length];
                 const from = locations[i];
                 const to = locations[i+1];
-                const polyline = L.polyline([from.coords, to.coords], { color: color, weight: 5 }).addTo(map);
+                const polyline = L.polyline([from.coords, to.coords], { color: color, weight: 4 }).addTo(map);
                 
                 const popupText = `<b>${from.name_en || from.name} → ${to.name_en || to.name}</b>`;
                 polyline.bindPopup(popupText);
@@ -345,30 +349,77 @@
                         { offset: '50%', repeat: 0, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, color: color } }) }
                     ]
                 }).addTo(map);
+                polylines.push(polyline);
             }
 
             if (bounds.length > 1) {
                 map.fitBounds(bounds, { padding: [50, 50] });
             }
             buildMapLegend(locations, dayId, colors);
+            return { map, polylines };
         }
         
         function buildMapLegend(locations, dayId, colors) {
             const legendContainer = document.getElementById('map-legend-container');
             if (!legendContainer) return;
-            let legendHtml = '<h4 class="font-bold text-slate-700">Map Legend:</h4><div class="space-y-1">';
+            let legendHtml = '<h4 class="font-bold text-slate-700 mb-2">מקרא מסלולים (לחצו להדגשה)</h4><div class="space-y-1">';
             for (let i = 0; i < locations.length - 1; i++) {
                 const color = colors[i % colors.length];
                 const from = locations[i];
                 const to = locations[i+1];
                 legendHtml += `
-                    <a href="#schedule-item-${dayId}-${i+1}" class="text-sm">
+                    <div class="map-legend-item" data-route-index="${i}">
                         <span class="legend-color-box" style="background-color: ${color};"></span>
-                        <span>${from.name_en} → ${to.name_en}</span>
-                    </a>`;
+                        <span class="text-sm">${from.name_en} → ${to.name_en}</span>
+                    </div>`;
             }
             legendHtml += '</div>';
             legendContainer.innerHTML = legendHtml;
+        }
+
+        function setupMapInteraction(map, polylines) {
+            const legendContainer = document.getElementById('map-legend-container');
+            if (!map || !polylines || polylines.length === 0 || !legendContainer) return;
+
+            let currentlySelected = -1;
+
+            const resetStyles = () => {
+                polylines.forEach(p => {
+                    p.setStyle({ weight: 4, opacity: 1.0 });
+                });
+                const highlightedItem = legendContainer.querySelector('.map-legend-item.highlighted');
+                if (highlightedItem) {
+                    highlightedItem.classList.remove('highlighted');
+                }
+                currentlySelected = -1;
+            };
+
+            legendContainer.addEventListener('click', (e) => {
+                const legendItem = e.target.closest('.map-legend-item');
+                if (!legendItem) return;
+
+                const index = parseInt(legendItem.dataset.routeIndex, 10);
+
+                if (index === currentlySelected) {
+                    resetStyles();
+                    return;
+                }
+                
+                resetStyles(); // Reset previous state before applying new one
+                
+                polylines.forEach((p, i) => {
+                    if (i === index) {
+                        p.setStyle({ weight: 8, opacity: 1.0 });
+                        p.bringToFront();
+                    } else {
+                        p.setStyle({ weight: 3, opacity: 0.5 });
+                    }
+                });
+                legendItem.classList.add('highlighted');
+                currentlySelected = index;
+            });
+
+            map.on('click', resetStyles);
         }
 
         function buildCosts(dayId) {
@@ -505,7 +556,7 @@
                         </div>
                         <div class="lg:col-span-1 space-y-8">
                             <div class="bg-white p-4 rounded-2xl shadow-md">
-                                <h3 class="text-xl font-bold text-slate-700 mb-4">🗺️ Map of the Day</h3>
+                                <h3 class="text-xl font-bold text-slate-700 mb-4">🗺️ מפת היום</h3>
                                 <div id="map-container" class="map-container"></div>
                                 <div id="map-legend-container" class="mt-4 map-legend"></div>
                             </div>
@@ -515,7 +566,8 @@
                 </section>
             `;
 
-            buildMap(data.locations, hash);
+            const { map, polylines } = buildMap(data.locations, hash);
+            setupMapInteraction(map, polylines);
             buildCosts(hash);
         }
 
