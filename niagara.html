@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מסע חלומות ❄️ מפלי הניאגרה</title>
+    <title>מסע חלומות ❄️ קנדה: ניאגרה וטורונטו</title>
     
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,7 +31,6 @@
         .nav-button.gmaps { background-color: #4285F4; }
         .nav-button.gmaps:hover { background-color: #3367D6; }
         
-        /* Interactive Itinerary & Checklist Styles */
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
         .chevron-icon { transition: transform 0.3s ease-out; }
@@ -41,36 +40,19 @@
         .checklist-item input:checked + label .fa-check-circle { display: inline-block; color: #22c55e; }
         .fa-check-circle { display: none; }
 
-        /* Map Legend Styles */
-        .map-legend-item {
-            display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; border-radius: 0.5rem;
-            transition: background-color 0.2s; text-decoration: none; color: #334155;
-            cursor: pointer;
-        }
-        .map-legend-item:hover { background-color: #f1f5f9; }
-        .map-legend-item.highlighted { background-color: #e0f2fe; font-weight: 600; }
-        .map-legend .legend-color-box {
-            width: 1rem; height: 1rem; border-radius: 0.25rem; flex-shrink: 0;
-        }
-
-        /* Booking Button Style */
         .booking-button {
-            display: inline-block;
-            margin-top: 0.75rem;
-            padding: 0.5rem 1rem;
-            background-color: #10b981; /* Emerald 500 */
-            color: white;
-            font-weight: 600;
-            border-radius: 0.5rem;
-            transition: background-color 0.2s;
-            text-decoration: none;
+            display: inline-block; margin-top: 0.75rem; padding: 0.5rem 1rem;
+            background-color: #10b981; color: white; font-weight: 600;
+            border-radius: 0.5rem; transition: background-color 0.2s; text-decoration: none;
         }
-        .booking-button:hover {
-            background-color: #059669; /* Emerald 600 */
-        }
-        .booking-button i {
-            margin-left: 0.5rem;
-        }
+        .booking-button:hover { background-color: #059669; }
+        .booking-button i { margin-left: 0.5rem; }
+        
+        .recommendations { margin-top: 1rem; padding-right: 1rem; border-right: 3px solid #e2e8f0; }
+        .recommendations h5 { font-weight: 700; color: #475569; }
+        .recommendations ul { list-style-type: none; padding: 0; }
+        .recommendations li { margin-top: 0.5rem; }
+        .recommendations b { color: #1e293b; }
     </style>
 </head>
 <body class="bg-slate-50">
@@ -88,56 +70,43 @@
         </div>
     </div>
 
-    <!-- Sidebar (Full Navigation Menu) -->
+    <!-- Sidebar -->
     <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
         <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
             <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
             <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
         </div>
-        <nav id="main-menu" class="p-4 space-y-2">
-            <!-- Menu will be built by JavaScript -->
-        </nav>
+        <nav id="main-menu" class="p-4 space-y-2"></nav>
     </aside>
 
     <!-- Main Content -->
     <div id="main-content" class="min-h-screen">
-        <!-- Header -->
         <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
-                    <h1 class="text-lg sm:text-xl font-bold text-slate-800">✨ מסע חלומות: מפלי הניאגרה ✨</h1>
+                    <h1 class="text-base sm:text-xl font-bold text-slate-800">🇨🇦 קנדה: 1-4 בינואר, 2026 🇨🇦</h1>
                     <div class="flex items-center gap-2">
-                        <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" aria-label="דף הבית">
-                            <i class="fas fa-house fa-lg"></i>
-                        </a>
-                        <button id="navigate-hotel-btn" class="p-2 text-slate-600 hover:text-blue-600" aria-label="נווט למלון">
-                            <i class="fas fa-hotel fa-lg"></i>
-                        </button>
-                        <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none">
-                            <i class="fas fa-bars fa-lg"></i>
-                        </button>
+                        <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" aria-label="דף הבית"><i class="fas fa-house fa-lg"></i></a>
+                        <button id="navigate-hotel-btn" class="p-2 text-slate-600 hover:text-blue-600" aria-label="נווט למלון"><i class="fas fa-hotel fa-lg"></i></button>
+                        <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none"><i class="fas fa-bars fa-lg"></i></button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Itinerary Display Area -->
-        <main id="content-area" class="p-4 sm:p-6 lg:p-8 space-y-8">
-            <!-- Content will be injected here based on URL hash -->
-        </main>
+        <main id="content-area" class="p-4 sm:p-6 lg:p-8 space-y-8"></main>
     </div>
     
     <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
 
     <script>
-        // --- DATA ---
         const siteData = {
             menu: [
                 { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
                 { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [
                     { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' }
                 ]},
-                { id: 'niagara', page: 'niagara.html', title: '❄️ מפלי הניאגרה', emoji: '❄️', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
+                { id: 'niagara', page: 'niagara.html', title: '❄️ קנדה', emoji: '🇨🇦', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
                 { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
                 { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
                 { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
@@ -146,174 +115,132 @@
                 { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
                 { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
             ],
-            hotels: [
-                { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23.12-30.12", address: "140 W 28th St, New York, NY 10001" },
+             hotels: [
                 { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", address: "105 W 28th St, New York, NY 10001" },
                 { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01.01-03.01", address: "6732 Fallsview Blvd, Niagara Falls, ON L2G 3W6, Canada" },
                 { name: "InterContinental Toronto Centre", dest: "טורונטו", dates: "03.01-04.01", address: "225 Front St W, Toronto, ON M5V 2X3, Canada" },
                 { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04.01-07.01", address: "1310 New Hampshire Ave NW, Washington, DC 20036" },
-                { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07.01-12.01", address: "5801 Universal Blvd, Orlando, FL 32819" },
-                { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12.01-15.01", address: "2216 Park Ave, Miami Beach, FL 33139" },
-                { name: "Fortune House Hotel Suites", dest: "מיאמי", dates: "15.01-18.01", address: "185 SE 14th Terrace, Miami, FL 33131" },
-                { name: "Majestic Mirage Punta Cana", dest: "פונטה קאנה", dates: "18.01-22.01", address: "Playa Arena Gorda, Bavaro, Punta Cana" },
-                { name: "פרטי המלון יתווספו", dest: "אריזונה", dates: "22.01-27.01", address: "פרטי הכתובת יתווספו" },
-                { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "27.01-01.02", address: "S Hope St, Los Angeles, CA" },
-                { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01.02-05.02", address: "1200 Sutter St, San Francisco, CA 94109" }
             ]
         };
         
         const itineraryData = {
             'day-01-01': {
-                title: '1 בינואר: המעבר הגדול למפלי הניאגרה',
+                title: '✨ יום 1: יום חמישי, 1.1 – המעבר הגדול למפלי הניאגרה ✨',
+                description: 'הנושא המרכזי: מעבר בינלאומי מסודר, התמודדות עם ביקורת גבולות, והגעה רגועה לצד הקנדי של המפלים.',
                 checklist: {
                     title: "📋 צ'ק-ליסט: משימות קריטיות ליום המעבר",
                     steps: [
-                        { 
-                            title: "לפני היציאה מהמלון בניו יורק:", 
-                            items: [
-                                { text: "אישור ETA לקנדה: לוודא שהוא הונפק, תקף ומודפס/שמור בטלפון.", bookingLink: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eta/apply-he.html', buttonText: 'מעבר לאתר הרשמי' },
-                                { text: "הזמנת הסעה (מבאפלו לניאגרה): לוודא שהוזמן כרטיס ושהאישור שמור." },
-                                { text: "מטען נייד (Power Bank): לוודא שהוא טעון במלואו." }
-                            ] 
-                        },
-                        {
-                            title: "תיקיית מסמכים (דיגיטלית ופיזית):",
-                            items: [
-                                { text: "דרכונים בתוקף" }, { text: "אישור ETA" }, { text: "כרטיסי טיסה (ניו יורק -> באפלו)" }, { text: "אישור הזמנת מלון בניאגרה" }, { text: "אישור הזמנת אוטובוס/שאטל" }, { text: "פוליסת ביטוח נסיעות" }
-                            ]
-                        }
+                        { title: "לפני היציאה מהמלון בניו יורק:", items: [
+                            { text: "אישור ETA לקנדה: לוודא שהוא הונפק, תקף ומודפס/שמור בטלפון.", bookingLink: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/eta/apply-he.html', buttonText: 'בדיקת סטטוס ETA' },
+                            { text: "הזמנת הסעה (מבאפלו לניאגרה): לוודא שהוזמן כרטיס (FlixBus/Greyhound). עלות ההסעה כ-280₪ לזוג.", bookingLink: 'https://www.flixbus.com/bus-routes/bus-buffalo-ny-niagara-falls-on', buttonText: 'חיפוש הסעה ב-FlixBus' },
+                            { text: "בדיקת שמות: לוודא שהשם בכל ההזמנות זהה לשם בדרכון." },
+                            { text: "כתובת המלון: לשמור את הכתובת המלאה ומספר הטלפון של המלון בניאגרה במקום נגיש." },
+                            { text: "מטען נייד (Power Bank): לוודא שהוא טעון במלואו." }
+                        ]},
+                        { title: "תיקיית מסמכים (דיגיטלית ופיזית):", items: [
+                            { text: "דרכונים בתוקף" }, { text: "אישור ETA" }, { text: "כרטיסי טיסה (ניו יורק -> באפלו)" }, { text: "אישור הזמנת מלון בניאגרה" }, { text: "אישור הזמנת אוטובוס/שאטל" }, { text: "פוליסת ביטוח נסיעות" }
+                        ]}
                     ]
                 },
                 schedule: [
-                    { time: 'שלב א\'', icon: 'fa-solid fa-plane-arrival', title: 'טיסה והגעה לבאפלו (עד 15:30)', desc: 'נחיתה משוערת ב-14:48 בשדה התעופה באפלו (BUF). לאחר איסוף המזוודות, נתרענן ונתארגן ליציאה.' },
-                    { time: 'שלב ב\'', icon: 'fa-solid fa-bus', title: 'מהשדה למעבר הגבול (15:30 – 19:30)', desc: 'יוצאים מהטרמינל אל תחנת האוטובוס/שאטל. הנסיעה לכיוון קנדה אורכת כשעה עד שעה וחצי. תיהנו מהנוף המשתנה!' },
-                    { time: 'שלב ג\'', icon: 'fa-solid fa-passport', title: 'מעבר הגבול לקנדה (19:30 – 20:00)', desc: 'השלב החשוב ביותר. יורדים מהרכב עם המזוודות, נכנסים למשרד ביקורת הגבולות ומציגים דרכונים ו-ETA. היו מוכנים לשאלות קצרות על מטרת ומשך הביקור.' },
-                    { time: '20:30', icon: 'fa-solid fa-hotel', title: 'הגעה למלון וצ\'ק-אין', desc: 'לאחר ההורדה בניאגרה, לוקחים מונית קצרה למלון. מבצעים צ\'ק-אין, מתמקמים בחדר ומתארגנים לערב.', nav: { waze: 'https://waze.com/ul?q=Tower%20Hotel%20at%20Fallsview', gmaps: 'https://www.google.com/maps/search/?api=1&query=Tower+Hotel+at+Fallsview' } },
-                    { time: '21:00', icon: 'fa-solid fa-snowflake', title: 'סיור לילי קסום במפלים', desc: 'יוצאים לסיבוב רגלי לאורך הטיילת. האוויר הקר, רעש המים העוצמתי והאורות הצבעוניים המשתקפים בקרח יוצרים חוויה בלתי נשכחת.' },
-                    { time: '21:30', icon: 'fa-solid fa-utensils', title: 'הליכה לאזור קליפטון היל וארוחת ערב', desc: 'הולכים לאזור התוסס של קליפטון היל, בוחרים מסעדה מחממת לארוחת ערב ונהנים מהאווירה הייחודית של המקום.' },
-                    { time: '22:30', icon: 'fa-solid fa-bed', title: 'חזרה למלון ולילה טוב', desc: 'חוזרים למלון למנוחה אחרי יום ארוך ומרגש, מוכנים ליום מלא חוויות מחר.' }
+                    { time: 'עד 15:15', icon: 'fa-solid fa-plane-arrival', title: 'שלב א\': טיסה והגעה לבאפלו', desc: 'נחיתה משוערת בשדה התעופה באפלו (BUF) ב-<strong>14:48</strong>. צפי לסיום איסוף המזוודות והתארגנות עד <strong>15:15</strong>.' },
+                    { time: '17:15-17:35', icon: 'fa-solid fa-bus', title: 'שלב ב\': מהשדה לאוטובוס', desc: 'עקבו אחר השלטים ל-Ground Transportation / Bus. חשוב להגיע לתחנה של חברת ההסעות <strong>לפחות 20 דקות לפני היציאה (כלומר, עד 17:15)</strong>. האוטובוס יוצא <strong>בדיוק</strong> בזמן ב-<strong>17:35</strong>!' },
+                    { time: '19:30-20:00', icon: 'fa-solid fa-passport', title: 'שלב ג\': מעבר הגבול לקנדה', desc: 'יורדים מהרכב עם המזוודות והמסמכים. ניגשים לקצין ביקורת הגבולות, מציגים דרכון ו-ETA, ועונים על שאלות קצרות (מטרת ביקור, משך שהייה).' },
+                    { time: '20:00-21:00', icon: 'fa-solid fa-hotel', title: 'שלב ד\': הגעה למלון והתמקמות', desc: 'הגעה משוערת לניאגרה, קנדה. לוקחים מונית/אובר קצרה למלון. צ\'ק-אין ב-Tower Hotel at Fallsview והתארגנות בחדר.', nav: { waze: 'https://waze.com/ul?q=Tower%20Hotel%20at%20Fallsview', gmaps: 'https://www.google.com/maps/search/?api=1&query=Tower+Hotel+at+Fallsview' } },
+                    { time: '21:00', icon: 'fa-solid fa-snowflake', title: 'סיור לילי וערב ראשון', desc: 'יוצאים לסיבוב רגלי ראשון ומרגש לאורך הטיילת כדי לראות את המפלים המוארים בצבעי הקשת.' },
+                    { time: '21:30', icon: 'fa-solid fa-utensils', title: 'ארוחת ערב', desc: 'ארוחת ערב קלה אחרי יום ארוך.<div class="recommendations"><h5>המלצות באזור המלון:</h5><ul><li><b>Zappi\'s Pizza & Pasta:</b> מקום איטלקי מקומי, לא יומרני ועם דירוגים מעולים. מושלם לארוחה מהירה, טעימה ומנחמת.</li><li><b>The Keg Steakhouse + Bar:</b> אופציה יוקרתית יותר עם אווירה נהדרת ונוף מרהיב למפלים.</li><li><b>TGI Fridays:</b> בחירה קלה ומוכרת לאוכל אמריקאי קלאסי באווירה קלילה, קרוב למלון.</li></ul></div>' }
                 ],
-                locations: [
-                    { coords: [40.7769, -73.8740], name: 'שדה תעופה לה-גווארדיה (LGA)', name_en: 'LaGuardia Airport (LGA)' },
-                    { coords: [42.9406, -78.7319], name: 'שדה תעופה באפלו (BUF)', name_en: 'Buffalo Airport (BUF)' },
-                    { coords: [43.0840, -79.0785], name: 'מלון Tower Hotel (ניאגרה)', name_en: 'Tower Hotel Niagara' }
-                ],
-                 costs: {
-                    title: '💰 פירוט עלויות ליום המעבר (מוערך לזוג)',
-                    items: [
-                        { category: '📄 אישור ETA לקנדה', cost_cad: '14$', cost_ils: '~₪38', notes: '7 CAD לאדם' },
-                        { category: '🍔 אוכל ליום המעבר', cost_cad: '~130$', cost_ils: '~₪350', notes: 'הערכה לשדה תעופה וערב' },
-                        { category: '🚌 הסעה (באפלו-ניאגרה)', cost_cad: '105$-150$', cost_ils: '₪280 - ₪410', notes: 'תלוי בבחירה (אוטובוס/פרטי)' }
-                    ],
-                    total: {
-                        category: 'סה"כ מוערך ליום', cost_cad: '~250$-295$', cost_ils: '~₪668 - ₪798'
-                    },
-                    footer: 'ההמרות הן הערכה לפי שער של 2.7 ₪ לדולר קנדי.'
+                locations: [ { coords: [42.9406, -78.7319], name: 'שדה תעופה באפלו (BUF)', name_en: 'Buffalo Airport (BUF)' }, { coords: [43.0840, -79.0785], name: 'מלון Tower Hotel (ניאגרה)', name_en: 'Tower Hotel Niagara' } ],
+                costs: {
+                    title: '📊 הערכת עלויות ליום 1 (לאדם)', items: [
+                        { category: 'הסעה (באפלו -> ניאגרה)', cost_cad: '~$52', cost_ils: '~₪140', notes: 'מבוסס על 280₪ לזוג' },
+                        { category: 'מונית למלון בניאגרה', cost_cad: '$10', cost_ils: '~₪27', notes: 'חצי מעלות זוגית' },
+                        { category: 'ארוחת ערב', cost_cad: '$35', cost_ils: '~₪95' }
+                    ], total: { category: 'סה"כ מוערך לאדם', cost_cad: '~$97', cost_ils: '~₪262' }, footer: 'ההמרות לפי שער של 2.7 ₪ ל-CAD.'
                 }
             },
             'day-02-01': {
-                title: '✨ לו”ז יומי: יום שישי, 02.01 – לבן, עוצמתי ושבת שלום ✨',
-                description: 'הנושא המרכזי של היום: חווית המפלים מקרוב, תצפית פנורמית, ארוחה עם נוף והכנות לשבת באווירה קנדית קסומה.',
+                title: '✨ יום 2: יום שישי, 2.1 – לבן, עוצמתי ושבת שלום ✨',
+                description: 'הנושא המרכזי: חווית המפלים מקרוב, תצפית פנורמית, והכנות לשבת באווירה קנדית קסומה.',
                 schedule: [
-                    { time: '08:30-09:30', icon: 'fa-solid fa-mug-saucer', title: 'בוקר קנדי קלאסי', desc: 'יוצאים לארוחת בוקר קלילה. המלצות: Tim Hortons (קלאסי וזול), Starbucks (קרוב ומוכר), או Paris Crêpes Café (מושקע יותר).' },
-                    { time: '09:45-11:30', icon: 'fa-solid fa-water', title: 'מסע אל לב המפלים: Journey Behind the Falls', desc: 'יורדים 45 מטר במעלית אל מאחורי "מסך המים". חוויה עוצמתית. בסיום, זמן למזכרות במרכז המבקרים.', nav: { waze: 'https://waze.com/ul?q=Journey%20Behind%20the%20Falls', gmaps: 'https://www.google.com/maps/search/?api=1&query=Journey+Behind+the+Falls' }, bookingLink: 'https://www.niagaraparks.com/visit/attractions/journey-behind-the-falls/' },
-                    { time: '11:40-13:00', icon: 'fa-solid fa-tower-observation', title: 'תצפית עוצרת נשימה: Skylon Tower', desc: 'עולים במעלית שקופה לנוף פנורמי של 360 מעלות. מראה בלתי נשכח!', nav: { waze: 'https://waze.com/ul?q=Skylon%20Tower', gmaps: 'https://www.google.com/maps/search/?api=1&query=Skylon+Tower' }, bookingLink: 'https://www.skylon.com/reservations/' },
-                    { time: '13:00-14:15', icon: 'fa-solid fa-utensils', title: 'הפסקת צהריים עם נוף', desc: 'בוחרים מקום לארוחת צהריים. המלצות: Table Rock House Restaurant (נוף מדהים), Queen Victoria Place Restaurant (קנדי קלאסי), או The Famous (קליל יותר).' },
-                    { time: '14:15-15:15', icon: 'fa-solid fa-cart-shopping', title: 'הכנות והצטיידות לשבת', desc: 'הולכים לסופרמרקט (Fallsview Market או Commisso’s Fresh Foods) לקניות אחרונות: שתיה, פירות, חטיפים וכל מה שצריך לקידוש ועונג שבת.' },
-                    { time: '15:15-18:00', icon: 'fa-solid fa-bed', title: 'מנוחה והתארגנות לשבת', desc: 'חוזרים למלון למנוחה, מקלחות, טעינת מכשירים והתארגנות לקראת שבת.' },
-                    { time: '18:00-20:00', icon: 'fa-solid fa-synagogue', title: 'ערב שבת קהילתי בבית חב"ד', desc: 'הליכה של כ-12 דקות לבית חב"ד לתפילה וסעודת שבת. <b>חובה להירשם מראש!</b>', nav: { waze: 'https://waze.com/ul?q=6417%20Main%20St%2C%20Niagara%20Falls', gmaps: 'https://www.google.com/maps/search/?api=1&query=6417+Main+St,+Niagara+Falls,+ON' }, bookingLink: 'https://www.jewishniagara.com/templates/articlecco_cdo/aid/109259', buttonText: 'הרשמה לסעודת שבת' },
-                    { time: '20:00 ואילך', icon: 'fa-solid fa-moon', title: 'טיול לילה וסיום רגוע', desc: 'חוזרים למלון בהליכה רגועה לאורך הטיילת וצופים במפלים המוארים בלילה. סיום ערב שקט ונעים במלון.' }
+                    { time: '08:30', icon: 'fa-solid fa-mug-saucer', title: 'בוקר קנדי קלאסי', desc: 'יוצאים לארוחת בוקר קלילה שתתחיל את היום.<div class="recommendations"><h5>המלצות באזור המלון:</h5><ul><li><b>Tim Hortons:</b> חובה לחוות! הרשת הקנדית האייקונית לקפה, דונאטס ("טימביטס") וסנדוויצ\'ים.</li><li><b>IHOP:</b> אם מחפשים ארוחת בוקר אמריקאית גדולה וקלאסית לשבת בנחת.</li><li><b>Starbucks:</b> האופציה המוכרת והבטוחה לקפה איכותי ומאפה טעים.</li></ul></div>' },
+                    { time: '09:45', icon: 'fa-solid fa-water', title: 'מסע אל לב המפלים', desc: 'הולכים אל Journey Behind the Falls. יורדים במעלית אל מנהרות מאחורי "מסך המים" של המפל. חוויה עוצמתית ורטובה! עלות: כ-18 CAD לאדם.', bookingLink: 'https://www.niagaraparks.com/visit/attractions/journey-behind-the-falls/' },
+                    { time: '11:40', icon: 'fa-solid fa-tower-observation', title: 'תצפית עוצרת נשימה', desc: 'הליכה קצרה אל מגדל סקיילון (Skylon Tower). עולים לתצפית פנורמית של 360 מעלות על כל האזור. עלות: כ-21 CAD לאדם.', bookingLink: 'https://www.skylon.com/reservations/' },
+                    { time: '13:00', icon: 'fa-solid fa-utensils', title: 'ארוחת צהריים עם נוף', desc: 'אוכלים צהריים עם נוף למפלים.<div class="recommendations"><h5>המלצות באזור:</h5><ul><li><b>Table Rock House Restaurant:</b> הנוף הכי קרוב ועוצמתי למפלים. חוויה קלאסית.</li><li><b>The Keg Steakhouse + Bar:</b> נוף פנורמי מדהים מגבוה ואוכל איכותי.</li><li><b>Queen Victoria Place Restaurant:</b> בבניין היסטורי יפהפה, אוכל קנדי ונוף רחב של הפארק.</li></ul></div>' },
+                    { time: '14:15', icon: 'fa-solid fa-cart-shopping', title: 'קניות והכנות לשבת', desc: 'קניות אחרונות לשבת בסופרמרקט סמוך, וחזרה למלון למנוחה והתארגנות.' },
+                    { time: '18:00', icon: 'fa-solid fa-star-of-david', title: 'ערב שבת קהילתי', desc: 'הליכה של כ-12 דקות לבית חב"ד ניאגרה לתפילת קבלת שבת וסעודה חמה עם מטיילים מהעולם. <strong>חובה להירשם מראש!</strong> מקובל להשאיר תרומה.', nav: { waze: 'https://waze.com/ul?q=Chabad+Niagara', gmaps: 'https://www.google.com/maps/search/?api=1&query=Chabad+Jewish+Center+of+Niagara' } }
                 ],
-                locations: [
-                    { coords: [43.0840, -79.0785], name: '🏨 Tower Hotel', name_en: 'Tower Hotel' },
-                    { coords: [43.0795, -79.0792], name: '🌊 Journey Behind the Falls', name_en: 'Journey Behind the Falls' },
-                    { coords: [43.0859, -79.0759], name: '🗼 Skylon Tower', name_en: 'Skylon Tower' },
-                    { coords: [43.0885, -79.0880], name: '🕍 בית חב"ד', name_en: 'Chabad Niagara' },
-                    { coords: [43.0840, -79.0785], name: '🏨 חזרה למלון', name_en: 'Back to Hotel' }
-                ],
+                locations: [ { coords: [43.0840, -79.0785], name: '🏨 Tower Hotel', name_en: 'Tower Hotel' }, { coords: [43.0795, -79.0792], name: '🌊 Journey Behind the Falls', name_en: 'Journey Behind the Falls' }, { coords: [43.0859, -79.0759], name: '🗼 Skylon Tower', name_en: 'Skylon Tower' }, { coords: [43.0855, -79.0798], name: '✡️ בית חב"ד ניאגרה', name_en: 'Chabad Niagara' } ],
                 costs: {
-                    title: '📊 הערכת עלויות ליום (לאדם, בדולר קנדי)',
-                    items: [
-                        { category: 'ארוחת בוקר', cost_cad: '$15', cost_ils: '~₪41', notes: 'הערכה ממוצעת' },
-                        { category: 'Journey Behind the Falls', cost_cad: '$18', cost_ils: '~₪49', notes: 'מחיר כרטיס' },
-                        { category: 'Skylon Tower', cost_cad: '$21', cost_ils: '~₪57', notes: 'מחיר כרטיס' },
-                        { category: 'ארוחת צהריים', cost_cad: '$30', cost_ils: '~₪81', notes: 'הערכה למסעדה' },
-                        { category: 'סעודת שבת (תרומה)', cost_cad: '$25', cost_ils: '~₪68', notes: 'תרומה מומלצת' },
-                        { category: 'קניות בסופר', cost_cad: '$20', cost_ils: '~₪54', notes: 'תקציב אישי' }
-                    ],
-                    total: {
-                        category: 'סה"כ מוערך לאדם', cost_cad: '~129$', cost_ils: '~₪350'
-                    },
-                    footer: 'ההמרות לפי שער של כ-2.7 ₪ ל-CAD.'
+                    title: '📊 הערכת עלויות ליום 2 (לאדם)', items: [
+                        { category: 'ארוחת בוקר', cost_cad: '$15', cost_ils: '~₪41' },
+                        { category: 'Journey Behind the Falls', cost_cad: '$18', cost_ils: '~₪49' },
+                        { category: 'Skylon Tower', cost_cad: '$21', cost_ils: '~₪57' },
+                        { category: 'ארוחת צהריים', cost_cad: '$35', cost_ils: '~₪95' },
+                        { category: 'סעודת שבת (תרומה)', cost_cad: '$25', cost_ils: '~₪68' },
+                        { category: 'קניות בסופר', cost_cad: '$20', cost_ils: '~₪54', notes: 'חצי מעלות זוגית' }
+                    ], total: { category: 'סה"כ מוערך לאדם', cost_cad: '~$134', cost_ils: '~₪364' }, footer: 'ההמרות לפי שער של 2.7 ₪ ל-CAD.'
                 }
             },
             'day-03-01': {
-                title: '✨ לו”ז יומי: יום שבת, 03.01 – שבת רגועה בניאגרה וערב אורבני בטורונטו ✨',
-                description: 'הנושא המרכזי: בוקר שבת שליו, פרידה מהאזור עם פעילות כיפית, ונסיעה נוחה אל לב הפועם של טורונטו.',
+                title: '✨ יום 3: יום שבת, 3.1 – שבת בניאגרה ומעבר לטורונטו ✨',
+                description: 'הנושא המרכזי: בוקר שבת שליו, פרידה מהאזור, ונסיעה נוחה לטורונטו במוצאי שבת.',
                 schedule: [
-                    { time: '08:30-11:00', icon: 'fa-solid fa-mug-saucer', title: 'בוקר שבת רגוע', desc: 'מתחילים בנחת עם קפה ומאפה, ויוצאים לטיול בוקר אחרון ומרענן לאורך טיילת Queen Victoria Park עם נוף למפלים.' },
-                    { time: '11:00-13:15', icon: 'fa-solid fa-person-walking-luggage', title: 'צ\'ק-אאוט וסעודת שבת', desc: 'מבצעים צ\'ק-אאוט מהמלון (משאירים מזוודות בשמירת חפצים), והולכים לסעודת שבת קהילתית בבית חב"ד.', bookingLink: 'https://www.jewishniagara.com/templates/articlecco_cdo/aid/109259', buttonText: 'אתר בית חב"ד', nav: { waze: 'https://waze.com/ul?q=6417%20Main%20St%2C%20Niagara%20Falls', gmaps: 'https://www.google.com/maps/search/?api=1&query=6417+Main+St,+Niagara+Falls,+ON' } },
-                    { time: '13:30-16:30', icon: 'fa-solid fa-bowling-ball', title: 'אחר צהריים של כיף בקליפטון היל', desc: 'הולכים לרחוב האטרקציות. המלצה: מיני גולף זוהר בחושך (Wizards\' Glow-in-the-Dark), שיטוט ופינוק מתוק כמו גלידה או BeaverTails.' },
-                    { time: '16:30-20:30', icon: 'fa-solid fa-train-subway', title: 'נסיעה לטורונטו', desc: 'חוזרים למלון לאסוף את המזוודות, לוקחים מונית לתחנת הרכבת ועולים על רכבת Via Rail לטורונטו. הנסיעה אורכת כשעתיים.', bookingLink: 'https://www.viarail.ca/en', buttonText: 'הזמנת כרטיסי רכבת' },
-                    { time: '20:30 ואילך', icon: 'fa-solid fa-city', title: 'הגעה לטורונטו ובילוי ערב', desc: 'הגעה לתחנת Union Station, צ\'ק-אין במלון InterContinental הסמוך, ויוצאים לבלות! המלצות: King St West (ברים ומסעדות), Queen St West (חנויות וגלריות), או Harbourfront Centre (טיילת על האגם).', nav: { waze: 'https://waze.com/ul?q=InterContinental%20Toronto%20Centre', gmaps: 'https://www.google.com/maps/search/?api=1&query=InterContinental+Toronto+Centre' } }
+                    { time: '11:00', icon: 'fa-solid fa-person-walking-luggage', title: 'בוקר שבת וצ\'ק-אאוט', desc: 'בוקר רגוע עם קפה/תה בחדר או טיול רגלי קצר. ב-11:00 מבצעים צ\'ק-אאוט ומשאירים מזוודות בשמירת חפצים.' },
+                    { time: '12:00', icon: 'fa-solid fa-utensils', title: 'סעודת שבת', desc: 'הולכים לבית חב"ד לסעודת שבת קהילתית.' },
+                    { time: '13:30', icon: 'fa-solid fa-bowling-ball', title: 'אחה"צ ב-Clifton Hill', desc: 'הולכים לרחוב האטרקציות Clifton Hill למשחק ב-Wizards\' Glow-in-the-Dark Mini Golf.' },
+                    { time: '15:00', icon: 'fa-solid fa-ice-cream', title: 'פינוק מתוק לסיום', desc: 'אחרי המיני-גולף, מתפנקים במשהו מתוק.<div class="recommendations"><h5>המלצות לפינוק מתוק:</h5><ul><li><b>BeaverTails:</b> חובה! בצק מטוגן חם עם תוספות מתוקות. הפינוק הקנדי האולטימטיבי.</li><li><b>The Fudge Factory:</b> חנות ממתקים קלאסית עם פאדג\' טרי וקיר ענק של ממתקים.</li><li><b>Sweet Jesus Ice Cream:</b> גלידות מושחתות, יצירתיות ופוטוגניות במיוחד.</li></ul></div>' },
+                    { time: '17:10', icon: 'fa-solid fa-taxi', title: 'נסיעה לתחנת הרכבת', desc: 'לאחר צאת השבת, חוזרים למלון לאסוף את המזוודות ולוקחים מונית/אובר לתחנת הרכבת של ניאגרה.' },
+                    { time: '17:45', icon: 'fa-solid fa-train-subway', title: 'רכבת לטורונטו!', desc: 'עולים על רכבת Via Rail Canada לטורונטו. נסיעה נוחה של כשעתיים עם Wi-Fi ושקעים.', bookingLink: 'https://www.viarail.ca/en', buttonText: 'הזמנת כרטיסי רכבת' },
+                    { time: '20:00', icon: 'fa-solid fa-city', title: 'הגעה לטורונטו וצ\'ק-אין', desc: 'מגיעים לתחנת Union Station בטורונטו והולכים 3 דקות למלון InterContinental.', nav: { waze: 'https://waze.com/ul?q=InterContinental%20Toronto%20Centre', gmaps: 'https://www.google.com/maps/search/?api=1&query=InterContinental+Toronto+Centre' } },
+                    { time: '20:30', icon: 'fa-solid fa-martini-glass-citrus', title: 'ערב בטורונטו', desc: 'יוצאים לבילוי וארוחת ערב.<div class="recommendations"><h5>המלצות באזור המלון (King St West):</h5><ul><li><b>Pai Northern Thai Kitchen:</b> תאילנדית פופולרית ותוססת. מומלץ להזמין מקום.</li><li><b>Earls Kitchen + Bar:</b> מקום טרנדי עם אווירה כיפית, קוקטיילים ותפריט מגוון.</li><li><b>Amsterdam BrewHouse:</b> מבשלת בירה ענקית על שפת האגם. מושלם לארוחה קלילה ובירה מקומית.</li></ul></div>' }
                 ],
-                locations: [
-                    { coords: [43.0840, -79.0785], name: '🏨 Tower Hotel', name_en: 'Tower Hotel' },
-                    { coords: [43.0885, -79.0880], name: '🕍 בית חב"ד', name_en: 'Chabad Niagara' },
-                    { coords: [43.0888, -79.0733], name: '🎢 קליפטון היל', name_en: 'Clifton Hill' },
-                    { coords: [43.0923, -79.0683], name: '🚆 תחנת רכבת ניאגרה', name_en: 'Niagara Falls Station' },
-                    { coords: [43.6453, -79.3806], name: '🏙️ מלון בטורונטו', name_en: 'InterContinental Toronto' }
-                ],
+                locations: [ { coords: [43.0840, -79.0785], name: '🏨 Tower Hotel', name_en: 'Tower Hotel' }, { coords: [43.0888, -79.0733], name: '🎢 קליפטון היל', name_en: 'Clifton Hill' }, { coords: [43.0923, -79.0683], name: '🚆 תחנת רכבת ניאגרה', name_en: 'Niagara Falls Station' }, { coords: [43.6453, -79.3806], name: '🏙️ מלון בטורונטו', name_en: 'InterContinental Toronto' } ],
                 costs: {
-                    title: '📊 הערכת עלויות ליום (לאדם, בדולר קנדי)',
-                    items: [
-                        { category: 'ארוחת בוקר וקפה', cost_cad: '$15', cost_ils: '~₪41', notes: 'הערכה' },
-                        { category: 'סעודת שבת (תרומה)', cost_cad: '$25', cost_ils: '~₪68', notes: 'תרומה מומלצת' },
-                        { category: 'מיני גולף', cost_cad: '$15', cost_ils: '~₪41', notes: 'מחיר כרטיס' },
-                        { category: 'פינוק אחה"צ', cost_cad: '$10', cost_ils: '~₪27', notes: 'גלידה / BeaverTail' },
+                    title: '📊 הערכת עלויות ליום 3 (לאדם)', items: [
+                        { category: 'סעודת שבת (תרומה)', cost_cad: '$25', cost_ils: '~₪68' },
+                        { category: 'מיני גולף', cost_cad: '$15', cost_ils: '~₪41' },
+                        { category: 'פינוק אחה"צ', cost_cad: '$10', cost_ils: '~₪27' },
                         { category: 'מונית לתחנה', cost_cad: '$8', cost_ils: '~₪22', notes: 'חצי מעלות זוגית' },
-                        { category: 'רכבת לטורונטו', cost_cad: '$40', cost_ils: '~₪108', notes: 'הזמנה מראש מומלצת' },
-                        { category: 'ארוחת ערב בטורונטו', cost_cad: '$60', cost_ils: '~₪162', notes: 'הערכה' }
-                    ],
-                    total: {
-                        category: 'סה"כ מוערך לאדם', cost_cad: '~173$', cost_ils: '~₪469'
-                    },
-                    footer: 'ההמרות לפי שער של כ-2.7 ₪ ל-CAD. מחיר הרכבת עשוי להשתנות.'
+                        { category: 'רכבת Via Rail', cost_cad: '$40', cost_ils: '~₪108', notes: 'מומלץ להזמין מראש' },
+                        { category: 'ארוחת ערב בטורונטו', cost_cad: '$60', cost_ils: '~₪162' }
+                    ], total: { category: 'סה"כ מוערך לאדם', cost_cad: '~$158', cost_ils: '~₪428' }, footer: 'ההמרות לפי שער של 2.7 ₪ ל-CAD.'
                 }
             },
             'day-04-01': {
-                title: '✨ לו”ז יומי: יום ראשון, 04.01 – בוקר בטורונטו וטיסה לבירה האמריקאית ✨',
-                description: 'ניצול מקסימלי של הבוקר האחרון בקנדה עם חוויות אורבניות, שופינג ונופים, לפני יציאה מסודרת לשדה התעופה.',
+                title: '✨ יום 4: יום ראשון, 4.1 – בוקר בטורונטו וטיסה לוושינגטון ✨',
+                description: 'הנושא המרכזי: ניצול בוקר אחרון בקנדה עם שופינג ונופים, לפני יציאה מסודרת לשדה התעופה.',
                 schedule: [
-                    { time: '07:30-10:15', icon: 'fa-solid fa-landmark', title: 'בוקר של חוויות אחרונות', desc: 'ארוחת בוקר ב-Dineen Coffee Co. או Aroma. לאחר מכן, סיור רגלי קצר: צילומים ליד מגדל ה-CN וטיול נעים לאורך הטיילת על שפת האגם (Waterfront).' },
-                    { time: '10:15-13:30', icon: 'fa-solid fa-bag-shopping', title: 'שופינג ואווירה אורבנית', desc: 'נוסעים לקניון הענק Eaton Centre לשופינג, מזכרות ושיטוט. לא לפספס תמונה בכיכר Yonge-Dundas הצמודה. ארוחת צהריים במתחם האוכל המגוון של הקניון.' },
-                    { time: '13:30-15:00', icon: 'fa-solid fa-mug-hot', title: 'מנוחה ושיטוט אחרון', desc: 'אחרי השופינג, זה הזמן לקפה אחרון, קינוח, או סיבוב נוסף ברחוב יונג הסואן והצבעוני.' },
-                    { time: '15:00-16:00', icon: 'fa-solid fa-plane-departure', title: 'התארגנות ויציאה לשדה התעופה', desc: 'חוזרים למלון לאסוף מזוודות. האופציה המומלצת: רכבת UP Express מתחנת Union (הליכה של 3 דקות) ישירות לשדה התעופה פירסון (YYZ) תוך 25 דקות.', bookingLink: 'https://www.upexpress.com/', buttonText: 'כרטיסים ל-UP Express' },
-                    { time: '16:00 ואילך', icon: 'fa-solid fa-passport', title: 'טיסה לוושינגטון', desc: 'מגיעים לשדה התעופה עם מספיק זמן לצ\'ק-אין ובידוק. המראה בשעה 19:05 ליעד הבא: וושינגטון די.סי!' }
+                    { time: '08:00', icon: 'fa-solid fa-mug-hot', title: 'בוקר אחרון וצ\'ק-אאוט', desc: 'ארוחת בוקר (כלולה במלון), צ\'ק-אאוט (השארת מזוודות בשמירה) וסיור רגלי קצר ליד מגדל ה-CN והטיילת.' },
+                    { time: '10:15', icon: 'fa-solid fa-bag-shopping', title: 'שופינג ואווירה אורבנית', desc: 'מגיעים לקניון הענק Eaton Centre לשופינג, קניית מזכרות ושיטוט.' },
+                    { time: '13:00', icon: 'fa-solid fa-burger', title: 'ארוחת צהריים בקניון', desc: 'אוכלים צהריים בקניון או בסביבתו.<div class="recommendations"><h5>המלצות ב-Eaton Centre והסביבה:</h5><ul><li><b>JOEY Eaton Centre:</b> מסעדה גדולה ומעוצבת בתוך הקניון, מצוינת לארוחה רגועה בישיבה.</li><li><b>Saks Food Hall by Pusateri\'s:</b> מתחם אוכל יוקרתי עם דוכני גורמה איכותיים.</li><li><b>Urban Eatery (מתחם האוכל):</b> האופציה המהירה והזולה יותר, עם עשרות רשתות מוכרות.</li></ul></div>' },
+                    { time: '15:30', icon: 'fa-solid fa-train', title: 'יציאה לשדה התעופה', desc: 'חוזרים למלון לאסוף את המזוודות ויוצאים לכיוון שדה התעופה פירסון (YYZ). האופציה המומלצת: רכבת UP Express מתחנת Union (הליכה של 3 דקות), נסיעה של 25 דקות ישירות לשדה.', bookingLink: 'https://www.upexpress.com/', buttonText: 'כרטיסים ל-UP Express' },
+                    { time: '16:00', icon: 'fa-solid fa-plane-departure', title: 'הגעה לשדה וצ\'ק-אין', desc: 'מגיעים לשדה כ-3 שעות לפני ההמראה. יש מספיק זמן לצ\'ק-אין, בידוק ביטחוני ודיוטי פרי.' },
+                    { time: '19:05', icon: 'fa-solid fa-plane', title: 'המראה לוושינגטון!', desc: 'טסים ליעד הבא – וושינגטון די.סי!' }
                 ],
-                locations: [
-                    { coords: [43.6453, -79.3806], name: '🏙️ מלון בטורונטו', name_en: 'InterContinental Toronto' },
-                    { coords: [43.6426, -79.3871], name: '🗼 מגדל ה-CN', name_en: 'CN Tower' },
-                    { coords: [43.6544, -79.3807], name: '🛍️ קניון איטון', name_en: 'Eaton Centre' },
-                    { coords: [43.6452, -79.3806], name: '🚆 תחנת יוניון (רכבת לשדה)', name_en: 'Union Station (UP Express)' }
-                ],
+                locations: [ { coords: [43.6453, -79.3806], name: '🏙️ מלון בטורונטו', name_en: 'InterContinental Toronto' }, { coords: [43.6544, -79.3807], name: '🛍️ קניון איטון', name_en: 'Eaton Centre' }, { coords: [43.6452, -79.3806], name: '🚆 תחנת יוניון', name_en: 'Union Station' }, { coords: [43.6777, -79.6248], name: '✈️ שדה תעופה פירסון (YYZ)', name_en: 'Toronto Pearson (YYZ)'} ],
                 costs: {
-                    title: '📊 הערכת עלויות ליום (לאדם, בדולר קנדי)',
+                    title: '📊 הערכת עלויות ליום 4 (לאדם)', items: [
+                        { category: 'ארוחת בוקר', cost_cad: '-', cost_ils: '-', notes: 'כלולה במלון' },
+                        { category: 'ארוחת צהריים', cost_cad: '$25', cost_ils: '~₪68' },
+                        { category: 'רכבת UP Express', cost_cad: '$13', cost_ils: '~₪35' },
+                        { category: 'שופינג ומזכרות', cost_cad: '$100', cost_ils: '~₪270', notes: 'תקציב אישי' }
+                    ], total: { category: 'סה"כ (לא כולל שופינג)', cost_cad: '~$38', cost_ils: '~₪103' }, footer: 'ההמרות לפי שער של 2.7 ₪ ל-CAD.'
+                },
+                summaryCosts: {
+                    title: '💰 סיכום עלויות משוער (קנדה)',
                     items: [
-                        { category: 'ארוחת בוקר', cost_cad: '$15', cost_ils: '~₪41', notes: 'הערכה' },
-                        { category: 'ארוחת צהריים', cost_cad: '$25', cost_ils: '~₪68', notes: 'בקניון איטון' },
-                        { category: 'רכבת UP Express לשדה', cost_cad: '$13', cost_ils: '~₪35', notes: 'מחיר קבוע לאדם' },
-                        { category: 'שופינג ומזכרות', cost_cad: '$100', cost_ils: '~₪270', notes: 'תקציב אישי וגמיש' }
+                        { category: 'יום 1: הגעה לניאגרה', cost_cad: '$97', cost_ils: '~₪262' },
+                        { category: 'יום 2: שישי בניאגרה', cost_cad: '$134', cost_ils: '~₪364' },
+                        { category: 'יום 3: שבת ומעבר לטורונטו', cost_cad: '$158', cost_ils: '~₪428' },
+                        { category: 'יום 4: יום אחרון בטורונטו', cost_cad: '$38', cost_ils: '~₪103' }
                     ],
-                    total: {
-                        category: 'סה"כ (לא כולל שופינג)', cost_cad: '~53$', cost_ils: '~₪144'
-                    },
-                    footer: 'ההמרות לפי שער של כ-2.7 ₪ ל-CAD.'
+                    total: { category: 'סה"כ לאדם (4 ימים)', cost_cad: '~$427', cost_ils: '~₪1,157' },
+                    footer: 'ההמרות לפי שער של כ-2.7 ₪ ל-CAD. העלויות אינן כוללות שופינג.'
                 }
             }
         };
 
-        // --- UI Elements ---
         const sidebar = document.getElementById('sidebar');
         const hamburgerBtn = document.getElementById('hamburger-btn');
         const closeSidebarBtn = document.getElementById('close-sidebar-btn');
@@ -323,20 +250,17 @@
         const navModalClose = document.getElementById('nav-modal-close');
         const navigateHotelBtn = document.getElementById('navigate-hotel-btn');
 
-        // --- Functions ---
         function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
         
         function buildMenu() {
-            mainMenu.innerHTML = ''; // Clear existing menu
+            mainMenu.innerHTML = '';
             siteData.menu.forEach(destination => {
                 const destinationDiv = document.createElement('div');
                 const button = document.createElement('button');
                 button.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center transition-colors';
-                button.innerHTML = `<span>${destination.title}</span> <i class="fas fa-chevron-down transition-transform duration-300"></i>`;
-                
+                button.innerHTML = `<span>${destination.title}</span> <i class="fas fa-chevron-down chevron-icon"></i>`;
                 const submenu = document.createElement('div');
                 submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
-                
                 destination.days.forEach(day => {
                     const dayLink = document.createElement('a');
                     dayLink.href = `${destination.page}#${day.id}`;
@@ -344,7 +268,6 @@
                     dayLink.textContent = `${destination.title.split(' ')[1]} ${day.label} ${destination.emoji}`;
                     submenu.appendChild(dayLink);
                 });
-
                 button.addEventListener('click', () => { submenu.classList.toggle('open'); button.querySelector('i').classList.toggle('rotate-180'); });
                 destinationDiv.appendChild(button);
                 destinationDiv.appendChild(submenu);
@@ -352,12 +275,10 @@
             });
         }
         
-        // --- Smart Navigation Functions ---
         function openNavModal(title, address, message) {
             document.getElementById('nav-modal-title').textContent = title;
             const navLinks = document.getElementById('nav-modal-content');
             const navMessage = document.getElementById('nav-modal-message');
-
             if (address) {
                 const encodedAddress = encodeURIComponent(address);
                 document.getElementById('nav-waze-link').href = `https://waze.com/ul?q=${encodedAddress}`;
@@ -369,87 +290,60 @@
                 navMessage.textContent = message;
                 navMessage.classList.remove('hidden');
             }
-            
             navModal.classList.remove('hidden');
             setTimeout(() => navModal.classList.remove('opacity-0'), 10);
         }
 
-        function closeNavModal() {
-            navModal.classList.add('opacity-0');
-            setTimeout(() => navModal.classList.add('hidden'), 300);
-        }
+        function closeNavModal() { navModal.classList.add('opacity-0'); setTimeout(() => navModal.classList.add('hidden'), 300); }
 
         function parseDateRange(dateString) {
-            const year = new Date().getFullYear();
+            const year = 2026; // Set to the trip year for accuracy
             let startDate, endDate;
-
             const parts = dateString.split('-');
-            
             try {
                 const startParts = parts[0].split('.').map(Number);
                 const endParts = parts[1].split('.').map(Number);
-                const startYear = startParts[1] === 12 ? year : year + 1;
-                const endYear = endParts[1] === 12 ? year : year + 1;
-                startDate = new Date(startYear, startParts[1] - 1, startParts[0]);
-                endDate = new Date(endYear, endParts[1] - 1, endParts[0]);
-                
+                startDate = new Date(year, startParts[1] - 1, startParts[0]);
+                endDate = new Date(year, endParts[1] - 1, endParts[0]);
                 if (endDate) endDate.setHours(23, 59, 59, 999);
                 return { start: startDate, end: endDate };
-            } catch (e) {
-                console.error("Could not parse date string:", dateString, e);
-                return { start: null, end: null };
-            }
+            } catch (e) { return { start: null, end: null }; }
         }
 
         function navigateToCurrentHotel() {
             const today = new Date();
-            // For testing: const today = new Date('2025-01-04T10:00:00'); 
-            
             let targetHotel = null;
-
             for (const hotel of siteData.hotels) {
                 const range = parseDateRange(hotel.dates);
-                if (range.start && range.end) {
-                    if (today >= range.start && today <= range.end) {
-                        targetHotel = hotel;
-                        break;
-                    }
+                if (range.start && range.end && today >= range.start && today <= range.end) {
+                    targetHotel = hotel; break;
                 }
             }
-            
             if (!targetHotel) {
                  for (const hotel of siteData.hotels) {
                     const range = parseDateRange(hotel.dates);
                     if (range.start && today < range.start) {
-                        targetHotel = hotel;
-                        break;
+                        targetHotel = hotel; break;
                     }
                 }
             }
-
-            if (targetHotel) {
-                openNavModal(`נווט אל: ${targetHotel.name}`, targetHotel.address);
-            } else {
-                openNavModal('המסע הסתיים', null, 'מקווים שנהניתם, הטיול הגיע לסיומו!');
-            }
+            if (targetHotel) { openNavModal(`נווט אל: ${targetHotel.name}`, targetHotel.address); } 
+            else { openNavModal('המסע הסתיים', null, 'מקווים שנהניתם, הטיול הגיע לסיומו!'); }
         }
         
-        // --- Page Specific Functions ---
-        function buildMap(locations, dayId) {
-            const mapId = 'map-container';
-            const mapContainer = document.getElementById(mapId);
+        function buildMap(locations) {
+            const mapContainer = document.getElementById('map-container');
             if (!locations || locations.length === 0) {
                 if(mapContainer) mapContainer.innerHTML = '<div class="flex items-center justify-center h-full bg-slate-100 rounded-lg"><p class="text-slate-500">אין מפה זמינה ליום זה.</p></div>';
-                return { map: null, polylines: [] };
+                return;
             }
-            if (mapContainer._leaflet_id) {
-                mapContainer._leaflet_id = null;
-            }
-
-            const map = L.map(mapId).setView(locations[0].coords, 12);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '© OpenStreetMap © CARTO'
-            }).addTo(map);
+            if (mapContainer._leaflet_id) { L.DomUtil.empty(mapContainer); }
+            
+            const map = L.map('map-container').setView(locations[0].coords, 12);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CARTO' }).addTo(map);
+            
+            const legendContainer = document.getElementById('map-legend');
+            if (legendContainer) legendContainer.innerHTML = '';
 
             const bounds = [];
             locations.forEach(loc => {
@@ -457,165 +351,67 @@
                 bounds.push(loc.coords);
             });
 
-            const polylines = [];
-            const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f97316', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b'];
-            for (let i = 0; i < locations.length - 1; i++) {
-                const color = colors[i % colors.length];
-                const from = locations[i];
-                const to = locations[i+1];
-                const polyline = L.polyline([from.coords, to.coords], { color: color, weight: 4 }).addTo(map);
-                
-                const popupText = `<b>${from.name_en || from.name} → ${to.name_en || to.name}</b>`;
-                polyline.bindPopup(popupText);
+            let legendHtml = '<h4 class="font-bold text-sm mb-2 text-slate-600">Route Legend:</h4><ul class="space-y-1">';
+            const colors = ['#3388ff', '#e63946', '#2a9d8f', '#9d4edd', '#f4a261'];
 
-                L.polylineDecorator(polyline, {
-                    patterns: [
-                        { offset: '50%', repeat: 0, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, color: color } }) }
-                    ]
-                }).addTo(map);
-                polylines.push(polyline);
+            if (locations.length > 1) {
+                for (let i = 1; i < locations.length; i++) {
+                    const from = locations[i-1];
+                    const to = locations[i];
+                    const color = colors[(i-1) % colors.length];
+
+                    const polyline = L.polyline([from.coords, to.coords], { color: color, weight: 3 }).addTo(map);
+
+                    L.polylineDecorator(polyline, {
+                        patterns: [
+                            { offset: '50%', repeat: 0, symbol: L.Symbol.arrowHead({ pixelSize: 15, polygon: false, pathOptions: { stroke: true, color: color, weight: 2 } }) }
+                        ]
+                    }).addTo(map);
+                    
+                    legendHtml += `<li class="flex items-center gap-2"><div style="width: 15px; height: 15px; background-color: ${color}; border-radius: 2px;"></div><span class="font-mono text-xs">${from.name_en} &rarr; ${to.name_en}</span></li>`;
+                }
+            }
+            legendHtml += '</ul>';
+
+            if (legendContainer && locations.length > 1) {
+                legendContainer.innerHTML = legendHtml;
             }
 
             if (bounds.length > 1) {
                 map.fitBounds(bounds, { padding: [50, 50] });
             }
-            buildMapLegend(locations, dayId, colors);
-            return { map, polylines };
         }
-        
-        function buildMapLegend(locations, dayId, colors) {
-            const legendContainer = document.getElementById('map-legend-container');
-            if (!legendContainer) return;
-            if (!locations || locations.length <= 1) {
-                legendContainer.innerHTML = '';
+
+        function buildCostsTable(costsData, containerId) {
+            const costsContainer = document.getElementById(containerId);
+            if (!costsContainer || !costsData) {
+                if(costsContainer) costsContainer.innerHTML = '';
                 return;
             }
-            let legendHtml = '<h4 class="font-bold text-slate-700 mb-2">מקרא מסלולים (לחצו להדגשה)</h4><div class="space-y-1">';
-            for (let i = 0; i < locations.length - 1; i++) {
-                const color = colors[i % colors.length];
-                const from = locations[i];
-                const to = locations[i+1];
-                legendHtml += `
-                    <div class="map-legend-item" data-route-index="${i}">
-                        <span class="legend-color-box" style="background-color: ${color};"></span>
-                        <span class="text-sm">${from.name_en} → ${to.name_en}</span>
-                    </div>`;
-            }
-            legendHtml += '</div>';
-            legendContainer.innerHTML = legendHtml;
-        }
-
-        function setupMapInteraction(map, polylines) {
-            const legendContainer = document.getElementById('map-legend-container');
-            if (!map || !polylines || polylines.length === 0 || !legendContainer) return;
-
-            let currentlySelected = -1;
-
-            const resetStyles = () => {
-                polylines.forEach(p => {
-                    p.setStyle({ weight: 4, opacity: 1.0 });
-                });
-                const highlightedItem = legendContainer.querySelector('.map-legend-item.highlighted');
-                if (highlightedItem) {
-                    highlightedItem.classList.remove('highlighted');
-                }
-                currentlySelected = -1;
-            };
-
-            legendContainer.addEventListener('click', (e) => {
-                const legendItem = e.target.closest('.map-legend-item');
-                if (!legendItem) return;
-
-                const index = parseInt(legendItem.dataset.routeIndex, 10);
-
-                if (index === currentlySelected) {
-                    resetStyles();
-                    return;
-                }
-                
-                resetStyles();
-                
-                polylines.forEach((p, i) => {
-                    if (i === index) {
-                        p.setStyle({ weight: 8, opacity: 1.0 });
-                        p.bringToFront();
-                    } else {
-                        p.setStyle({ weight: 3, opacity: 0.5 });
-                    }
-                });
-                legendItem.classList.add('highlighted');
-                currentlySelected = index;
-            });
-
-            map.on('click', resetStyles);
-        }
-
-        function buildCosts(costsData) {
-            const costsId = 'costs-container';
-            const costsContainer = document.getElementById(costsId);
-            if (!costsContainer) return;
-            
-            if (!costsData) {
-                costsContainer.innerHTML = ''; // Clear if no data for the day
-                return;
-            }
-
             let itemsHtml = '';
-            costsData.items.forEach(item => {
-                itemsHtml += `
-                    <tr class="border-b border-slate-200 last:border-b-0">
-                        <td class="py-2 px-3">${item.category}</td>
-                        <td class="py-2 px-3 font-mono text-center">${item.cost_cad || '-'}</td>
-                        <td class="py-2 px-3 font-mono text-center">${item.cost_ils || '-'}</td>
-                        <td class="py-2 px-3 text-xs text-slate-500">${item.notes || ''}</td>
-                    </tr>
-                `;
-            });
-
+            costsData.items.forEach(item => { itemsHtml += `<tr class="border-b border-slate-200 last:border-b-0"><td class="py-2 px-3">${item.category}${item.notes ? ` <span class="text-xs text-slate-400">(${item.notes})</span>` : ''}</td><td class="py-2 px-3 font-mono text-center">${item.cost_cad || '-'}</td><td class="py-2 px-3 font-mono text-center">${item.cost_ils || '-'}</td></tr>`; });
             costsContainer.innerHTML = `
                 <div class="bg-white p-4 rounded-2xl shadow-md">
                     <h3 class="text-xl font-bold text-slate-700 mb-4">${costsData.title}</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-right">
-                            <thead class="bg-slate-50">
-                                <tr>
-                                    <th class="p-3 font-semibold text-right">קטגוריה</th>
-                                    <th class="p-3 font-semibold text-center">עלות (CAD)</th>
-                                    <th class="p-3 font-semibold text-center">עלות (₪)</th>
-                                    <th class="p-3 font-semibold text-right">הערות</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${itemsHtml}
-                            </tbody>
-                            <tfoot class="border-t-2 border-slate-300">
-                                <tr class="font-bold bg-slate-100 text-slate-800">
-                                    <td class="py-3 px-3">${costsData.total.category}</td>
-                                    <td class="py-3 px-3 font-mono text-center">${costsData.total.cost_cad || '-'}</td>
-                                    <td class="py-3 px-3 font-mono text-center">${costsData.total.cost_ils || '-'}</td>
-                                    <td class="py-3 px-3"></td>
-                                </tr>
-                            </tfoot>
+                            <thead class="bg-slate-50"><tr><th class="p-2 font-semibold text-right">קטגוריה</th><th class="p-2 font-semibold text-center">עלות (CAD)</th><th class="p-2 font-semibold text-center">עלות (₪)</th></tr></thead>
+                            <tbody>${itemsHtml}</tbody>
+                            <tfoot class="border-t-2 border-slate-300"><tr class="font-bold bg-slate-100 text-slate-800"><td class="p-3">${costsData.total.category}</td><td class="p-3 font-mono text-center">${costsData.total.cost_cad || '-'}</td><td class="p-3 font-mono text-center">${costsData.total.cost_ils || '-'}</td></tr></tfoot>
                         </table>
                     </div>
                     <p class="text-xs text-slate-500 mt-3 p-1 text-center">${costsData.footer || ''}</p>
-                </div>
-            `;
+                </div>`;
         }
 
         function loadContent() {
             const hash = window.location.hash.substring(1) || siteData.menu.find(d => d.id === 'niagara').days[0].id;
             const contentArea = document.getElementById('content-area');
             const data = itineraryData[hash];
-
             if (!data) {
-                contentArea.innerHTML = `<div class="text-center bg-white p-8 rounded-2xl shadow">
-                        <h2 class="text-2xl font-bold text-slate-700">אופס!</h2>
-                        <p class="text-slate-500 mt-2">לא נמצא תוכן עבור היום המבוקש. אנא בחרו יום אחר מהתפריט.</p>
-                    </div>`;
+                contentArea.innerHTML = `<div class="text-center bg-white p-8 rounded-2xl shadow"><h2 class="text-2xl font-bold text-slate-700">אופס!</h2><p class="text-slate-500 mt-2">לא נמצא תוכן עבור היום המבוקש.</p></div>`;
                 return;
             }
-
             let checklistHtml = '';
             if (data.checklist) {
                 let checklistStepsHtml = '';
@@ -623,112 +419,37 @@
                     let itemsHtml = '';
                     step.items.forEach((item, itemIndex) => {
                         const uniqueId = `cl-${hash}-${stepIndex}-${itemIndex}`;
-                        let buttonHtml = '';
-                        if (item.bookingLink) {
-                            const buttonText = item.buttonText || 'הזמנת כרטיס';
-                            const iconClass = item.buttonText ? 'fa-solid fa-arrow-up-right-from-square' : 'fas fa-ticket-alt';
-                            buttonHtml = `<a href="${item.bookingLink}" target="_blank" class="booking-button"><i class="${iconClass}"></i> ${buttonText}</a>`;
-                        }
-                        itemsHtml += `
-                            <div class="checklist-item py-2">
-                                <input type="checkbox" id="${uniqueId}" class="hidden">
-                                <label for="${uniqueId}" class="flex items-center gap-3 text-base text-slate-700 cursor-pointer transition-colors">
-                                    <i class="far fa-circle text-sky-500"></i><i class="fas fa-check-circle"></i><span>${item.text}</span>
-                                </label>
-                                ${buttonHtml ? `<div class="pr-7">${buttonHtml}</div>` : ''}
-                            </div>
-                        `;
+                        let buttonHtml = item.bookingLink ? `<a href="${item.bookingLink}" target="_blank" class="booking-button"><i class="${item.buttonText ? 'fa-solid fa-arrow-up-right-from-square' : 'fas fa-ticket-alt'}"></i> ${item.buttonText || 'הזמנת כרטיס'}</a>` : '';
+                        itemsHtml += `<div class="checklist-item py-2"><input type="checkbox" id="${uniqueId}" class="hidden"><label for="${uniqueId}" class="flex items-center gap-3 text-base text-slate-700 cursor-pointer"><i class="far fa-circle text-sky-500"></i><i class="fas fa-check-circle"></i><span>${item.text}</span></label>${buttonHtml ? `<div class="pr-7">${buttonHtml}</div>` : ''}</div>`;
                     });
-                    checklistStepsHtml += `
-                        <div class="mt-4">
-                            <h5 class="font-semibold text-slate-600 mb-2">${step.title}</h5>
-                            <div class="space-y-2 pr-2">${itemsHtml}</div>
-                        </div>
-                    `;
+                    checklistStepsHtml += `<div class="mt-4"><h5 class="font-semibold text-slate-600 mb-2">${step.title}</h5><div class="space-y-2 pr-2">${itemsHtml}</div></div>`;
                 });
-
-                checklistHtml = `
-                    <details class="group bg-white rounded-lg shadow-sm border border-slate-200 mb-4" open>
-                        <summary class="flex items-center justify-between p-4 cursor-pointer list-none">
-                            <div class="flex items-center gap-4">
-                                <i class="fa-solid fa-list-check text-blue-500 text-xl w-6 text-center"></i>
-                                <h4 class="font-bold text-lg text-slate-800">${data.checklist.title}</h4>
-                            </div>
-                            <i class="fas fa-chevron-down text-slate-400 chevron-icon"></i>
-                        </summary>
-                        <div class="p-4 pt-0 pl-12">
-                            ${checklistStepsHtml}
-                        </div>
-                    </details>
-                `;
+                checklistHtml = `<details class="group bg-white rounded-lg shadow-sm border border-slate-200 mb-4" open><summary class="flex items-center justify-between p-4 cursor-pointer"><div class="flex items-center gap-4"><i class="fa-solid fa-list-check text-blue-500 text-xl w-6 text-center"></i><h4 class="font-bold text-lg text-slate-800">${data.checklist.title}</h4></div><i class="fas fa-chevron-down chevron-icon"></i></summary><div class="p-4 pt-0 pl-12">${checklistStepsHtml}</div></details>`;
             }
-
             let scheduleHtml = '';
             data.schedule.forEach(item => {
                 let actionButtonsHtml = '<div class="flex flex-wrap items-center gap-2 mt-3">';
                 let hasActionButtons = false;
-
-                if (item.nav) {
-                    hasActionButtons = true;
-                    actionButtonsHtml += `
-                        <a href="${item.nav.waze}" target="_blank" class="nav-button waze"><i class="fa-brands fa-waze"></i> Waze</a>
-                        <a href="${item.nav.gmaps}" target="_blank" class="nav-button gmaps"><i class="fa-solid fa-map-location-dot"></i> Google</a>
-                    `;
-                }
-                if (item.bookingLink) {
-                    hasActionButtons = true;
-                    const buttonText = item.buttonText || 'הזמנת כרטיס';
-                    const iconClass = item.buttonText ? 'fa-solid fa-arrow-up-right-from-square' : 'fas fa-ticket-alt';
-                    actionButtonsHtml += `<a href="${item.bookingLink}" target="_blank" class="booking-button"><i class="${iconClass}"></i> ${buttonText}</a>`;
-                }
+                if (item.nav) { hasActionButtons = true; actionButtonsHtml += `<a href="${item.nav.waze}" target="_blank" class="nav-button waze"><i class="fa-brands fa-waze"></i> Waze</a><a href="${item.nav.gmaps}" target="_blank" class="nav-button gmaps"><i class="fa-solid fa-map-location-dot"></i> Google</a>`; }
+                if (item.bookingLink) { hasActionButtons = true; const buttonText = item.buttonText || 'הזמנת כרטיס'; const iconClass = item.buttonText ? 'fa-solid fa-arrow-up-right-from-square' : 'fas fa-ticket-alt'; actionButtonsHtml += `<a href="${item.bookingLink}" target="_blank" class="booking-button"><i class="${iconClass}"></i> ${buttonText}</a>`; }
                 actionButtonsHtml += '</div>';
-
-                scheduleHtml += `
-                    <details class="group bg-white rounded-lg shadow-sm border border-slate-200" open>
-                        <summary class="flex items-center justify-between p-4 cursor-pointer list-none">
-                            <div class="flex items-center gap-4">
-                                <i class="${item.icon} text-blue-500 text-xl w-6 text-center"></i>
-                                <div>
-                                    <h4 class="font-bold text-lg text-slate-800">${item.title}</h4>
-                                    <p class="text-sm text-slate-500">${item.time}</p>
-                                </div>
-                            </div>
-                            <i class="fas fa-chevron-down text-slate-400 chevron-icon"></i>
-                        </summary>
-                        <div class="p-4 pt-0 pl-12">
-                            <p class="text-slate-600">${item.desc}</p>
-                            ${hasActionButtons ? actionButtonsHtml : ''}
-                        </div>
-                    </details>`;
+                scheduleHtml += `<details class="group bg-white rounded-lg shadow-sm border border-slate-200" open><summary class="flex items-center justify-between p-4 cursor-pointer"><div class="flex items-center gap-4"><i class="${item.icon} text-blue-500 text-xl w-6 text-center"></i><div><h4 class="font-bold text-lg text-slate-800">${item.title}</h4><p class="text-sm text-slate-500 font-mono">${item.time}</p></div></div><i class="fas fa-chevron-down chevron-icon"></i></summary><div class="p-4 pt-0 pl-12"><div class="text-slate-600">${item.desc}</div>${hasActionButtons ? actionButtonsHtml : ''}</div></details>`;
             });
+            
+            let summaryCostsHtml = '';
+            if (data.summaryCosts) {
+                summaryCostsHtml = `<div id="summary-costs-container" class="mt-8"></div>`;
+            }
 
-            contentArea.innerHTML = `
-                <section id="${hash}">
-                    <h2 class="text-3xl font-bold text-slate-800 mb-2">${data.title}</h2>
-                    <p class="text-slate-600 mb-6">${data.description || ''}</p>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div class="lg:col-span-2 space-y-4">
-                            ${checklistHtml}
-                            ${scheduleHtml}
-                        </div>
-                        <div class="lg:col-span-1 space-y-8">
-                            <div class="bg-white p-4 rounded-2xl shadow-md">
-                                <h3 class="text-xl font-bold text-slate-700 mb-4">🗺️ מפת היום</h3>
-                                <div id="map-container" class="map-container"></div>
-                                <div id="map-legend-container" class="mt-4"></div>
-                            </div>
-                            <div id="costs-container"></div>
-                        </div>
-                    </div>
-                </section>
-            `;
-
-            const { map, polylines } = buildMap(data.locations, hash);
-            setupMapInteraction(map, polylines);
-            buildCosts(data.costs);
+            contentArea.innerHTML = `<section id="${hash}"><h2 class="text-3xl font-bold text-slate-800 mb-2">${data.title}</h2><p class="text-slate-600 mb-6">${data.description || ''}</p><div class="grid grid-cols-1 lg:grid-cols-3 gap-8"><div class="lg:col-span-2 space-y-4">${checklistHtml}${scheduleHtml}</div><div class="lg:col-span-1 space-y-8"><div class="bg-white p-4 rounded-2xl shadow-md"><h3 class="text-xl font-bold text-slate-700 mb-4">🗺️ מפת היום</h3><div id="map-container" class="map-container"></div><div id="map-legend" class="p-4 pt-2 text-sm text-slate-700"></div></div><div id="costs-container"></div></div></div>${summaryCostsHtml}</section>`;
+            
+            buildMap(data.locations);
+            buildCostsTable(data.costs, 'costs-container');
+            if (data.summaryCosts) {
+                buildCostsTable(data.summaryCosts, 'summary-costs-container');
+            }
         }
 
-        // --- Event Listeners & Initial Load ---
         hamburgerBtn.addEventListener('click', toggleSidebar);
         closeSidebarBtn.addEventListener('click', toggleSidebar);
         overlay.addEventListener('click', toggleSidebar);
@@ -742,13 +463,10 @@
             const menuIndex = siteData.menu.findIndex(d => d.id === currentPageId);
             if (menuIndex !== -1) {
                 const activeMenuButton = document.querySelector(`#main-menu > div:nth-child(${menuIndex + 1}) > button`);
-                if(activeMenuButton) {
-                    activeMenuButton.click();
-                }
+                if(activeMenuButton) { activeMenuButton.click(); }
             }
         });
         window.addEventListener('hashchange', loadContent);
-
     </script>
 </body>
 </html>
