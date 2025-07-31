@@ -150,6 +150,7 @@
                 { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23.12-30.12", address: "140 W 28th St, New York, NY 10001" },
                 { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", address: "105 W 28th St, New York, NY 10001" },
                 { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01.01-04.01", address: "6732 Fallsview Blvd, Niagara Falls, ON L2G 3W6, Canada" },
+                { name: "InterContinental Toronto Centre", dest: "טורונטו", dates: "03.01-04.01", address: "225 Front St W, Toronto, ON M5V 2X3, Canada" },
                 { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04.01-07.01", address: "1310 New Hampshire Ave NW, Washington, DC 20036" },
                 { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07.01-12.01", address: "5801 Universal Blvd, Orlando, FL 32819" },
                 { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12.01-15.01", address: "2216 Park Ave, Miami Beach, FL 33139" },
@@ -247,21 +248,38 @@
                 }
             },
             'day-03-01': {
-                title: '3 בינואר: קסם קנדי וטעימות יין',
+                title: '✨ לו”ז יומי: יום שבת, 03.01 – שבת רגועה בניאגרה וערב אורבני בטורונטו ✨',
+                description: 'הנושא המרכזי: בוקר שבת שליו, פרידה מהאזור עם פעילות כיפית, ונסיעה נוחה אל לב הפועם של טורונטו.',
                 schedule: [
-                    { time: '09:30', icon: 'fa-solid fa-car-side', title: 'נסיעה לעיירה Niagara-on-the-Lake', desc: 'נסיעה של כ-30 דקות לאחת העיירות היפות בקנדה, המכונה "העיירה היפה ביותר בקנדה".', nav: { waze: 'https://waze.com/ul?q=Niagara-on-the-Lake', gmaps: 'https://www.google.com/maps/search/?api=1&query=Niagara-on-the-Lake' } },
-                    { time: '10:30', icon: 'fa-solid fa-shop', title: 'שיטוט ברחוב הראשי הציורי', desc: 'חוקרים את החנויות הקטנות, בתי הקפה והבוטיקים של העיירה. אווירה אירופאית קלאסית.' },
-                    { time: '12:30', icon: 'fa-solid fa-wine-glass', title: 'ביקור ביקב וטעימות Icewine', desc: 'האזור מפורסם ביין הקרח שלו. נבקר באחד היקבים המפורסמים (כמו Inniskillin) לסיור וטעימות.', nav: { waze: 'https://waze.com/ul?q=Inniskillin%20Wines', gmaps: 'https://www.google.com/maps/search/?api=1&query=Inniskillin+Wines' } },
-                    { time: '14:00', icon: 'fa-solid fa-utensils', title: 'ארוחת צהריים בעיירה', desc: 'נהנים מארוחה באחת המסעדות המקומיות המצוינות.' },
-                    { time: '16:00', icon: 'fa-solid fa-leaf', title: 'חזרה למפלים דרך ה-Niagara Parkway', desc: 'נסיעה חזרה לאורך הנהר, עם עצירות לתצפיות נוף יפות בדרך.' },
-                    { time: '18:00', icon: 'fa-solid fa-gift', title: 'קניות אחרונות ומזכרות', desc: 'זמן לקנות מתנות קטנות או מזכרת מהמפלים.' },
-                    { time: '20:00', icon: 'fa-solid fa-pizza-slice', title: 'ארוחת ערב אחרונה ואריזות', desc: 'ארוחת ערב קלילה ואריזת המזוודות לקראת הטיסה של מחר.' }
+                    { time: '08:30-11:00', icon: 'fa-solid fa-mug-saucer', title: 'בוקר שבת רגוע', desc: 'מתחילים בנחת עם קפה ומאפה, ויוצאים לטיול בוקר אחרון ומרענן לאורך טיילת Queen Victoria Park עם נוף למפלים.' },
+                    { time: '11:00-13:15', icon: 'fa-solid fa-person-walking-luggage', title: 'צ\'ק-אאוט וסעודת שבת', desc: 'מבצעים צ\'ק-אאוט מהמלון (משאירים מזוודות בשמירת חפצים), והולכים לסעודת שבת קהילתית בבית חב"ד.', bookingLink: 'https://www.jewishniagara.com/templates/articlecco_cdo/aid/109259', buttonText: 'אתר בית חב"ד', nav: { waze: 'https://waze.com/ul?q=6417%20Main%20St%2C%20Niagara%20Falls', gmaps: 'https://www.google.com/maps/search/?api=1&query=6417+Main+St,+Niagara+Falls,+ON' } },
+                    { time: '13:30-16:30', icon: 'fa-solid fa-bowling-ball', title: 'אחר צהריים של כיף בקליפטון היל', desc: 'הולכים לרחוב האטרקציות. המלצה: מיני גולף זוהר בחושך (Wizards\' Glow-in-the-Dark), שיטוט ופינוק מתוק כמו גלידה או BeaverTails.' },
+                    { time: '16:30-20:30', icon: 'fa-solid fa-train-subway', title: 'נסיעה לטורונטו', desc: 'חוזרים למלון לאסוף את המזוודות, לוקחים מונית לתחנת הרכבת ועולים על רכבת Via Rail לטורונטו. הנסיעה אורכת כשעתיים.', bookingLink: 'https://www.viarail.ca/en', buttonText: 'הזמנת כרטיסי רכבת' },
+                    { time: '20:30 ואילך', icon: 'fa-solid fa-city', title: 'הגעה לטורונטו ובילוי ערב', desc: 'הגעה לתחנת Union Station, צ\'ק-אין במלון InterContinental הסמוך, ויוצאים לבלות! המלצות: King St West (ברים ומסעדות), Queen St West (חנויות וגלריות), או Harbourfront Centre (טיילת על האגם).', nav: { waze: 'https://waze.com/ul?q=InterContinental%20Toronto%20Centre', gmaps: 'https://www.google.com/maps/search/?api=1&query=InterContinental+Toronto+Centre' } }
                 ],
                 locations: [
                     { coords: [43.0840, -79.0785], name: '🏨 Tower Hotel', name_en: 'Tower Hotel' },
-                    { coords: [43.2552, -79.0729], name: '🌸 Niagara-on-the-Lake', name_en: 'Niagara-on-the-Lake' },
-                    { coords: [43.2324, -79.0620], name: '🍷 יקב Inniskillin', name_en: 'Inniskillin Winery' }
-                ]
+                    { coords: [43.0885, -79.0880], name: '🕍 בית חב"ד', name_en: 'Chabad Niagara' },
+                    { coords: [43.0888, -79.0733], name: '🎢 קליפטון היל', name_en: 'Clifton Hill' },
+                    { coords: [43.0923, -79.0683], name: '🚆 תחנת רכבת ניאגרה', name_en: 'Niagara Falls Station' },
+                    { coords: [43.6453, -79.3806], name: '🏙️ מלון בטורונטו', name_en: 'InterContinental Toronto' }
+                ],
+                costs: {
+                    title: '📊 הערכת עלויות ליום (לאדם, בדולר קנדי)',
+                    items: [
+                        { category: 'ארוחת בוקר וקפה', cost_cad: '$15', cost_ils: '~₪41', notes: 'הערכה' },
+                        { category: 'סעודת שבת (תרומה)', cost_cad: '$25', cost_ils: '~₪68', notes: 'תרומה מומלצת' },
+                        { category: 'מיני גולף', cost_cad: '$15', cost_ils: '~₪41', notes: 'מחיר כרטיס' },
+                        { category: 'פינוק אחה"צ', cost_cad: '$10', cost_ils: '~₪27', notes: 'גלידה / BeaverTail' },
+                        { category: 'מונית לתחנה', cost_cad: '$8', cost_ils: '~₪22', notes: 'חצי מעלות זוגית' },
+                        { category: 'רכבת לטורונטו', cost_cad: '$40', cost_ils: '~₪108', notes: 'הזמנה מראש מומלצת' },
+                        { category: 'ארוחת ערב בטורונטו', cost_cad: '$60', cost_ils: '~₪162', notes: 'הערכה' }
+                    ],
+                    total: {
+                        category: 'סה"כ מוערך לאדם', cost_cad: '~173$', cost_ils: '~₪469'
+                    },
+                    footer: 'ההמרות לפי שער של כ-2.7 ₪ ל-CAD. מחיר הרכבת עשוי להשתנות.'
+                }
             },
             'day-04-01': {
                 title: '4 בינואר: נפרדים מהמפלים וטסים לבירה',
@@ -273,7 +291,7 @@
                     { time: '13:30', icon: 'fa-solid fa-taxi', title: 'נסיעה למלון והתמקמות', desc: 'נסיעה למלון Hotel Madera, צ\'ק-אין והתחלה של ההרפתקה הבאה בבירת ארה"ב.', nav: { waze: 'https://waze.com/ul?q=Hotel%20Madera', gmaps: 'https://www.google.com/maps/search/?api=1&query=Hotel+Madera' } }
                 ],
                 locations: [
-                    { coords: [43.0840, -79.0785], name: '🏨 Tower Hotel', name_en: 'Tower Hotel' },
+                    { coords: [43.6453, -79.3806], name: '🏙️ מלון בטורונטו', name_en: 'InterContinental Toronto' },
                     { coords: [42.9406, -78.7319], name: '✈️ שדה התעופה באפלו (BUF)', name_en: 'Buffalo Airport (BUF)' },
                     { coords: [38.9077, -77.0425], name: '🏛️ Hotel Madera (DC)', name_en: 'Hotel Madera (DC)' }
                 ]
@@ -370,7 +388,7 @@
 
         function navigateToCurrentHotel() {
             const today = new Date();
-            // For testing: const today = new Date('2025-01-02T10:00:00'); 
+            // For testing: const today = new Date('2025-01-03T10:00:00'); 
             
             let targetHotel = null;
 
@@ -625,7 +643,7 @@
 
             let scheduleHtml = '';
             data.schedule.forEach(item => {
-                let actionButtonsHtml = '<div class="flex flex-wrap gap-2 mt-3">';
+                let actionButtonsHtml = '<div class="flex flex-wrap items-center gap-2 mt-3">';
                 let hasActionButtons = false;
 
                 if (item.nav) {
