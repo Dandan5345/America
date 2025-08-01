@@ -19,7 +19,7 @@
       <img class="w-6 h-6" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
       התחברות עם גוגל
     </button>
-    <p id="auth-status" class="mt-4 h-5 text-center font-medium text-red-500"></p>
+    <p id="auth-status" class="mt-4 h-5 text-center font-medium"></p>
   </div>
 
   <script type="module">
@@ -28,8 +28,15 @@
       getAuth,
       GoogleAuthProvider,
       signInWithPopup,
-      onAuthStateChanged
+      onAuthStateChanged,
+      signOut
     } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+
+    // רשימת המיילים המותרים
+    const allowedEmails = [
+      "Doronenakache@gmail.com",
+      "Ronyla6305@gmail.com"
+    ];
 
     // הגדרות ה־Firebase שלך
     const firebaseConfig = {
@@ -42,7 +49,7 @@
       measurementId: "G-S29LD2DT7S"
     };
 
-    // initialize
+    // initialize Firebase & Auth
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
@@ -53,12 +60,8 @@
     btn.addEventListener('click', async () => {
       status.textContent = '';
       try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        status.className = "mt-4 text-green-600 font-medium";
-        status.textContent = `התחברת בהצלחה, שלום ${user.displayName}!`;
-        // כאן אפשר להפנות לעמוד אחר:
-        // setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+        await signInWithPopup(auth, provider);
+        // בדיקת הרשאות תתבצע ב-onAuthStateChanged
       } catch (e) {
         status.className = "mt-4 text-red-500 font-medium";
         status.textContent = `שגיאה: ${e.message}`;
@@ -67,8 +70,21 @@
 
     onAuthStateChanged(auth, user => {
       if (user) {
-        status.className = "mt-4 text-green-600 font-medium";
-        status.textContent = `שלום שוב, ${user.displayName}!`;
+        if (allowedEmails.includes(user.email)) {
+          status.className = "mt-4 text-green-600 font-medium";
+          status.textContent = `התחברת בהצלחה, שלום ${user.displayName}!`;
+          // כאן אפשר להפנות לעמוד אחר:
+          // setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+        } else {
+          // משתמש לא מורשה – מנתק אותו מיד
+          signOut(auth);
+          status.className = "mt-4 text-red-500 font-medium";
+          status.textContent = "המשתמש לא מורשה.";
+        }
+      } else {
+        // משתמש יצא או לא מחובר
+        status.className = "";
+        status.textContent = "";
       }
     });
   </script>
