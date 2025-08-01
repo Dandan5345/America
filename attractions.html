@@ -23,7 +23,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         #map-preview { height: 200px; border-radius: 0.5rem; background-color: #e2e8f0; }
         .leaflet-container { z-index: 10; }
-        details > summary { list-style: none; }
+        details > summary { list-style: none; cursor: pointer; }
         details > summary::-webkit-details-marker { display: none; }
         .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
@@ -36,20 +36,21 @@
     <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.imgur.com/xC0eTsS.jpeg');"></div>
     <div class="fixed inset-0 z-0 bg-black/50"></div>
 
-    <!-- Sidebar (z-60) - Must be on top of other elements like modal and overlay -->
-    <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-60 transform translate-x-full overflow-y-auto">
+    <!-- Sidebar and Overlay are moved here, outside the main content wrapper -->
+    <!-- This ensures their z-index context is at the root level -->
+    <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-[60] transform translate-x-full overflow-y-auto">
         <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
             <h2 class="text-2xl font-bold text-slate-800">תפריט המסע 🧭</h2>
             <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
         </div>
         <nav id="main-menu" class="p-4 space-y-2"></nav>
     </aside>
-    <div id="overlay" class="fixed inset-0 bg-black/50 z-50 hidden"></div>
+    <div id="overlay" class="fixed inset-0 bg-black/60 z-50 hidden"></div>
 
     <!-- Scrollable Content Wrapper -->
     <div class="relative z-10">
         <!-- Header -->
-        <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-40 shadow-sm">
+        <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-4">
@@ -83,7 +84,7 @@
     </div>
     
     <!-- Add/Edit Item Modal -->
-    <div id="item-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
+    <div id="item-modal" class="fixed inset-0 bg-black/60 z-40 hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col">
             <div class="p-5 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
                 <h3 id="modal-title" class="text-2xl font-bold text-slate-800">הוספת מקום חדש</h3>
@@ -237,6 +238,11 @@
         function openModalHandler() {
             currentModalStep = 1;
             form.reset();
+            // Clear all step content to ensure a fresh start
+            for(let i = 1; i <= 9; i++) {
+                const stepContainer = document.getElementById(`step-${i}`);
+                if(stepContainer) stepContainer.innerHTML = '';
+            }
             updateModalView();
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -344,7 +350,7 @@
                 if (map) {
                     map.invalidateSize();
                 }
-            }, 200); // Increased delay slightly for stability with animation
+            }, 200);
         }
 
         async function findLocationOnMap(e) {
@@ -383,6 +389,7 @@
             if (!itemsContainer) return;
             if (allItems.length === 0) {
                 itemsContainer.innerHTML = `<div class="text-center p-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm"><i class="fas fa-map-signs fa-4x text-slate-400 mb-6"></i><h3 class="text-2xl font-bold text-slate-700">עדיין אין המלצות...</h3><p class="text-slate-500 mt-2">זה הזמן להתחיל! לחץ על "הוספת מקום" כדי ליצור את הראשון.</p></div>`;
+                loadingMessage.style.display = 'none';
                 return;
             }
             
@@ -405,7 +412,7 @@
                     destSection.open = true;
 
                     const destEmoji = siteData.destinationEmojis[dest] || '📍';
-                    destSection.innerHTML = `<summary class="text-3xl font-bold text-slate-800 flex justify-between items-center p-5 cursor-pointer hover:bg-white/30 transition"><span class="flex items-center gap-4">${destEmoji} ${dest}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
+                    destSection.innerHTML = `<summary class="text-3xl font-bold text-slate-800 flex justify-between items-center p-5 hover:bg-white/30 transition"><span class="flex items-center gap-4">${destEmoji} ${dest}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
                     
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'p-4 space-y-6 bg-slate-50/80';
@@ -423,7 +430,7 @@
                         typeSection.open = true;
                         
                         const typeIcon = siteData.placeTypeEmojis[type] || '📌';
-                        let summaryHtml = `<summary class="text-xl font-semibold text-slate-700 flex justify-between items-center cursor-pointer"><span>${typeIcon} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
+                        let summaryHtml = `<summary class="text-xl font-semibold text-slate-700 flex justify-between items-center"><span>${typeIcon} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
                         
                         const typeContentDiv = document.createElement('div');
                         typeContentDiv.className = "mt-4 pt-4 border-t space-y-4";
@@ -509,7 +516,7 @@
         
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (currentModalStep !== totalModalSteps) return; // Guard clause
+            if (currentModalStep !== totalModalSteps) return;
 
             const getVal = id => document.getElementById(id) ? document.getElementById(id).value : null;
             
