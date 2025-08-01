@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מסע חלומות 🗽 אישורי הזמנה</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Assistant', sans-serif; background-color: #f1f5f9; }
+        .form-input { transition: all 0.2s ease-in-out; }
+        .form-input:focus { border-color: #38bdf8; box-shadow: 0 0 0 2px #38bdf840; }
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        .details-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+        details[open] .details-content { max-height: 1000px; }
+        .chevron-icon { transition: transform 0.3s ease-out; }
+        details[open] > summary .chevron-icon { transform: rotate(180deg); }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <!-- Header -->
+    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="index.html" class="text-xl font-bold text-slate-800 hover:text-blue-600 transition">✨ מסע חלומות 2025-26 ✨</a>
+                <!-- Hamburger menu can be added here if needed -->
+            </div>
+        </div>
+    </header>
+
+    <main class="p-4 sm:p-6 lg:p-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-10">
+                <h2 class="text-4xl font-extrabold text-slate-800">אישורי הזמנה</h2>
+                <p class="mt-4 text-lg text-slate-600">המקום המאובטח לכל האישורים, מספרי ההזמנה והמסמכים החשובים.</p>
+            </div>
+
+            <!-- Add New Confirmation Form -->
+            <div class="bg-white p-6 rounded-2xl shadow-lg mb-10">
+                <h3 class="text-2xl font-bold text-slate-800 mb-4">הוספת אישור חדש</h3>
+                <form id="add-confirmation-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="conf-type" class="block text-sm font-medium text-slate-700 mb-1">סוג האישור</label>
+                            <select id="conf-type" required class="form-input w-full p-2 border border-slate-300 rounded-lg">
+                                <option value="טיסה">✈️ טיסה</option>
+                                <option value="מלון">🏨 מלון</option>
+                                <option value="רכב">🚗 רכב</option>
+                                <option value="רכבת">🚂 רכבת</option>
+                                <option value="אטרקציה">🎟️ אטרקציה</option>
+                                <option value="אחר">📄 אחר</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="conf-title" class="block text-sm font-medium text-slate-700 mb-1">כותרת</label>
+                            <input type="text" id="conf-title" required class="form-input w-full p-2 border border-slate-300 rounded-lg" placeholder="לדוגמה: טיסה לניו יורק (אל-על)">
+                        </div>
+                    </div>
+                     <div>
+                        <label for="conf-dates" class="block text-sm font-medium text-slate-700 mb-1">תאריך/ים</label>
+                        <input type="text" id="conf-dates" class="form-input w-full p-2 border border-slate-300 rounded-lg" placeholder="לדוגמה: 22.12.2025 או 23-30.12.2025">
+                    </div>
+                    <div>
+                        <label for="conf-number" class="block text-sm font-medium text-slate-700 mb-1">מספר אישור / קוד הזמנה</label>
+                        <input type="text" id="conf-number" required class="form-input w-full p-2 border border-slate-300 rounded-lg" placeholder="העתק את מספר האישור לכאן">
+                    </div>
+                    <div>
+                        <label for="conf-details" class="block text-sm font-medium text-slate-700 mb-1">פרטים נוספים</label>
+                        <textarea id="conf-details" rows="3" class="form-input w-full p-2 border border-slate-300 rounded-lg" placeholder="שמות נוסעים, פרטי טיסה, תנאי ביטול וכו'"></textarea>
+                    </div>
+                    <div>
+                        <label for="conf-link" class="block text-sm font-medium text-slate-700 mb-1">קישור לקובץ האישור (אופציונלי)</label>
+                        <input type="url" id="conf-link" class="form-input w-full p-2 border border-slate-300 rounded-lg" placeholder="קישור לקובץ ב-Google Drive, Dropbox...">
+                    </div>
+                    <div class="text-left">
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+                            <i class="fas fa-plus mr-2"></i>הוסף אישור
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Display Area -->
+            <div id="confirmations-container" class="space-y-4">
+                <p id="auth-message" class="text-center text-slate-500">מאמת נתונים...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase and App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "...", authDomain: "...", projectId: "..." };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'dream-trip-default';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+
+        const form = document.getElementById('add-confirmation-form');
+        const container = document.getElementById('confirmations-container');
+        const authMessage = document.getElementById('auth-message');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authMessage.textContent = 'טוען אישורים...';
+                listenForConfirmations(user.uid);
+            } else {
+                currentUser = null;
+                container.innerHTML = '';
+                authMessage.textContent = 'יש להתחבר כדי לראות ולהוסיף אישורים.';
+                signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
+            }
+        });
+
+        const getIconForType = (type) => {
+            const icons = { 'טיסה': '✈️', 'מלון': '🏨', 'רכב': '🚗', 'רכבת': '🚂', 'אטרקציה': '🎟️', 'אחר': '📄' };
+            return icons[type] || '📄';
+        }
+
+        const renderConfirmations = (confirmations) => {
+            if (confirmations.length === 0) {
+                authMessage.textContent = "עדיין אין אישורים. הוסיפו את הראשון!";
+                authMessage.style.display = 'block';
+                container.innerHTML = '';
+                return;
+            }
+            
+            authMessage.style.display = 'none';
+            container.innerHTML = '';
+
+            confirmations.forEach(item => {
+                const detailsElement = document.createElement('details');
+                detailsElement.className = 'bg-white rounded-xl shadow-md overflow-hidden';
+
+                let linkHTML = '';
+                if (item.link) {
+                    linkHTML = `<a href="${item.link}" target="_blank" class="text-blue-500 hover:underline font-semibold">פתח קובץ אישור <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>`;
+                }
+
+                detailsElement.innerHTML = `
+                    <summary class="p-4 cursor-pointer flex justify-between items-center bg-white hover:bg-slate-50 transition">
+                        <div class="flex items-center gap-4">
+                            <span class="text-2xl">${getIconForType(item.type)}</span>
+                            <div>
+                                <h4 class="font-bold text-lg text-slate-800">${item.title}</h4>
+                                <p class="text-sm text-slate-500">${item.dates || 'אין תאריך'}</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-down chevron-icon text-slate-400"></i>
+                    </summary>
+                    <div class="details-content">
+                        <div class="p-4 border-t border-slate-200 bg-slate-50 space-y-3">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-600">מספר אישור:</p>
+                                <p class="text-lg font-mono text-slate-800 bg-slate-200 p-2 rounded-md inline-block">${item.number}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-slate-600">פרטים נוספים:</p>
+                                <p class="text-slate-700 whitespace-pre-wrap">${item.details || 'אין'}</p>
+                            </div>
+                            ${linkHTML ? `<div>${linkHTML}</div>` : ''}
+                             <div class="text-xs text-slate-400 mt-4 pt-2 border-t text-left">
+                                <button data-id="${item.id}" class="delete-btn text-red-400 hover:text-red-600 transition">מחק אישור</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(detailsElement);
+            });
+        };
+
+        const listenForConfirmations = (userId) => {
+            const confirmationsCollection = collection(db, `artifacts/${appId}/users/${userId}/confirmations`);
+            const q = query(confirmationsCollection, orderBy('createdAt', 'desc'));
+            
+            onSnapshot(q, (snapshot) => {
+                const confirmations = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderConfirmations(confirmations);
+            }, (error) => {
+                console.error("Error fetching confirmations: ", error);
+                authMessage.textContent = "שגיאה בטעינת המידע.";
+            });
+        };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                alert("You must be signed in to add a confirmation.");
+                return;
+            }
+
+            const newConfirmation = {
+                type: form['conf-type'].value,
+                title: form['conf-title'].value,
+                dates: form['conf-dates'].value,
+                number: form['conf-number'].value,
+                details: form['conf-details'].value,
+                link: form['conf-link'].value,
+                createdAt: serverTimestamp(),
+            };
+
+            const confirmationsCollection = collection(db, `artifacts/${appId}/users/${currentUser.uid}/confirmations`);
+            try {
+                await addDoc(confirmationsCollection, newConfirmation);
+                form.reset();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("Failed to add confirmation.");
+            }
+        });
+
+        container.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const itemId = e.target.dataset.id;
+                if (confirm('האם למחוק את האישור הזה? הפעולה בלתי הפיכה.')) {
+                    try {
+                        const docRef = doc(db, `artifacts/${appId}/users/${currentUser.uid}/confirmations`, itemId);
+                        await deleteDoc(docRef);
+                    } catch (error) {
+                        console.error("Error deleting document: ", error);
+                        alert("Failed to delete confirmation.");
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
