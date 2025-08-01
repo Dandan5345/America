@@ -36,7 +36,18 @@
         details > summary::-webkit-details-marker { display: none; }
         .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
-    </style>
+  
+    <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('SW registered'))
+        .catch(err => console.log('SW failed:', err));
+    });
+  }
+</script>
+    
+      </style>
 </head>
 <body class="bg-slate-50">
 
