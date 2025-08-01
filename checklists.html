@@ -74,15 +74,7 @@
             justify-content: center; z-index: 1000; transition: opacity 0.5s ease;
         }
    
-    <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log('SW registered'))
-        .catch(err => console.log('SW failed:', err));
-    });
-  }
-</script>
+  
     
      </style>
 </head>
@@ -584,6 +576,15 @@
                 window.location.replace('login.html');
             }
         });
+        
+        if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('SW registered'))
+        .catch(err => console.log('SW failed:', err));
+    });
+  }
+        
     </script>
 </body>
 </html>
