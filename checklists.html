@@ -21,17 +21,30 @@
         .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
 
-        .checklist-item input:checked + label { text-decoration: line-through; color: #9ca3af; }
-        .checklist-item input:checked + label .fa-circle { display: none; }
-        .checklist-item input:checked + label .fa-check-circle { display: inline-block; }
-        .fa-check-circle { display: none; }
-        
+        /* Custom Checkbox Styling */
+        .checklist-item input[type="checkbox"] { display: none; }
+        .checklist-item .checkbox-icon {
+            cursor: pointer;
+            font-size: 1.5rem;
+            width: 24px;
+            text-align: center;
+        }
+        .checklist-item .fa-circle { color: #38bdf8; }
+        .checklist-item .fa-check-circle { color: #22c55e; display: none; }
+        .checklist-item input:checked ~ label .fa-circle { display: none; }
+        .checklist-item input:checked ~ label .fa-check-circle { display: inline-block; }
+        .checklist-item input:checked ~ label .item-text {
+            text-decoration: line-through;
+            color: #9ca3af;
+        }
+
         .priority-3 { border-right: 4px solid #ef4444; }
         .priority-2 { border-right: 4px solid #f97316; }
         .priority-1 { border-right: 4px solid #eab308; }
 
         .modal-step { display: none; }
-        .modal-step.active { display: block; }
+        .modal-step.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -101,7 +114,7 @@
                 <div id="step-1" class="modal-step"><label class="block text-sm font-bold text-slate-700 mb-2">שאלה 1: בחר סוג רשימה</label><select id="checklist-type" class="w-full p-2 border border-slate-300 rounded-lg"><option value="">-- בחר --</option><option value="לפני הטיול">לפני הטיול</option><option value="לפני יעד">לפני יעד</option><option value="לפני מעבר">לפני מעבר</option><option value="אחר">אחר</option></select><input type="text" id="checklist-type-other" class="w-full p-2 border border-slate-300 rounded-lg mt-2 hidden" placeholder="הקלד שם לסוג הרשימה"></div>
                 <div id="step-2" class="modal-step"></div>
                 <div id="step-3" class="modal-step"></div>
-                <div id="step-4" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">חשיבות נמוכה</option><option value="2" selected>חשיבות בינונית</option><option value="3">חשיבות גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
+                <div id="step-4" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" min="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">חשיבות נמוכה</option><option value="2" selected>חשיבות בינונית</option><option value="3">חשיבות גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
             </div>
             <div class="p-4 bg-slate-50 border-t flex justify-between items-center">
                 <button id="modal-back-btn" class="py-2 px-4 rounded-lg hover:bg-slate-200 transition hidden">אחורה</button>
@@ -112,12 +125,12 @@
         </div>
     </div>
 
-    <div id="delete-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center"><div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full"><h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3><p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה.</p><div class="flex justify-center gap-4"><button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button><button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button></div></div></div>
+    <div id="delete-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4"><div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full"><h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3><p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה.</p><div class="flex justify-center gap-4"><button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button><button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button></div></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
@@ -134,7 +147,7 @@
         const checklistsCollectionRef = collection(db, 'checklists');
 
         const siteData = {
-            menu: [
+             menu: [
                     { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
                     { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [ { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' } ]},
                     { id: 'niagara', page: 'niagara.html', title: '❄️ קנדה', emoji: '🇨🇦', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
@@ -149,14 +162,11 @@
             destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו", "חזרה לארץ"]
         };
         
-        // --- Global State ---
         let checklistsData = [];
         let currentModalStep = 0;
-        let totalModalSteps = 0;
         let modalItems = [];
         let editingChecklistId = null;
 
-        // --- DOM Elements ---
         const loader = document.getElementById('loader');
         const mainContent = document.getElementById('main-content');
         const checklistsContainer = document.getElementById('checklists-container');
@@ -164,7 +174,6 @@
         const deleteModal = document.getElementById('delete-modal');
 
         const initApp = () => {
-            // This function is called only after user is authenticated
             const sidebar = document.getElementById('sidebar');
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const closeSidebarBtn = document.getElementById('close-sidebar-btn');
@@ -205,20 +214,27 @@
             overlay.addEventListener('click', toggleSidebar);
             addChecklistBtn.addEventListener('click', () => openModal());
 
-            // Subscribe to checklist changes
-            const q = query(checklistsCollectionRef, orderBy('createdAt', 'desc'));
-            onSnapshot(q, (snapshot) => {
-                checklistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderChecklists();
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 500);
-                mainContent.classList.add('loaded');
-            }, (error) => {
-                console.error("Firestore snapshot error:", error);
-                checklistsContainer.innerHTML = `<div class="text-center p-10 bg-red-100 text-red-700 rounded-lg">אירעה שגיאה בטעינת הנתונים.</div>`;
-                loader.style.display = 'none';
-                mainContent.classList.add('loaded');
-            });
+            try {
+                const q = query(checklistsCollectionRef);
+                onSnapshot(q, (snapshot) => {
+                    checklistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    checklistsData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                    renderChecklists();
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                    mainContent.classList.add('loaded');
+                }, (error) => {
+                    console.error("Firestore snapshot error:", error);
+                    checklistsContainer.innerHTML = `<div class="text-center p-10 bg-red-100 text-red-700 rounded-lg"><h3>שגיאה בקריאת הנתונים</h3><p>${error.message}</p></div>`;
+                    loader.style.display = 'none';
+                    mainContent.classList.add('loaded');
+                });
+            } catch (error) {
+                 console.error("Error setting up Firestore listener:", error);
+                 checklistsContainer.innerHTML = `<div class="text-center p-10 bg-red-100 text-red-700 rounded-lg"><h3>שגיאה חמורה בהתחברות למסד הנתונים.</h3></div>`;
+                 loader.style.display = 'none';
+                 mainContent.classList.add('loaded');
+            }
         };
 
         const renderChecklists = () => {
@@ -233,7 +249,13 @@
 
             for (const type in groupedByType) {
                 html += `<details class="bg-white p-4 rounded-2xl shadow-lg" open><summary class="text-2xl font-bold text-slate-700 cursor-pointer flex justify-between items-center"><span>${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="mt-4 pt-4 border-t space-y-4">`;
-                groupedByType[type].forEach(list => html += renderSingleChecklist(list));
+                
+                const groupedBySub = groupBy(groupedByType[type], 'subCategory');
+                for (const sub in groupedBySub) {
+                    html += `<details class="pl-4" open><summary class="text-lg font-semibold text-slate-600 cursor-pointer"><span>${sub || 'ללא תת-קטגוריה'}</span></summary><div class="mt-2 space-y-2">`;
+                    groupedBySub[sub].forEach(list => html += renderSingleChecklist(list));
+                    html += `</div></details>`;
+                }
                 html += `</div></details>`;
             }
             checklistsContainer.innerHTML = html;
@@ -243,16 +265,16 @@
             const sortedItems = list.items ? list.items.sort((a, b) => b.priority - a.priority) : [];
             let itemsHtml = sortedItems.map((item, index) => `
                 <div class="checklist-item flex items-center justify-between p-2 rounded-md hover:bg-slate-50 ${'priority-' + item.priority}">
-                    <div class="flex-grow">
-                        <input type="checkbox" id="item-${list.id}-${index}" class="hidden" data-list-id="${list.id}" data-item-index="${index}" ${item.checked ? 'checked' : ''}>
-                        <label for="item-${list.id}-${index}" class="flex items-center gap-3 text-lg text-slate-700 cursor-pointer">
-                            <i class="far fa-circle text-sky-500"></i><i class="fas fa-check-circle text-green-500"></i>
-                            <div>
-                                <span class="font-semibold">${item.text}</span> <span class="text-sm text-slate-500">(x${item.quantity})</span>
-                                ${item.description ? `<p class="text-sm text-slate-500">${item.description}</p>` : ''}
-                            </div>
-                        </label>
-                    </div>
+                    <input type="checkbox" id="item-${list.id}-${index}" data-list-id="${list.id}" data-item-index="${index}" ${item.checked ? 'checked' : ''}>
+                    <label for="item-${list.id}-${index}" class="flex-grow flex items-center gap-3 cursor-pointer">
+                        <span class="checkbox-icon">
+                            <i class="far fa-circle"></i><i class="fas fa-check-circle"></i>
+                        </span>
+                        <div class="item-text">
+                            <span class="font-semibold">${item.text}</span> <span class="text-sm text-slate-500">(x${item.quantity})</span>
+                            ${item.description ? `<p class="text-sm text-slate-500">${item.description}</p>` : ''}
+                        </div>
+                    </label>
                 </div>`).join('');
 
             return `<div class="bg-slate-50 p-4 rounded-xl"><div class="flex justify-between items-center mb-2"><h4 class="text-xl font-bold text-slate-800">${list.name}</h4><div><button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button><button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button></div></div><div class="space-y-2">${itemsHtml}</div></div>`;
@@ -262,14 +284,13 @@
             editingChecklistId = listToEdit ? listToEdit.id : null;
             document.getElementById('modal-title').textContent = listToEdit ? 'עריכת רשימה' : 'יצירת רשימה חדשה';
             
-            // Reset form
             document.getElementById('checklist-name').value = listToEdit?.name || '';
             document.getElementById('checklist-type').value = listToEdit?.type || '';
             modalItems = listToEdit ? [...listToEdit.items] : [];
             renderModalItems();
 
             currentModalStep = 0;
-            updateModalStep(true);
+            updateModalStep();
             checklistModal.classList.add('flex');
             checklistModal.classList.remove('hidden');
         };
@@ -279,37 +300,46 @@
             checklistModal.classList.remove('flex');
         };
 
-        const updateModalStep = (isOpening = false) => {
-            const type = document.getElementById('checklist-type').value;
-            if (type === 'לפני יעד' || type === 'לפני מעבר') totalModalSteps = 4;
-            else if (type === 'לפני הטיול') totalModalSteps = 3;
-            else if (type === 'אחר' || type === '') totalModalSteps = 1;
-
-            if (!isOpening) currentModalStep = Math.min(currentModalStep, totalModalSteps);
+        const updateModalStep = () => {
+            const getNumberOfConfigSteps = () => {
+                const type = document.getElementById('checklist-type').value;
+                if (type === 'לפני יעד') return 3;
+                if (type === 'לפני מעבר') return 3;
+                if (type === 'לפני הטיול') return 2;
+                if (type === 'אחר' || !type) return 1;
+                return 1;
+            };
+            
+            const totalConfigSteps = getNumberOfConfigSteps();
+            const isLastConfigStep = currentModalStep >= totalConfigSteps;
 
             document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('active'));
-            document.getElementById(`step-${currentModalStep}`).classList.add('active');
             
+            if (isLastConfigStep) {
+                document.getElementById('step-4').classList.add('active');
+            } else {
+                document.getElementById(`step-${currentModalStep}`).classList.add('active');
+            }
+
             document.getElementById('modal-back-btn').classList.toggle('hidden', currentModalStep === 0);
-            document.getElementById('modal-next-btn').classList.toggle('hidden', currentModalStep >= totalModalSteps);
-            document.getElementById('modal-finish-btn').classList.toggle('hidden', currentModalStep < totalModalSteps);
+            document.getElementById('modal-next-btn').classList.toggle('hidden', isLastConfigStep);
+            document.getElementById('modal-finish-btn').classList.toggle('hidden', !isLastConfigStep);
             
-            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${totalModalSteps + 1}`;
+            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${totalConfigSteps + 1}`;
             
             if (currentModalStep === 1) generateStep2Content();
             if (currentModalStep === 2) generateStep3Content();
         };
 
         const generateStepContent = (containerId, html) => {
-            const container = document.getElementById(containerId);
-            container.innerHTML = html;
+            document.getElementById(containerId).innerHTML = html;
         };
 
         const generateStep2Content = () => {
             const type = document.getElementById('checklist-type').value;
             let html = '';
             if (type === 'לפני הטיול') {
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר נושא</label><select id="checklist-subtype" class="w-full p-2 border rounded-lg"><option>רשימת בגדים לבן</option><option>רשימת בגדים לבת</option><option>מסמכים ואישורים</option><option>הזמנות</option><option>קניות</option><option>מוצרים חשובים</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subtype-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר נושא</label><select id="checklist-subcategory" class="w-full p-2 border rounded-lg"><option value="">-- בחר --</option><option>רשימת בגדים לבן</option><option>רשימת בגדים לבת</option><option>מסמכים ואישורים</option><option>הזמנות</option><option>קניות</option><option>מוצרים חשובים</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subcategory-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
             } else if (type === 'לפני יעד' || type === 'לפני מעבר') {
                 const options = siteData.destinations.map(d => `<option value="${d}">${d}</option>`).join('');
                 html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר יעד</label><select id="checklist-destination" class="w-full p-2 border rounded-lg">${options}</select>`;
@@ -321,9 +351,9 @@
             const type = document.getElementById('checklist-type').value;
             let html = '';
             if (type === 'לפני יעד') {
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא ליעד</label><select id="checklist-subtype" class="w-full p-2 border rounded-lg"><option>בגדים לבן</option><option>בגדים לבת</option><option>מסמכים ליעד</option><option>ציוד נדרש</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subtype-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא ליעד</label><select id="checklist-subcategory" class="w-full p-2 border rounded-lg"><option value="">-- בחר --</option><option>בגדים לבן</option><option>בגדים לבת</option><option>מסמכים ליעד</option><option>ציוד נדרש</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subcategory-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
             } else if (type === 'לפני מעבר') {
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא למעבר</label><select id="checklist-subtype" class="w-full p-2 border rounded-lg"><option>אישורים ומסמכים</option><option>קניות</option><option>בגדים לבן</option><option>בגדים לבת</option></select>`;
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא למעבר</label><select id="checklist-subcategory" class="w-full p-2 border rounded-lg"><option value="">-- בחר --</option><option>אישורים ומסמכים</option><option>קניות</option><option>בגדים לבן</option><option>בגדים לבת</option></select>`;
             }
             generateStepContent('step-3', html);
         };
@@ -340,10 +370,11 @@
             let type = document.getElementById('checklist-type').value;
             if (type === 'אחר') type = document.getElementById('checklist-type-other').value;
 
-            let subType = document.getElementById('checklist-subtype')?.value || null;
-            if (subType === 'אחר') subType = document.getElementById('checklist-subtype-other')?.value;
+            let subCategory = document.getElementById('checklist-subcategory')?.value || document.getElementById('checklist-destination')?.value || 'כללי';
+            const subCategoryOtherInput = document.getElementById('checklist-subcategory-other');
+            if (subCategory === 'אחר' && subCategoryOtherInput) subCategory = subCategoryOtherInput.value;
 
-            const checklistData = { name, type, destination: document.getElementById('checklist-destination')?.value || null, subType, items: modalItems, updatedAt: serverTimestamp() };
+            const checklistData = { name, type, subCategory, items: modalItems, updatedAt: serverTimestamp() };
             
             try {
                 if (editingChecklistId) {
@@ -359,7 +390,6 @@
             }
         };
 
-        // --- Event Listeners ---
         document.getElementById('modal-close-btn').addEventListener('click', closeModal);
         document.getElementById('modal-back-btn').addEventListener('click', () => { currentModalStep--; updateModalStep(); });
         document.getElementById('modal-next-btn').addEventListener('click', () => { currentModalStep++; updateModalStep(); });
@@ -367,12 +397,13 @@
         
         document.getElementById('checklist-type').addEventListener('change', (e) => {
             document.getElementById('checklist-type-other').classList.toggle('hidden', e.target.value !== 'אחר');
+            currentModalStep = 1; 
             updateModalStep();
         });
 
         checklistModal.addEventListener('change', e => {
-            if (e.target.id === 'checklist-subtype') {
-                const otherInput = document.getElementById('checklist-subtype-other');
+            if (e.target.id === 'checklist-subcategory') {
+                const otherInput = document.getElementById('checklist-subcategory-other');
                 if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
             }
         });
@@ -456,7 +487,6 @@
             }
         });
 
-        // --- Authentication Check ---
         onAuthStateChanged(auth, user => {
             if (user) {
                 const authContainer = document.getElementById('auth-container');
