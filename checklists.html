@@ -227,13 +227,13 @@
                 return;
             }
 
-            const groupBy = (array, key) => array.reduce((r, v) => {
-                const groupKey = v[key] || 'אחר';
+            const groupBy = (array, key, fallback = 'כללי') => array.reduce((r, v) => {
+                const groupKey = v[key] || fallback;
                 (r[groupKey] = r[groupKey] || []).push(v);
                 return r;
             }, {});
+
             const groupedByType = groupBy(checklistsData, 'type');
-            
             let html = '';
             const sortedTypes = Object.keys(groupedByType).sort();
 
@@ -242,41 +242,45 @@
                 
                 html += `<details class="bg-white p-4 rounded-2xl shadow-lg" open><summary class="text-2xl font-bold text-slate-700 cursor-pointer flex justify-between items-center"><span>${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="mt-4 pt-4 border-t space-y-4">`;
 
-                const subGroups = {};
-                const fallbackKey = 'כללי';
+                // Level 2: Group by Destination
+                const destinationGroups = groupBy(listsInType, 'destination');
+                const sortedDestKeys = Object.keys(destinationGroups).sort();
 
-                for (const list of listsInType) {
-                    const key = list.destination || list.subType || fallbackKey;
-                    if (!subGroups[key]) {
-                        subGroups[key] = {
-                            lists: [],
-                            prefix: list.destination ? 'יעד' : (list.subType ? 'נושא' : '')
-                        };
+                for (const destKey of sortedDestKeys) {
+                    const listsInDest = destinationGroups[destKey];
+                    const isSingleFallbackDest = sortedDestKeys.length === 1 && destKey === 'כללי';
+
+                    const containerTag = isSingleFallbackDest ? 'div' : 'details';
+                    html += `<${containerTag} class="bg-slate-50 p-3 rounded-xl" ${isSingleFallbackDest ? '' : 'open'}>`;
+                    if (!isSingleFallbackDest) {
+                        html += `<summary class="text-lg font-bold text-slate-600 cursor-pointer flex justify-between items-center"><span>יעד: ${destKey}</span><i class="fa-solid fa-chevron-down chevron-icon text-base"></i></summary>`;
                     }
-                    subGroups[key].lists.push(list);
-                }
+                    html += `<div class="${isSingleFallbackDest ? '' : 'mt-3 pt-3 border-t border-slate-200'} space-y-4">`;
 
-                const sortedSubGroupKeys = Object.keys(subGroups).sort();
+                    // Level 3: Group by subType (Topic)
+                    const topicGroups = groupBy(listsInDest, 'subType');
+                    const sortedTopicKeys = Object.keys(topicGroups).sort();
 
-                for (const subGroupKey of sortedSubGroupKeys) {
-                    const subGroup = subGroups[subGroupKey];
-                    const prefixText = subGroup.prefix ? `${subGroup.prefix}: ` : '';
+                    for (const topicKey of sortedTopicKeys) {
+                        const listsInTopic = topicGroups[topicKey];
+                        const isSingleFallbackTopic = sortedTopicKeys.length === 1 && topicKey === 'כללי';
 
-                    if (sortedSubGroupKeys.length === 1 && subGroupKey === fallbackKey) {
-                         html += `<div class="space-y-4">`;
-                         subGroup.lists.forEach(list => {
-                            html += renderSingleChecklist(list);
-                         });
-                         html += `</div>`;
-                    } else {
-                        html += `<details class="bg-slate-50 p-3 rounded-xl" open>`;
-                        html += `<summary class="text-lg font-bold text-slate-600 cursor-pointer flex justify-between items-center"><span>${prefixText}${subGroupKey}</span><i class="fa-solid fa-chevron-down chevron-icon text-base"></i></summary>`;
-                        html += `<div class="mt-3 pt-3 border-t border-slate-200 space-y-4">`;
-                        subGroup.lists.forEach(list => {
+                        const subContainerTag = isSingleFallbackTopic ? 'div' : 'details';
+                        html += `<${subContainerTag} class="bg-white p-3 rounded-lg shadow-inner" ${isSingleFallbackTopic ? '' : 'open'}>`;
+                        if (!isSingleFallbackTopic) {
+                             html += `<summary class="font-semibold text-slate-500 cursor-pointer flex justify-between items-center"><span>נושא: ${topicKey}</span><i class="fa-solid fa-chevron-down chevron-icon text-sm"></i></summary>`;
+                        }
+                        html += `<div class="${isSingleFallbackTopic ? '' : 'mt-2 pt-2 border-t border-slate-100'} space-y-4">`;
+                        
+                        // Level 4: Render the actual checklists
+                        listsInTopic.forEach(list => {
                             html += renderSingleChecklist(list);
                         });
-                        html += `</div></details>`;
+
+                        html += `</div></${subContainerTag}>`;
                     }
+                    
+                    html += `</div></${containerTag}>`;
                 }
 
                 html += `</div></details>`;
@@ -300,7 +304,7 @@
                     </div>
                 </div>`).join('');
 
-            return `<div class="bg-white p-4 rounded-xl shadow-sm"><div class="flex justify-between items-center mb-2"><h4 class="text-xl font-bold text-slate-800">${list.name}</h4><div><button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button><button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button></div></div><div class="space-y-2">${itemsHtml}</div></div>`;
+            return `<div class="bg-slate-50 p-4 rounded-xl"><div class="flex justify-between items-center mb-2"><h4 class="text-xl font-bold text-slate-800">${list.name}</h4><div><button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button><button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button></div></div><div class="space-y-2">${itemsHtml}</div></div>`;
         };
 
         const openModal = (listToEdit = null) => {
