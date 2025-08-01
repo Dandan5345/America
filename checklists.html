@@ -11,31 +11,66 @@
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Assistant', sans-serif; }
+        body { 
+            font-family: 'Assistant', sans-serif; 
+            background-color: #f0f4f8; /* Light blue-gray background */
+        }
         #sidebar { transition: transform 0.3s ease-in-out; }
         .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
         .submenu.open { max-height: 1200px; }
         
-        details > summary { list-style: none; }
+        /* Custom styles for details/summary to create accordion effect */
+        details > summary { 
+            list-style: none; 
+            cursor: pointer;
+        }
         details > summary::-webkit-details-marker { display: none; }
         .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
 
-        .checklist-item input:checked + label { text-decoration: line-through; color: #9ca3af; }
-        .checklist-item input:checked + label .fa-circle { display: none; }
-        .checklist-item input:checked + label .fa-check-circle { display: inline-block; }
-        .fa-check-circle { display: none; }
+        /* Custom Checkbox Styling */
+        .checklist-item input[type="checkbox"] { display: none; }
+        .checklist-item .custom-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid #38bdf8; /* sky-500 */
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease-in-out;
+            flex-shrink: 0;
+        }
+        .checklist-item .custom-checkbox .fa-check {
+            font-size: 14px;
+            color: white;
+            transform: scale(0);
+            transition: transform 0.2s ease-in-out;
+        }
+        .checklist-item input:checked + label .custom-checkbox {
+            background-color: #0ea5e9; /* sky-600 */
+            border-color: #0ea5e9;
+        }
+        .checklist-item input:checked + label .custom-checkbox .fa-check {
+            transform: scale(1);
+        }
+        .checklist-item input:checked + label .item-text {
+            text-decoration: line-through;
+            color: #64748b; /* slate-500 */
+        }
         
-        .priority-3 { border-right: 4px solid #ef4444; }
-        .priority-2 { border-right: 4px solid #f97316; }
-        .priority-1 { border-right: 4px solid #eab308; }
+        /* Priority Indicators */
+        .priority-3 { border-right: 4px solid #f43f5e; } /* rose-500 */
+        .priority-2 { border-right: 4px solid #f97316; } /* orange-500 */
+        .priority-1 { border-right: 4px solid #eab308; } /* yellow-500 */
 
         .modal-step { display: none; }
         .modal-step.active { display: block; }
 
+        /* Loader and content visibility */
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #f1f5f9; display: flex; align-items: center;
+            background: #f0f4f8; display: flex; align-items: center;
             justify-content: center; z-index: 1000; transition: opacity 0.5s ease;
         }
         #main-content { visibility: hidden; opacity: 0; transition: opacity 0.5s ease-in-out; }
@@ -45,12 +80,12 @@
 <body class="bg-slate-100">
 
     <div id="loader">
-        <i class="fas fa-spinner fa-spin fa-3x text-blue-500"></i>
+        <i class="fas fa-plane-departure fa-spin fa-3x text-blue-500"></i>
     </div>
 
     <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
         <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
-            <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
+            <h2 class="text-2xl font-bold text-slate-800">תפריט המסע 🧭</h2>
             <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
         </div>
         <nav id="main-menu" class="p-4 space-y-2"></nav>
@@ -73,17 +108,15 @@
         </header>
 
         <main class="p-4 sm:p-6 lg:p-8">
-            <div class="max-w-5xl mx-auto">
-                <div class="flex justify-between items-center mb-10">
-                    <div class="text-right">
-                        <h2 class="text-4xl font-extrabold text-slate-800">ניהול רשימות</h2>
-                        <p class="mt-2 text-lg text-slate-600">כל מה שצריך לארוז ולזכור, מסונכרן בזמן אמת.</p>
-                    </div>
-                    <button id="add-checklist-btn" class="bg-blue-600 text-white font-bold py-3 px-5 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
-                        <i class="fas fa-plus mr-2"></i> הוסף רשימה
+            <div class="max-w-6xl mx-auto">
+                <div class="text-center mb-12">
+                    <h2 class="text-5xl font-extrabold text-slate-800">✅ סדר עושים בכיף</h2>
+                    <p class="mt-3 text-xl text-slate-600 max-w-2xl mx-auto">כל הרשימות לטיול החלומי, מאורגנות במקום אחד ומסונכרנות עם כולם בזמן אמת.</p>
+                     <button id="add-checklist-btn" class="mt-6 bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                        <i class="fas fa-plus mr-2"></i> הוספת רשימה חדשה
                     </button>
                 </div>
-                <div id="checklists-container" class="space-y-6"></div>
+                <div id="checklists-container" class="space-y-8"></div>
             </div>
         </main>
     </div>
@@ -92,18 +125,18 @@
 
     <div id="checklist-modal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div class="p-5 border-b flex justify-between items-center">
+            <div class="p-5 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
                 <h3 id="modal-title" class="text-2xl font-bold text-slate-800">יצירת רשימה חדשה</h3>
                 <button id="modal-close-btn" class="text-slate-400 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
             </div>
             <div class="p-6 space-y-6 overflow-y-auto">
-                <div id="step-0" class="modal-step"><label for="checklist-name" class="block text-sm font-bold text-slate-700 mb-2">שם הרשימה</label><input type="text" id="checklist-name" class="w-full p-2 border border-slate-300 rounded-lg" placeholder="לדוגמה: אריזה לטיסה לניו יורק"></div>
-                <div id="step-1" class="modal-step"><label class="block text-sm font-bold text-slate-700 mb-2">שאלה 1: בחר סוג רשימה</label><select id="checklist-type" class="w-full p-2 border border-slate-300 rounded-lg"><option value="">-- בחר --</option><option value="לפני הטיול">לפני הטיול</option><option value="לפני יעד">לפני יעד</option><option value="לפני מעבר">לפני מעבר</option><option value="אחר">אחר</option></select><input type="text" id="checklist-type-other" class="w-full p-2 border border-slate-300 rounded-lg mt-2 hidden" placeholder="הקלד שם לסוג הרשימה"></div>
+                <div id="step-0" class="modal-step"><label for="checklist-name" class="block text-sm font-bold text-slate-700 mb-2">שם הרשימה</label><input type="text" id="checklist-name" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400" placeholder="לדוגמה: אריזה לטיסה לניו יורק"></div>
+                <div id="step-1" class="modal-step"><label class="block text-sm font-bold text-slate-700 mb-2">שאלה 1: בחר סוג רשימה</label><select id="checklist-type" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"><option value="">-- בחר --</option><option value="לפני הטיול">✈️ לפני הטיול</option><option value="לפני יעד">🗺️ לפני יעד</option><option value="לפני מעבר">🚚 לפני מעבר</option><option value="אחר">📋 אחר</option></select><input type="text" id="checklist-type-other" class="w-full p-3 border border-slate-300 rounded-lg mt-2 hidden" placeholder="הקלד שם לסוג הרשימה"></div>
                 <div id="step-2" class="modal-step"></div>
                 <div id="step-3" class="modal-step"></div>
-                <div id="step-4" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">חשיבות נמוכה</option><option value="2" selected>חשיבות בינונית</option><option value="3">חשיבות גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
+                <div id="step-4" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים לרשימה</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">🟡 נמוכה</option><option value="2" selected>🟠 בינונית</option><option value="3">🔴 גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
             </div>
-            <div class="p-4 bg-slate-50 border-t flex justify-between items-center">
+            <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
                 <button id="modal-back-btn" class="py-2 px-4 rounded-lg hover:bg-slate-200 transition hidden">אחורה</button>
                 <div id="modal-steps-indicator" class="text-sm text-slate-500"></div>
                 <button id="modal-next-btn" class="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">הבא</button>
@@ -112,7 +145,7 @@
         </div>
     </div>
 
-    <div id="delete-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center"><div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full"><h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3><p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה.</p><div class="flex justify-center gap-4"><button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button><button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button></div></div></div>
+    <div id="delete-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center"><div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full"><div class="text-red-500 mb-4"><i class="fas fa-exclamation-triangle fa-3x"></i></div><h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3><p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה ולא ניתן יהיה לשחזר את הרשימה.</p><div class="flex justify-center gap-4"><button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button><button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button></div></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -146,7 +179,12 @@
                     { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
                     { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
                 ],
-            destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו", "חזרה לארץ"]
+            destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו", "חזרה לארץ"],
+            emojis: {
+                types: { 'לפני הטיול': '✈️', 'לפני יעד': '🗺️', 'לפני מעבר': '🚚', 'אחר': '📋' },
+                destinations: { 'ניו יורק': '🗽', 'מפלי הניאגרה וקנדה': '🇨🇦', 'וושינגטון די סי': '🏛️', 'אורלנדו': '🎢', 'מיאמי': '🌴', 'פונטה קאנה': '🇩🇴', 'אריזונה': '🏜️', 'לוס אנג\'לס': '🎬', 'סן פרנסיסקו': '🌉', 'חזרה לארץ': '🇮🇱' },
+                topics: { 'בגדים': '👕', 'מסמכים': '📄', 'קניות': '🛒', 'ציוד': '🎒', 'הזמנות': '🎟️', 'אישורים': '✔️' }
+            }
         };
         
         // --- Global State ---
@@ -164,7 +202,6 @@
         const deleteModal = document.getElementById('delete-modal');
 
         const initApp = () => {
-            // This function is called only after user is authenticated
             const sidebar = document.getElementById('sidebar');
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const closeSidebarBtn = document.getElementById('close-sidebar-btn');
@@ -205,7 +242,6 @@
             overlay.addEventListener('click', toggleSidebar);
             addChecklistBtn.addEventListener('click', () => openModal());
 
-            // Subscribe to checklist changes
             const q = query(checklistsCollectionRef, orderBy('createdAt', 'desc'));
             onSnapshot(q, (snapshot) => {
                 checklistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -221,9 +257,15 @@
             });
         };
 
+        const getEmoji = (category, value) => {
+            if (!value) return '';
+            const key = Object.keys(siteData.emojis[category]).find(k => value.includes(k)) || null;
+            return key ? siteData.emojis[category][key] : '';
+        };
+        
         const renderChecklists = () => {
             if (checklistsData.length === 0) {
-                checklistsContainer.innerHTML = `<div class="text-center p-10 bg-white rounded-lg shadow-md"><i class="fas fa-folder-open fa-3x text-slate-400 mb-4"></i><h3 class="text-xl font-bold text-slate-700">אין עדיין רשימות</h3><p class="text-slate-500">לחץ על "הוסף רשימה" כדי להתחיל.</p></div>`;
+                checklistsContainer.innerHTML = `<div class="text-center p-16 bg-white rounded-2xl shadow-sm"><i class="fas fa-folder-open fa-4x text-slate-300 mb-6"></i><h3 class="text-2xl font-bold text-slate-700">עדיין אין רשימות...</h3><p class="text-slate-500 mt-2">זה הזמן להתחיל! לחץ על "הוספת רשימה חדשה" כדי ליצור את הראשונה.</p></div>`;
                 return;
             }
 
@@ -239,40 +281,39 @@
 
             for (const type of sortedTypes) {
                 const listsInType = groupedByType[type];
-                
-                html += `<details class="bg-white p-4 rounded-2xl shadow-lg" open><summary class="text-2xl font-bold text-slate-700 cursor-pointer flex justify-between items-center"><span>${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="mt-4 pt-4 border-t space-y-4">`;
+                const typeEmoji = getEmoji('types', type);
+                html += `<details class="bg-white rounded-2xl shadow-lg overflow-hidden" open><summary class="text-2xl font-bold text-slate-800 flex justify-between items-center p-5 bg-gradient-to-r from-sky-50 to-blue-50"><span>${typeEmoji} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="p-4 space-y-4 bg-slate-50">`;
 
-                // Level 2: Group by Destination
                 const destinationGroups = groupBy(listsInType, 'destination');
                 const sortedDestKeys = Object.keys(destinationGroups).sort();
 
                 for (const destKey of sortedDestKeys) {
                     const listsInDest = destinationGroups[destKey];
                     const isSingleFallbackDest = sortedDestKeys.length === 1 && destKey === 'כללי';
+                    const destEmoji = getEmoji('destinations', destKey);
 
                     const containerTag = isSingleFallbackDest ? 'div' : 'details';
-                    html += `<${containerTag} class="bg-slate-50 p-3 rounded-xl" ${isSingleFallbackDest ? '' : 'open'}>`;
+                    html += `<${containerTag} class="bg-white rounded-xl shadow-md" ${isSingleFallbackDest ? '' : 'open'}>`;
                     if (!isSingleFallbackDest) {
-                        html += `<summary class="text-lg font-bold text-slate-600 cursor-pointer flex justify-between items-center"><span>יעד: ${destKey}</span><i class="fa-solid fa-chevron-down chevron-icon text-base"></i></summary>`;
+                        html += `<summary class="text-xl font-bold text-slate-700 flex justify-between items-center p-4"><span>${destEmoji} יעד: ${destKey}</span><i class="fa-solid fa-chevron-down chevron-icon text-lg"></i></summary>`;
                     }
-                    html += `<div class="${isSingleFallbackDest ? '' : 'mt-3 pt-3 border-t border-slate-200'} space-y-4">`;
+                    html += `<div class="${isSingleFallbackDest ? 'p-2' : 'p-3 pt-3 border-t'} space-y-3">`;
 
-                    // Level 3: Group by subType (Topic)
                     const topicGroups = groupBy(listsInDest, 'subType');
                     const sortedTopicKeys = Object.keys(topicGroups).sort();
 
                     for (const topicKey of sortedTopicKeys) {
                         const listsInTopic = topicGroups[topicKey];
                         const isSingleFallbackTopic = sortedTopicKeys.length === 1 && topicKey === 'כללי';
+                        const topicEmoji = getEmoji('topics', topicKey);
 
                         const subContainerTag = isSingleFallbackTopic ? 'div' : 'details';
-                        html += `<${subContainerTag} class="bg-white p-3 rounded-lg shadow-inner" ${isSingleFallbackTopic ? '' : 'open'}>`;
+                        html += `<${subContainerTag} class="bg-slate-50 rounded-lg" ${isSingleFallbackTopic ? '' : 'open'}>`;
                         if (!isSingleFallbackTopic) {
-                             html += `<summary class="font-semibold text-slate-500 cursor-pointer flex justify-between items-center"><span>נושא: ${topicKey}</span><i class="fa-solid fa-chevron-down chevron-icon text-sm"></i></summary>`;
+                             html += `<summary class="font-semibold text-slate-600 flex justify-between items-center p-3"><span>${topicEmoji} נושא: ${topicKey}</span><i class="fa-solid fa-chevron-down chevron-icon text-base"></i></summary>`;
                         }
-                        html += `<div class="${isSingleFallbackTopic ? '' : 'mt-2 pt-2 border-t border-slate-100'} space-y-4">`;
+                        html += `<div class="${isSingleFallbackTopic ? '' : 'p-3 pt-2 border-t'} space-y-3">`;
                         
-                        // Level 4: Render the actual checklists
                         listsInTopic.forEach(list => {
                             html += renderSingleChecklist(list);
                         });
@@ -289,32 +330,30 @@
         };
 
         const renderSingleChecklist = (list) => {
-            const sortedItems = list.items ? list.items.sort((a, b) => b.priority - a.priority) : [];
+            const sortedItems = list.items ? list.items.sort((a, b) => (b.priority || 0) - (a.priority || 0)) : [];
             let itemsHtml = sortedItems.map((item, index) => `
-                <div class="checklist-item flex items-center justify-between p-2 rounded-md hover:bg-slate-100 ${'priority-' + item.priority}">
-                    <div class="flex-grow">
-                        <input type="checkbox" id="item-${list.id}-${index}" class="hidden" data-list-id="${list.id}" data-item-index="${index}" ${item.checked ? 'checked' : ''}>
-                        <label for="item-${list.id}-${index}" class="flex items-center gap-3 text-lg text-slate-700 cursor-pointer">
-                            <i class="far fa-circle text-sky-500"></i><i class="fas fa-check-circle text-green-500"></i>
-                            <div>
-                                <span class="font-semibold">${item.text}</span> <span class="text-sm text-slate-500">(x${item.quantity})</span>
-                                ${item.description ? `<p class="text-sm text-slate-500">${item.description}</p>` : ''}
-                            </div>
-                        </label>
-                    </div>
+                <div class="checklist-item bg-white p-3 rounded-lg flex items-center gap-4 hover:bg-sky-50 transition-colors duration-200 ${'priority-' + item.priority}">
+                    <input type="checkbox" id="item-${list.id}-${index}" data-list-id="${list.id}" data-item-index="${index}" ${item.checked ? 'checked' : ''}>
+                    <label for="item-${list.id}-${index}" class="flex-grow flex items-center gap-4 text-slate-700 cursor-pointer">
+                        <div class="custom-checkbox"><i class="fas fa-check"></i></div>
+                        <div class="item-text">
+                            <span class="font-semibold">${item.text}</span> 
+                            <span class="text-sm text-slate-500">(x${item.quantity})</span>
+                            ${item.description ? `<p class="text-sm text-slate-500">${item.description}</p>` : ''}
+                        </div>
+                    </label>
                 </div>`).join('');
 
-            return `<div class="bg-slate-50 p-4 rounded-xl"><div class="flex justify-between items-center mb-2"><h4 class="text-xl font-bold text-slate-800">${list.name}</h4><div><button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button><button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button></div></div><div class="space-y-2">${itemsHtml}</div></div>`;
+            return `<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200"><div class="flex justify-between items-center mb-3"><h4 class="text-lg font-bold text-blue-700">${list.name}</h4><div><button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button><button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button></div></div><div class="space-y-2">${itemsHtml || '<p class="text-center text-slate-400 p-4">אין פריטים ברשימה זו.</p>'}</div></div>`;
         };
 
         const openModal = (listToEdit = null) => {
             editingChecklistId = listToEdit ? listToEdit.id : null;
             document.getElementById('modal-title').textContent = listToEdit ? 'עריכת רשימה' : 'יצירת רשימה חדשה';
             
-            // Reset form
             document.getElementById('checklist-name').value = listToEdit?.name || '';
             document.getElementById('checklist-type').value = listToEdit?.type || '';
-            modalItems = listToEdit ? [...listToEdit.items] : [];
+            modalItems = listToEdit ? JSON.parse(JSON.stringify(listToEdit.items)) : [];
             renderModalItems();
 
             currentModalStep = 0;
@@ -330,9 +369,10 @@
 
         const updateModalStep = (isOpening = false) => {
             const type = document.getElementById('checklist-type').value;
-            if (type === 'לפני יעד' || type === 'לפני מעבר') totalModalSteps = 4;
-            else if (type === 'לפני הטיול') totalModalSteps = 3;
-            else if (type === 'אחר' || type === '') totalModalSteps = 1;
+            if (type.includes('יעד') || type.includes('מעבר')) totalModalSteps = 4;
+            else if (type.includes('הטיול')) totalModalSteps = 3;
+            else if (type.includes('אחר') || type === '') totalModalSteps = 1;
+            else totalModalSteps = 1;
 
             if (!isOpening) currentModalStep = Math.min(currentModalStep, totalModalSteps);
 
@@ -357,11 +397,11 @@
         const generateStep2Content = () => {
             const type = document.getElementById('checklist-type').value;
             let html = '';
-            if (type === 'לפני הטיול') {
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר נושא</label><select id="checklist-subtype" class="w-full p-2 border rounded-lg"><option>רשימת בגדים לבן</option><option>רשימת בגדים לבת</option><option>מסמכים ואישורים</option><option>הזמנות</option><option>קניות</option><option>מוצרים חשובים</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subtype-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
-            } else if (type === 'לפני יעד' || type === 'לפני מעבר') {
-                const options = siteData.destinations.map(d => `<option value="${d}">${d}</option>`).join('');
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר יעד</label><select id="checklist-destination" class="w-full p-2 border rounded-lg">${options}</select>`;
+            if (type.includes('הטיול')) {
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר נושא</label><select id="checklist-subtype" class="w-full p-3 border rounded-lg"><option>👕 בגדים לבן</option><option>👚 בגדים לבת</option><option>📄 מסמכים ואישורים</option><option>🎟️ הזמנות</option><option>🛒 קניות</option><option>🎒 ציוד ומוצרים חשובים</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subtype-other" class="w-full p-3 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
+            } else if (type.includes('יעד') || type.includes('מעבר')) {
+                const options = siteData.destinations.map(d => `<option value="${d}">${getEmoji('destinations', d)} ${d}</option>`).join('');
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר יעד</label><select id="checklist-destination" class="w-full p-3 border rounded-lg">${options}</select>`;
             }
             generateStepContent('step-2', html);
         };
@@ -369,10 +409,10 @@
         const generateStep3Content = () => {
             const type = document.getElementById('checklist-type').value;
             let html = '';
-            if (type === 'לפני יעד') {
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא ליעד</label><select id="checklist-subtype" class="w-full p-2 border rounded-lg"><option>בגדים לבן</option><option>בגדים לבת</option><option>מסמכים ליעד</option><option>ציוד נדרש</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subtype-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
-            } else if (type === 'לפני מעבר') {
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא למעבר</label><select id="checklist-subtype" class="w-full p-2 border rounded-lg"><option>אישורים ומסמכים</option><option>קניות</option><option>בגדים לבן</option><option>בגדים לבת</option></select>`;
+            if (type.includes('יעד')) {
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא ליעד</label><select id="checklist-subtype" class="w-full p-3 border rounded-lg"><option>👕 בגדים לבן</option><option>👚 בגדים לבת</option><option>📄 מסמכים ליעד</option><option>🎒 ציוד נדרש</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subtype-other" class="w-full p-3 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
+            } else if (type.includes('מעבר')) {
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא למעבר</label><select id="checklist-subtype" class="w-full p-3 border rounded-lg"><option>📄 אישורים ומסמכים</option><option>🛒 קניות</option><option>👕 בגדים לבן</option><option>👚 בגדים לבת</option></select>`;
             }
             generateStepContent('step-3', html);
         };
@@ -386,13 +426,20 @@
             const name = document.getElementById('checklist-name').value;
             if (!name) return alert('חובה לתת שם לרשימה.');
             
-            let type = document.getElementById('checklist-type').value;
+            let type = document.getElementById('checklist-type').value.replace(/[^א-ת\s]/g, '').trim();
             if (type === 'אחר') type = document.getElementById('checklist-type-other').value;
 
-            let subType = document.getElementById('checklist-subtype')?.value || null;
+            let subTypeElement = document.getElementById('checklist-subtype');
+            let subType = subTypeElement ? subTypeElement.value : null;
             if (subType === 'אחר') subType = document.getElementById('checklist-subtype-other')?.value;
+            if (subType) subType = subType.replace(/[^א-ת\s]/g, '').trim();
 
-            const checklistData = { name, type, destination: document.getElementById('checklist-destination')?.value || null, subType, items: modalItems, updatedAt: serverTimestamp() };
+            let destElement = document.getElementById('checklist-destination');
+            let destination = destElement ? destElement.value : null;
+            if (destination) destination = destination.replace(/[^א-ת\s]/g, '').trim();
+
+
+            const checklistData = { name, type, destination, subType, items: modalItems, updatedAt: serverTimestamp() };
             
             try {
                 if (editingChecklistId) {
@@ -415,7 +462,7 @@
         document.getElementById('modal-finish-btn').addEventListener('click', handleFinishModal);
         
         document.getElementById('checklist-type').addEventListener('change', (e) => {
-            document.getElementById('checklist-type-other').classList.toggle('hidden', e.target.value !== 'אחר');
+            document.getElementById('checklist-type-other').classList.toggle('hidden', !e.target.value.includes('אחר'));
             updateModalStep();
         });
 
@@ -431,8 +478,8 @@
             if (!textInput.value) return;
             modalItems.push({ text: textInput.value, quantity: document.getElementById('item-quantity').value || 1, description: document.getElementById('item-description').value, priority: document.getElementById('item-priority').value, checked: false });
             renderModalItems();
-            textInput.value = '';
-            document.getElementById('item-description').value = '';
+            ['item-text', 'item-description'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('item-quantity').value = 1;
             textInput.focus();
         });
 
@@ -464,34 +511,23 @@
                 const list = checklistsData.find(l => l.id === listId);
                 if (!list) return;
                 
-                let step = 1;
                 const modalTitle = document.getElementById('delete-modal-title');
                 const confirmBtn = document.getElementById('delete-modal-confirm');
                 
                 modalTitle.textContent = `האם למחוק את "${list.name}"?`;
-                confirmBtn.textContent = 'מחק';
-                confirmBtn.className = 'py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600';
                 
                 const confirmHandler = async () => {
-                    if (step === 1) {
-                        modalTitle.textContent = 'מחיקה היא סופית. למחוק בכל זאת?';
-                        confirmBtn.textContent = 'כן, מחק סופית';
-                        confirmBtn.className = 'py-2 px-6 bg-red-700 text-white font-bold rounded-lg hover:bg-red-800';
-                        step = 2;
-                    } else {
-                        await deleteDoc(doc(db, 'checklists', listId));
-                        closeDeleteModal();
-                    }
+                    await deleteDoc(doc(db, 'checklists', listId));
+                    closeDeleteModal();
                 };
 
                 const closeDeleteModal = () => {
                     deleteModal.classList.add('hidden');
                     deleteModal.classList.remove('flex');
                     confirmBtn.removeEventListener('click', confirmHandler);
-                    document.getElementById('delete-modal-cancel').removeEventListener('click', closeDeleteModal);
                 };
                 
-                confirmBtn.addEventListener('click', confirmHandler);
+                confirmBtn.addEventListener('click', confirmHandler, { once: true });
                 document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
 
                 deleteModal.classList.remove('hidden');
@@ -505,12 +541,11 @@
             }
         });
 
-        // --- Authentication Check ---
         onAuthStateChanged(auth, user => {
             if (user) {
                 const authContainer = document.getElementById('auth-container');
                 const displayName = user.displayName || user.email.split('@')[0];
-                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName}</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
+                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
                 document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
                 initApp();
             } else {
