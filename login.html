@@ -32,13 +32,12 @@
       signOut
     } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
-    // רשימת המיילים המותרים
+    // נא להכניס את שני המיילים באותיות קטנות
     const allowedEmails = [
-      "Doronenakache@gmail.com",
-      "Ronyla6305@gmail.com"
+      "doronenakache@gmail.com",
+      "ronyla6305@gmail.com"
     ];
 
-    // הגדרות ה־Firebase שלך
     const firebaseConfig = {
       apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
       authDomain: "america1tour.firebaseapp.com",
@@ -49,7 +48,6 @@
       measurementId: "G-S29LD2DT7S"
     };
 
-    // initialize Firebase & Auth
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
@@ -61,7 +59,6 @@
       status.textContent = '';
       try {
         await signInWithPopup(auth, provider);
-        // בדיקת הרשאות תתבצע ב-onAuthStateChanged
       } catch (e) {
         status.className = "mt-4 text-red-500 font-medium";
         status.textContent = `שגיאה: ${e.message}`;
@@ -70,19 +67,17 @@
 
     onAuthStateChanged(auth, user => {
       if (user) {
-        if (allowedEmails.includes(user.email)) {
+        const email = (user.email || "").toLowerCase();
+        console.log("Firebase returned email:", email);
+        if (allowedEmails.includes(email)) {
           status.className = "mt-4 text-green-600 font-medium";
           status.textContent = `התחברת בהצלחה, שלום ${user.displayName}!`;
-          // כאן אפשר להפנות לעמוד אחר:
-          // setTimeout(() => { window.location.href = 'index.html'; }, 1000);
         } else {
-          // משתמש לא מורשה – מנתק אותו מיד
-          signOut(auth);
           status.className = "mt-4 text-red-500 font-medium";
           status.textContent = "המשתמש לא מורשה.";
+          signOut(auth);
         }
       } else {
-        // משתמש יצא או לא מחובר
         status.className = "";
         status.textContent = "";
       }
