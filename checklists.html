@@ -13,7 +13,6 @@
     <style>
         body { 
             font-family: 'Assistant', sans-serif; 
-            background-color: #f0f4f8; /* Light blue-gray background */
         }
         #sidebar { transition: transform 0.3s ease-in-out; }
         .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
@@ -47,9 +46,10 @@
             transform: scale(0);
             transition: transform 0.2s ease-in-out;
         }
+        /* THIS IS THE CHANGE: Checkbox color is now green */
         .checklist-item input:checked + label .custom-checkbox {
-            background-color: #0ea5e9; /* sky-600 */
-            border-color: #0ea5e9;
+            background-color: #22c55e; /* green-500 */
+            border-color: #16a34a; /* green-600 */
         }
         .checklist-item input:checked + label .custom-checkbox .fa-check {
             transform: scale(1);
@@ -73,79 +73,85 @@
             background: #f0f4f8; display: flex; align-items: center;
             justify-content: center; z-index: 1000; transition: opacity 0.5s ease;
         }
-        #main-content { visibility: hidden; opacity: 0; transition: opacity 0.5s ease-in-out; }
-        #main-content.loaded { visibility: visible; opacity: 1; }
     </style>
 </head>
-<body class="bg-slate-100">
+<body>
 
-    <div id="loader">
-        <i class="fas fa-plane-departure fa-spin fa-3x text-blue-500"></i>
-    </div>
+    <!-- Fixed Background -->
+    <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.imgur.com/IrS6mDW.jpeg');"></div>
+    <div class="fixed inset-0 z-0 bg-black/50"></div>
 
-    <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
-        <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
-            <h2 class="text-2xl font-bold text-slate-800">תפריט המסע 🧭</h2>
-            <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
+    <!-- Scrollable Content Wrapper -->
+    <div class="relative z-10">
+
+        <div id="loader">
+            <i class="fas fa-plane-departure fa-spin fa-3x text-blue-500"></i>
         </div>
-        <nav id="main-menu" class="p-4 space-y-2"></nav>
-    </aside>
 
-    <div id="main-content">
-        <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center gap-4">
-                        <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" title="חזרה לדף הבית"><i class="fas fa-home fa-lg"></i></a>
-                        <h1 class="text-xl font-bold text-slate-800">רשימות וצ'ק-ליסטים</h1>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div id="auth-container" class="flex items-center"></div>
-                        <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none"><i class="fas fa-bars fa-lg"></i></button>
+        <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
+            <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
+                <h2 class="text-2xl font-bold text-slate-800">תפריט המסע 🧭</h2>
+                <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
+            </div>
+            <nav id="main-menu" class="p-4 space-y-2"></nav>
+        </aside>
+
+        <div id="main-content" class="min-h-screen">
+            <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between h-16">
+                        <div class="flex items-center gap-4">
+                            <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" title="חזרה לדף הבית"><i class="fas fa-home fa-lg"></i></a>
+                            <h1 class="text-xl font-bold text-slate-800">רשימות וצ'ק-ליסטים</h1>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div id="auth-container" class="flex items-center"></div>
+                            <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none"><i class="fas fa-bars fa-lg"></i></button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        <main class="p-4 sm:p-6 lg:p-8">
-            <div class="max-w-6xl mx-auto">
-                <div class="text-center mb-12">
-                    <h2 class="text-5xl font-extrabold text-slate-800">✅ סדר עושים בכיף</h2>
-                    <p class="mt-3 text-xl text-slate-600 max-w-2xl mx-auto">כל הרשימות לטיול החלומי, מאורגנות במקום אחד ומסונכרנות עם כולם בזמן אמת.</p>
-                     <button id="add-checklist-btn" class="mt-6 bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
-                        <i class="fas fa-plus mr-2"></i> הוספת רשימה חדשה
-                    </button>
+            <main class="p-4 sm:p-6 lg:p-8">
+                <div class="max-w-6xl mx-auto">
+                    <div class="text-center mb-12">
+                        <h2 class="text-5xl font-extrabold text-white drop-shadow-lg">✅ סדר עושים בכיף</h2>
+                        <p class="mt-3 text-xl text-slate-200 max-w-2xl mx-auto">כל הרשימות לטיול החלומי, מאורגנות במקום אחד ומסונכרנות עם כולם בזמן אמת.</p>
+                         <button id="add-checklist-btn" class="mt-6 bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                            <i class="fas fa-plus mr-2"></i> הוספת רשימה חדשה
+                        </button>
+                    </div>
+                    <div id="checklists-container" class="space-y-8"></div>
                 </div>
-                <div id="checklists-container" class="space-y-8"></div>
-            </div>
-        </main>
-    </div>
-    
-    <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
+            </main>
+        </div>
+        
+        <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
 
-    <div id="checklist-modal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div class="p-5 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
-                <h3 id="modal-title" class="text-2xl font-bold text-slate-800">יצירת רשימה חדשה</h3>
-                <button id="modal-close-btn" class="text-slate-400 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
-            </div>
-            <div class="p-6 space-y-6 overflow-y-auto">
-                <div id="step-0" class="modal-step"><label for="checklist-name" class="block text-sm font-bold text-slate-700 mb-2">שם הרשימה</label><input type="text" id="checklist-name" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400" placeholder="לדוגמה: אריזה לטיסה לניו יורק"></div>
-                <div id="step-1" class="modal-step"><label class="block text-sm font-bold text-slate-700 mb-2">שאלה 1: בחר סוג רשימה</label><select id="checklist-type" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"><option value="">-- בחר --</option><option value="לפני הטיול">✈️ לפני הטיול</option><option value="לפני יעד">🗺️ לפני יעד</option><option value="לפני מעבר">🚚 לפני מעבר</option><option value="אחר">📋 אחר</option></select><input type="text" id="checklist-type-other" class="w-full p-3 border border-slate-300 rounded-lg mt-2 hidden" placeholder="הקלד שם לסוג הרשימה"></div>
-                <div id="step-2" class="modal-step"></div>
-                <div id="step-3" class="modal-step"></div>
-                <div id="step-items" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים לרשימה</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">🟡 נמוכה</option><option value="2" selected>🟠 בינונית</option><option value="3">🔴 גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
-            </div>
-            <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
-                <button id="modal-back-btn" class="py-2 px-4 rounded-lg hover:bg-slate-200 transition hidden">אחורה</button>
-                <div id="modal-steps-indicator" class="text-sm text-slate-500"></div>
-                <button id="modal-next-btn" class="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">הבא</button>
-                <button id="modal-finish-btn" class="py-2 px-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition hidden">שמור רשימה</button>
+        <div id="checklist-modal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                <div class="p-5 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                    <h3 id="modal-title" class="text-2xl font-bold text-slate-800">יצירת רשימה חדשה</h3>
+                    <button id="modal-close-btn" class="text-slate-400 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
+                </div>
+                <div class="p-6 space-y-6 overflow-y-auto">
+                    <div id="step-0" class="modal-step"><label for="checklist-name" class="block text-sm font-bold text-slate-700 mb-2">שם הרשימה</label><input type="text" id="checklist-name" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400" placeholder="לדוגמה: אריזה לטיסה לניו יורק"></div>
+                    <div id="step-1" class="modal-step"><label class="block text-sm font-bold text-slate-700 mb-2">שאלה 1: בחר סוג רשימה</label><select id="checklist-type" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"><option value="">-- בחר --</option><option value="לפני הטיול">✈️ לפני הטיול</option><option value="לפני יעד">🗺️ לפני יעד</option><option value="לפני מעבר">🚚 לפני מעבר</option><option value="אחר">📋 אחר</option></select><input type="text" id="checklist-type-other" class="w-full p-3 border border-slate-300 rounded-lg mt-2 hidden" placeholder="הקלד שם לסוג הרשימה"></div>
+                    <div id="step-2" class="modal-step"></div>
+                    <div id="step-3" class="modal-step"></div>
+                    <div id="step-items" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים לרשימה</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">🟡 נמוכה</option><option value="2" selected>🟠 בינונית</option><option value="3">🔴 גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
+                </div>
+                <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
+                    <button id="modal-back-btn" class="py-2 px-4 rounded-lg hover:bg-slate-200 transition hidden">אחורה</button>
+                    <div id="modal-steps-indicator" class="text-sm text-slate-500"></div>
+                    <button id="modal-next-btn" class="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">הבא</button>
+                    <button id="modal-finish-btn" class="py-2 px-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition hidden">שמור רשימה</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="delete-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center"><div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full"><div class="text-red-500 mb-4"><i class="fas fa-exclamation-triangle fa-3x"></i></div><h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3><p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה ולא ניתן יהיה לשחזר את הרשימה.</p><div class="flex justify-center gap-4"><button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button><button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button></div></div></div>
+        <div id="delete-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center"><div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full"><div class="text-red-500 mb-4"><i class="fas fa-exclamation-triangle fa-3x"></i></div><h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3><p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה ולא ניתן יהיה לשחזר את הרשימה.</p><div class="flex justify-center gap-4"><button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button><button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button></div></div></div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -248,12 +254,10 @@
                 renderChecklists();
                 loader.style.opacity = '0';
                 setTimeout(() => loader.style.display = 'none', 500);
-                mainContent.classList.add('loaded');
             }, (error) => {
                 console.error("Firestore snapshot error:", error);
                 checklistsContainer.innerHTML = `<div class="text-center p-10 bg-red-100 text-red-700 rounded-lg">אירעה שגיאה בטעינת הנתונים.</div>`;
                 loader.style.display = 'none';
-                mainContent.classList.add('loaded');
             });
         };
 
@@ -265,7 +269,7 @@
         
         const renderChecklists = () => {
             if (checklistsData.length === 0) {
-                checklistsContainer.innerHTML = `<div class="text-center p-16 bg-white rounded-2xl shadow-sm"><i class="fas fa-folder-open fa-4x text-slate-300 mb-6"></i><h3 class="text-2xl font-bold text-slate-700">עדיין אין רשימות...</h3><p class="text-slate-500 mt-2">זה הזמן להתחיל! לחץ על "הוספת רשימה חדשה" כדי ליצור את הראשונה.</p></div>`;
+                checklistsContainer.innerHTML = `<div class="text-center p-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm"><i class="fas fa-folder-open fa-4x text-slate-400 mb-6"></i><h3 class="text-2xl font-bold text-slate-700">עדיין אין רשימות...</h3><p class="text-slate-500 mt-2">זה הזמן להתחיל! לחץ על "הוספת רשימה חדשה" כדי ליצור את הראשונה.</p></div>`;
                 return;
             }
 
@@ -282,7 +286,7 @@
             for (const type of sortedTypes) {
                 const listsInType = groupedByType[type];
                 const typeEmoji = getEmoji('types', type);
-                html += `<details class="bg-white rounded-2xl shadow-lg overflow-hidden" open><summary class="text-2xl font-bold text-slate-800 flex justify-between items-center p-5 bg-gradient-to-r from-sky-50 to-blue-50"><span>${typeEmoji} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="p-4 space-y-4 bg-slate-50">`;
+                html += `<details class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden" open><summary class="text-2xl font-bold text-slate-800 flex justify-between items-center p-5 bg-white/20"><span>${typeEmoji} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="p-4 space-y-4 bg-slate-50/80">`;
 
                 const destinationGroups = groupBy(listsInType, 'destination');
                 const sortedDestKeys = Object.keys(destinationGroups).sort();
@@ -293,7 +297,7 @@
                     const destEmoji = getEmoji('destinations', destKey);
 
                     const containerTag = isSingleFallbackDest ? 'div' : 'details';
-                    html += `<${containerTag} class="bg-white rounded-xl shadow-md" ${isSingleFallbackDest ? '' : 'open'}>`;
+                    html += `<${containerTag} class="bg-white/90 rounded-xl shadow-md" ${isSingleFallbackDest ? '' : 'open'}>`;
                     if (!isSingleFallbackDest) {
                         html += `<summary class="text-xl font-bold text-slate-700 flex justify-between items-center p-4"><span>${destEmoji} יעד: ${destKey}</span><i class="fa-solid fa-chevron-down chevron-icon text-lg"></i></summary>`;
                     }
@@ -308,7 +312,7 @@
                         const topicEmoji = getEmoji('topics', topicKey);
 
                         const subContainerTag = isSingleFallbackTopic ? 'div' : 'details';
-                        html += `<${subContainerTag} class="bg-slate-50 rounded-lg" ${isSingleFallbackTopic ? '' : 'open'}>`;
+                        html += `<${subContainerTag} class="bg-slate-50/90 rounded-lg" ${isSingleFallbackTopic ? '' : 'open'}>`;
                         if (!isSingleFallbackTopic) {
                              html += `<summary class="font-semibold text-slate-600 flex justify-between items-center p-3"><span>${topicEmoji} נושא: ${topicKey}</span><i class="fa-solid fa-chevron-down chevron-icon text-base"></i></summary>`;
                         }
@@ -344,7 +348,7 @@
                     </label>
                 </div>`).join('');
 
-            return `<div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200"><div class="flex justify-between items-center mb-3"><h4 class="text-lg font-bold text-blue-700">${list.name}</h4><div><button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button><button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button></div></div><div class="space-y-2">${itemsHtml || '<p class="text-center text-slate-400 p-4">אין פריטים ברשימה זו.</p>'}</div></div>`;
+            return `<div class="bg-white/80 p-4 rounded-xl shadow-sm border border-slate-200"><div class="flex justify-between items-center mb-3"><h4 class="text-lg font-bold text-blue-700">${list.name}</h4><div><button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button><button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button></div></div><div class="space-y-2">${itemsHtml || '<p class="text-center text-slate-400 p-4">אין פריטים ברשימה זו.</p>'}</div></div>`;
         };
 
         const openModal = (listToEdit = null) => {
@@ -356,7 +360,6 @@
             modalItems = listToEdit ? JSON.parse(JSON.stringify(listToEdit.items)) : [];
             renderModalItems();
 
-            // Always start from the beginning
             currentModalStep = 0;
             updateModalStep(true);
 
@@ -372,53 +375,30 @@
         const updateModalStep = (isOpening = false) => {
             const type = document.getElementById('checklist-type').value;
 
-            // Determine the number of question steps before the final "add items" step
             if (type.includes('יעד') || type.includes('מעבר')) {
-                numQuestionSteps = 3; // Name -> Type -> Destination -> SubType
+                numQuestionSteps = 4;
             } else if (type.includes('הטיול')) {
-                numQuestionSteps = 2; // Name -> Type -> SubType
-            } else { // This covers 'אחר' and the initial empty state
-                numQuestionSteps = 1; // Name -> Type
+                numQuestionSteps = 3;
+            } else {
+                numQuestionSteps = 2;
+            }
+            
+            if (isOpening) {
+                currentModalStep = 0;
             }
 
-            // Hide all steps first
             document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('active'));
             
-            // Show the correct step
-            if (currentModalStep <= numQuestionSteps) {
-                // We are in a question step
-                document.getElementById(`step-${currentModalStep}`).classList.add('active');
-            } else {
-                // We are in the final item-adding step
-                document.getElementById('step-items').classList.add('active');
-            }
-
-            // Update button visibility
-            const atLastQuestionStep = currentModalStep === numQuestionSteps;
-            const onItemsStep = currentModalStep > numQuestionSteps;
+            const isLastStep = currentModalStep >= numQuestionSteps;
+            const currentStepId = isLastStep ? 'step-items' : `step-${currentModalStep}`;
+            document.getElementById(currentStepId).classList.add('active');
 
             document.getElementById('modal-back-btn').classList.toggle('hidden', currentModalStep === 0);
-            document.getElementById('modal-next-btn').classList.toggle('hidden', atLastQuestionStep || onItemsStep);
-            document.getElementById('modal-finish-btn').classList.toggle('hidden', !atLastQuestionStep);
-
-            // Special case for finish button if it's the last step
-            if(atLastQuestionStep) {
-                 document.getElementById('modal-finish-btn').classList.remove('hidden');
-                 document.getElementById('modal-next-btn').classList.add('hidden');
-            } else {
-                 document.getElementById('modal-finish-btn').classList.add('hidden');
-                 document.getElementById('modal-next-btn').classList.remove('hidden');
-            }
-            if(onItemsStep) {
-                document.getElementById('modal-finish-btn').classList.remove('hidden');
-                document.getElementById('modal-next-btn').classList.add('hidden');
-            }
-
-
-            // Update step indicator
-            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${numQuestionSteps + 2}`;
+            document.getElementById('modal-next-btn').classList.toggle('hidden', isLastStep);
+            document.getElementById('modal-finish-btn').classList.toggle('hidden', !isLastStep);
             
-            // Generate dynamic content for the next step if needed
+            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${numQuestionSteps + 1}`;
+            
             if (currentModalStep === 1) generateStep2Content();
             if (currentModalStep === 2) generateStep3Content();
         };
@@ -457,13 +437,6 @@
         };
 
         const handleFinishModal = async () => {
-            // Move to the items step if we are not there yet
-            if(currentModalStep <= numQuestionSteps) {
-                currentModalStep++;
-                updateModalStep();
-                return;
-            }
-
             const name = document.getElementById('checklist-name').value;
             if (!name) return alert('חובה לתת שם לרשימה.');
             
@@ -478,7 +451,6 @@
             let destElement = document.getElementById('checklist-destination');
             let destination = destElement ? destElement.value : null;
             if (destination) destination = destination.replace(/[^א-ת\s]/g, '').trim();
-
 
             const checklistData = { name, type, destination, subType, items: modalItems, updatedAt: serverTimestamp() };
             
