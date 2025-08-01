@@ -19,7 +19,7 @@
       <img class="w-6 h-6" src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
       התחברות עם גוגל
     </button>
-    <p id="auth-status" class="mt-4 h-5 text-center font-medium"></p>
+    <p id="auth-status" class="mt-4 h-6 text-center font-medium"></p>
   </div>
 
   <script type="module">
@@ -32,7 +32,7 @@
       signOut
     } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
-    // נא להכניס את שני המיילים באותיות קטנות
+    // רשימת המיילים המותרים (מכול באותיות קטנות)
     const allowedEmails = [
       "doronenakache@gmail.com",
       "ronyla6305@gmail.com"
@@ -55,31 +55,35 @@
     const btn = document.getElementById('google-login-btn');
     const status = document.getElementById('auth-status');
 
+    // ניסיון התחברות
     btn.addEventListener('click', async () => {
       status.textContent = '';
       try {
         await signInWithPopup(auth, provider);
+        // המשך בבדיקת onAuthStateChanged
       } catch (e) {
+        // שגיאת popup או אחרת
         status.className = "mt-4 text-red-500 font-medium";
-        status.textContent = `שגיאה: ${e.message}`;
+        status.textContent = `שגיאה בהתחברות: ${e.code}`;
       }
     });
 
+    // בדיקת מצב התחברות
     onAuthStateChanged(auth, user => {
       if (user) {
         const email = (user.email || "").toLowerCase();
-        console.log("Firebase returned email:", email);
+        console.log("Firebase email:", email);
         if (allowedEmails.includes(email)) {
+          // התחברות מוצלחת
           status.className = "mt-4 text-green-600 font-medium";
           status.textContent = `התחברת בהצלחה, שלום ${user.displayName}!`;
+          setTimeout(() => { window.location.href = 'index.html'; }, 500);
         } else {
+          // אימייל לא מורשה
           status.className = "mt-4 text-red-500 font-medium";
-          status.textContent = "המשתמש לא מורשה.";
+          status.textContent = `הכניסה נדחתה: המייל "${user.email}" אינו מורשה.`;
           signOut(auth);
         }
-      } else {
-        status.className = "";
-        status.textContent = "";
       }
     });
   </script>
