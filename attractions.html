@@ -30,15 +30,7 @@
         .step-indicator { transition: all 0.4s ease-in-out; }
         .item-card { cursor: pointer; }
   
-    <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log('SW registered'))
-        .catch(err => console.log('SW failed:', err));
-    });
-  }
-</script>
+  
     
       </style>
 </head>
@@ -743,6 +735,15 @@
                 window.location.replace('login.html');
             }
         });
+        
+        if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('SW registered'))
+        .catch(err => console.log('SW failed:', err));
+    });
+  }
+        
     </script>
 </body>
 </html>
