@@ -456,7 +456,7 @@
 
                     const destSection = document.createElement('details');
                     destSection.className = "bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden";
-                    destSection.open = true;
+                    // destSection.open = true; // This line was removed
 
                     const destEmoji = siteData.destinationEmojis[dest] || '📍';
                     destSection.innerHTML = `<summary class="text-3xl font-bold text-slate-800 flex justify-between items-center p-5 hover:bg-white/30 transition"><span class="flex items-center gap-4">${destEmoji} ${dest}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
@@ -474,7 +474,7 @@
                     Object.keys(groupedByType).sort().forEach(type => {
                         const typeSection = document.createElement('details');
                         typeSection.className = "bg-white/90 p-4 rounded-xl shadow-md";
-                        typeSection.open = true;
+                        // typeSection.open = true; // This line was removed
                         
                         const typeIcon = siteData.placeTypeEmojis[type] || '📌';
                         let summaryHtml = `<summary class="text-xl font-semibold text-slate-700 flex justify-between items-center"><span>${typeIcon} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
