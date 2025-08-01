@@ -36,17 +36,18 @@
     <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.imgur.com/xC0eTsS.jpeg');"></div>
     <div class="fixed inset-0 z-0 bg-black/50"></div>
 
+    <!-- Sidebar (z-60) - Must be on top of other elements like modal and overlay -->
+    <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-60 transform translate-x-full overflow-y-auto">
+        <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
+            <h2 class="text-2xl font-bold text-slate-800">תפריט המסע 🧭</h2>
+            <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <nav id="main-menu" class="p-4 space-y-2"></nav>
+    </aside>
+    <div id="overlay" class="fixed inset-0 bg-black/50 z-50 hidden"></div>
+
     <!-- Scrollable Content Wrapper -->
     <div class="relative z-10">
-        <!-- Sidebar -->
-        <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
-            <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
-                <h2 class="text-2xl font-bold text-slate-800">תפריט המסע 🧭</h2>
-                <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
-            </div>
-            <nav id="main-menu" class="p-4 space-y-2"></nav>
-        </aside>
-
         <!-- Header -->
         <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-40 shadow-sm">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,8 +82,6 @@
         </main>
     </div>
     
-    <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
-
     <!-- Add/Edit Item Modal -->
     <div id="item-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col">
@@ -90,23 +89,34 @@
                 <h3 id="modal-title" class="text-2xl font-bold text-slate-800">הוספת מקום חדש</h3>
                 <button id="modal-close-btn" class="text-slate-400 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
             </div>
-            <!-- Step Indicator Bar -->
             <div class="w-full bg-slate-200 h-2.5">
                 <div id="step-progress-bar" class="bg-blue-500 h-2.5 rounded-r-full transition-all duration-500" style="width: 0%;"></div>
             </div>
             <form id="item-form" class="flex-grow overflow-y-auto p-6 space-y-6">
-                <!-- Steps will be dynamically generated here -->
                 <div id="step-1" class="modal-step"></div><div id="step-2" class="modal-step"></div><div id="step-3" class="modal-step"></div><div id="step-4" class="modal-step"></div><div id="step-5" class="modal-step"></div><div id="step-6" class="modal-step"></div><div id="step-7" class="modal-step"></div><div id="step-8" class="modal-step"></div><div id="step-9" class="modal-step"></div>
             </form>
             <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
                 <button type="button" id="modal-back-btn" class="py-2 px-5 rounded-lg hover:bg-slate-200 transition hidden font-semibold">אחורה</button>
-                <div id="modal-steps-indicator" class="text-sm text-slate-500 font-semibold"></div>
+                <div class="flex-grow text-center"><div id="modal-error-message" class="text-red-500 text-sm font-bold h-5"></div></div>
+                <div id="modal-steps-indicator" class="text-sm text-slate-500 font-semibold mx-4"></div>
                 <button type="button" id="modal-next-btn" class="py-2 px-5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">הבא</button>
                 <button type="submit" form="item-form" id="modal-finish-btn" class="py-2 px-5 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition hidden">הוסף לדף</button>
             </div>
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
+            <div class="text-red-500 mb-4"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
+            <h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3>
+            <p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה.</p>
+            <div class="flex justify-center gap-4">
+                <button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button>
+                <button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -139,16 +149,16 @@
 
         const siteData = {
             menu: [
-                    { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
-                    { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [ { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' } ]},
-                    { id: 'niagara', page: 'niagara.html', title: '❄️ קנדה', emoji: '🇨🇦', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
-                    { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
-                    { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
-                    { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
-                    { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
-                    { id: 'arizona', page: 'arizona.html', title: '🏜️ אריזונה', emoji: '🏜️', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' } ]},
-                    { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
-                    { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
+                { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
+                { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [ { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' } ]},
+                { id: 'niagara', page: 'niagara.html', title: '❄️ קנדה', emoji: '🇨🇦', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
+                { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
+                { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
+                { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
+                { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
+                { id: 'arizona', page: 'arizona.html', title: '🏜️ אריזונה', emoji: '🏜️', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' } ]},
+                { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
+                { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
             ],
             destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו"],
             placeTypes: ["מסעדה/אוכל", "סופר", "מוזיאון", "קניון/מרכז קניות", "אטרקציה", "חוף", "סיור"],
@@ -169,6 +179,8 @@
         const finishBtn = document.getElementById('modal-finish-btn');
         const stepsIndicator = document.getElementById('modal-steps-indicator');
         const progressBar = document.getElementById('step-progress-bar');
+        const modalError = document.getElementById('modal-error-message');
+        const deleteModal = document.getElementById('delete-confirm-modal');
 
         // --- App Initialization ---
         function initApp() {
@@ -211,12 +223,14 @@
             overlay.addEventListener('click', toggleSidebar);
             openModalBtn.addEventListener('click', openModalHandler);
 
-            // Start listening to Firestore
             const q = query(attractionsCollection, orderBy('createdAt', 'desc'));
             onSnapshot(q, (snapshot) => {
                 allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderAllItems();
-            }, (error) => { loadingMessage.textContent = "שגיאה בטעינת המידע."; });
+            }, (error) => { 
+                console.error("Firestore snapshot error:", error);
+                loadingMessage.textContent = "שגיאה בטעינת המידע."; 
+            });
         }
 
         // --- Modal & Form Logic ---
@@ -232,17 +246,27 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             if (map) { map.remove(); map = null; marker = null; }
+            showModalError(''); // Clear any previous errors
         }
         
         function updateModalView() {
-            isRestaurant = document.getElementById('item-type')?.value === 'מסעדה/אוכל';
+            const itemTypeEl = document.getElementById('item-type');
+            isRestaurant = itemTypeEl ? itemTypeEl.value === 'מסעדה/אוכל' : false;
             totalModalSteps = isRestaurant ? 9 : 7;
 
             document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
             const currentStepEl = document.getElementById(`step-${currentModalStep}`);
             if (currentStepEl) {
                 currentStepEl.style.display = 'block';
-                generateStepContent(currentModalStep);
+                // Only generate content if it's not there yet, to preserve user input
+                if (!currentStepEl.innerHTML.trim()) {
+                    generateStepContent(currentModalStep);
+                }
+            }
+            
+            // Special case for map: ensure it's rendered correctly
+            if (document.getElementById('map-preview')) {
+                initMapForStep();
             }
 
             backBtn.classList.toggle('hidden', currentModalStep === 1);
@@ -287,8 +311,15 @@
         
         function handleTypeChange(e) {
             const otherInput = document.getElementById('item-type-other');
-            if (e.target.value === 'אחר') otherInput.classList.remove('hidden');
-            else otherInput.classList.add('hidden');
+            if (otherInput) {
+                otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
+            }
+            // When type changes, we need to regenerate the next steps
+            for(let i = currentModalStep + 1; i <= 9; i++) {
+                const stepContainer = document.getElementById(`step-${i}`);
+                if(stepContainer) stepContainer.innerHTML = '';
+            }
+            updateModalView();
         }
 
         function createLocationHtml(inputId) {
@@ -310,7 +341,10 @@
                     map = L.map(mapDiv).setView([40.7128, -74.0060], 10);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
                 }
-            }, 100);
+                if (map) {
+                    map.invalidateSize();
+                }
+            }, 200); // Increased delay slightly for stability with animation
         }
 
         async function findLocationOnMap(e) {
@@ -326,18 +360,34 @@
                     map.setView(coords, 15);
                     if (marker) marker.setLatLng(coords);
                     else marker = L.marker(coords).addTo(map);
-                } else alert('לא נמצאה כתובת. נסה שוב עם פרטים נוספים.');
-            } catch (err) { alert('שגיאה בחיפוש הכתובת.'); }
+                } else {
+                    showModalError('לא נמצאה כתובת. נסה שוב.');
+                }
+            } catch (err) { 
+                console.error("Location search error:", err);
+                showModalError('שגיאה בחיפוש הכתובת.'); 
+            }
         }
         
+        function showModalError(message) {
+            modalError.textContent = message;
+            if (message) {
+                setTimeout(() => {
+                    modalError.textContent = '';
+                }, 4000);
+            }
+        }
+
         // --- Firestore & Rendering Logic ---
         function renderAllItems() {
+            if (!itemsContainer) return;
             if (allItems.length === 0) {
                 itemsContainer.innerHTML = `<div class="text-center p-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm"><i class="fas fa-map-signs fa-4x text-slate-400 mb-6"></i><h3 class="text-2xl font-bold text-slate-700">עדיין אין המלצות...</h3><p class="text-slate-500 mt-2">זה הזמן להתחיל! לחץ על "הוספת מקום" כדי ליצור את הראשון.</p></div>`;
                 return;
             }
             
             itemsContainer.innerHTML = '';
+            loadingMessage.style.display = 'none';
 
             const groupedByDest = allItems.reduce((acc, item) => {
                 const dest = item.destination || 'כללי';
@@ -386,8 +436,8 @@
                                 <div class="local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center gap-4 mb-4">
                                     <span class="font-bold text-slate-600 text-sm">סינון:</span>
                                     <div class="flex items-center gap-2">
-                                        <input type="checkbox" data-destination="${dest}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest].kosher ? 'checked' : ''}>
-                                        <label class="text-sm font-medium text-slate-600">כשר בלבד</label>
+                                        <input type="checkbox" id="kosher-filter-${dest.replace(/\s/g, '')}" data-destination="${dest}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest].kosher ? 'checked' : ''}>
+                                        <label for="kosher-filter-${dest.replace(/\s/g, '')}" class="text-sm font-medium text-slate-600">כשר בלבד</label>
                                     </div>
                                     <select data-destination="${dest}" class="local-filter-food-type form-select rounded-md text-sm">
                                         <option value="">כל סוגי האוכל</option>
@@ -415,7 +465,7 @@
 
                                 card.innerHTML = `
                                     <div class="flex-grow">
-                                        <div class="flex justify-between items-start"><h5 class="text-lg font-bold text-slate-800">${item.name}</h5><button data-id="${item.id}" class="delete-btn text-slate-300 hover:text-red-500 text-xs"><i class="fas fa-trash"></i></button></div>
+                                        <div class="flex justify-between items-start"><h5 class="text-lg font-bold text-slate-800">${item.name}</h5><button data-id="${item.id}" data-name="${item.name}" class="delete-btn text-slate-300 hover:text-red-500 text-xs"><i class="fas fa-trash"></i></button></div>
                                         <div class="flex flex-wrap gap-2 my-2 min-h-[26px]">${detailsHtml}</div>
                                         ${item.hours ? `<p class="text-sm text-slate-500 mt-1"><i class="fa-regular fa-clock fa-fw text-slate-400"></i> ${item.hours}</p>` : ''}
                                         ${item.location ? `<p class="text-sm text-slate-500 mt-1"><i class="fa-solid fa-location-dot fa-fw text-slate-400"></i> ${item.location}</p>` : ''}
@@ -443,26 +493,39 @@
         // --- Event Listeners ---
         nextBtn.addEventListener('click', () => { if (currentModalStep < totalModalSteps) { currentModalStep++; updateModalView(); } });
         backBtn.addEventListener('click', () => { if (currentModalStep > 1) { currentModalStep--; updateModalView(); } });
-        modal.addEventListener('click', e => { if (e.target.classList.contains('find-location-btn')) findLocationOnMap(e); });
+        modal.addEventListener('click', e => { if (e.target.closest('.find-location-btn')) findLocationOnMap(e); });
         closeModalBtn.addEventListener('click', closeModalHandler);
+
+        form.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (!nextBtn.classList.contains('hidden')) {
+                    nextBtn.click();
+                } else if (!finishBtn.classList.contains('hidden')) {
+                    finishBtn.click();
+                }
+            }
+        });
         
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (currentModalStep !== totalModalSteps) return; // Guard clause
+
             const getVal = id => document.getElementById(id) ? document.getElementById(id).value : null;
+            
+            const name = getVal('item-name');
+            if (!name || name.trim() === '') {
+                showModalError('שם המקום הוא שדה חובה.');
+                return;
+            }
+
             let finalType = getVal('item-type');
             if (finalType === 'אחר') {
-                const otherVal = getVal('item-type-other').trim();
-                if (otherVal) {
-                    const existingType = siteData.placeTypes.find(pt => pt.toLowerCase() === otherVal.toLowerCase());
-                    finalType = existingType || otherVal;
-                    if (!existingType) siteData.placeTypes.push(finalType);
-                } else {
-                    finalType = 'כללי';
-                }
+                finalType = getVal('item-type-other').trim() || 'כללי';
             }
 
             const data = {
-                name: getVal('item-name'), destination: getVal('item-destination'), type: finalType,
+                name: name, destination: getVal('item-destination'), type: finalType,
                 isKosher: isRestaurant ? getVal('item-kosher') : null,
                 foodType: isRestaurant ? getVal('item-food-type') : null,
                 location: isRestaurant ? getVal('item-location-restaurant') : getVal('item-location-other'),
@@ -472,18 +535,48 @@
                 createdAt: serverTimestamp(), author: currentUser.uid,
             };
 
-            try { await addDoc(attractionsCollection, data); closeModalHandler(); } 
-            catch (err) { alert("שגיאה בהוספת הפריט."); }
+            try { 
+                await addDoc(attractionsCollection, data); 
+                closeModalHandler(); 
+            } 
+            catch (err) { 
+                console.error("Error adding document:", err);
+                showModalError("שגיאה בהוספת הפריט."); 
+            }
         });
 
-        itemsContainer.addEventListener('click', async (e) => {
+        itemsContainer.addEventListener('click', (e) => {
             const deleteBtn = e.target.closest('.delete-btn');
             if (deleteBtn) {
                 const itemId = deleteBtn.dataset.id;
-                if (confirm('האם למחוק את ההמלצה?')) {
-                    try { await deleteDoc(doc(db, 'attractions', itemId)); } 
-                    catch (error) { alert("Failed to delete item."); }
-                }
+                const itemName = deleteBtn.dataset.name;
+                
+                const modalTitle = document.getElementById('delete-modal-title');
+                const confirmBtn = document.getElementById('delete-modal-confirm');
+                
+                modalTitle.textContent = `האם למחוק את "${itemName}"?`;
+                
+                const confirmHandler = async () => {
+                    try {
+                        await deleteDoc(doc(db, 'attractions', itemId));
+                    } catch (error) {
+                        console.error("Failed to delete item:", error);
+                    } finally {
+                        closeDeleteModal();
+                    }
+                };
+
+                const closeDeleteModal = () => {
+                    deleteModal.classList.add('hidden');
+                    deleteModal.classList.remove('flex');
+                    confirmBtn.removeEventListener('click', confirmHandler);
+                };
+                
+                confirmBtn.addEventListener('click', confirmHandler, { once: true });
+                document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
+
+                deleteModal.classList.remove('hidden');
+                deleteModal.classList.add('flex');
             }
         });
         
