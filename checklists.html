@@ -73,7 +73,18 @@
             background: #f0f4f8; display: flex; align-items: center;
             justify-content: center; z-index: 1000; transition: opacity 0.5s ease;
         }
-    </style>
+   
+    <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('SW registered'))
+        .catch(err => console.log('SW failed:', err));
+    });
+  }
+</script>
+    
+     </style>
 </head>
 <body>
 
