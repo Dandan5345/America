@@ -28,6 +28,7 @@
         .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
         .step-indicator { transition: all 0.4s ease-in-out; }
+        .item-card { cursor: pointer; }
     </style>
 </head>
 <body class="bg-slate-100">
@@ -36,8 +37,7 @@
     <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.imgur.com/xC0eTsS.jpeg');"></div>
     <div class="fixed inset-0 z-0 bg-black/50"></div>
 
-    <!-- Sidebar and Overlay are moved here, outside the main content wrapper -->
-    <!-- This ensures their z-index context is at the root level -->
+    <!-- Sidebar and Overlay -->
     <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-[60] transform translate-x-full overflow-y-auto">
         <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
             <h2 class="text-2xl font-bold text-slate-800">תפריט המסע 🧭</h2>
@@ -106,8 +106,16 @@
         </div>
     </div>
 
+    <!-- Details Modal -->
+    <div id="details-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4">
+        <div id="details-modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col relative">
+            <!-- Content will be injected by JS -->
+        </div>
+    </div>
+
+
     <!-- Delete Confirmation Modal -->
-    <div id="delete-confirm-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center">
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black/60 z-[80] hidden items-center justify-center">
         <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
             <div class="text-red-500 mb-4"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
             <h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3>
@@ -122,7 +130,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, orderBy, serverTimestamp, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
@@ -147,6 +155,7 @@
         let marker = null;
         let allItems = [];
         let activeFilters = {}; 
+        let editingItemId = null; // To track which item is being edited
 
         const siteData = {
             menu: [
@@ -182,6 +191,7 @@
         const progressBar = document.getElementById('step-progress-bar');
         const modalError = document.getElementById('modal-error-message');
         const deleteModal = document.getElementById('delete-confirm-modal');
+        const detailsModal = document.getElementById('details-modal');
 
         // --- App Initialization ---
         function initApp() {
@@ -222,11 +232,13 @@
             hamburgerBtn.addEventListener('click', toggleSidebar);
             closeSidebarBtn.addEventListener('click', toggleSidebar);
             overlay.addEventListener('click', toggleSidebar);
-            openModalBtn.addEventListener('click', openModalHandler);
+            openModalBtn.addEventListener('click', () => openModalHandler());
 
-            const q = query(attractionsCollection, orderBy('createdAt', 'desc'));
+            const q = query(attractionsCollection);
             onSnapshot(q, (snapshot) => {
                 allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Sort by creation date descending
+                allItems.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
                 renderAllItems();
             }, (error) => { 
                 console.error("Firestore snapshot error:", error);
@@ -235,20 +247,58 @@
         }
 
         // --- Modal & Form Logic ---
-        function openModalHandler() {
-            currentModalStep = 1;
+        async function openModalHandler(itemId = null) {
+            editingItemId = itemId;
             form.reset();
-            // Clear all step content to ensure a fresh start
             for(let i = 1; i <= 9; i++) {
                 const stepContainer = document.getElementById(`step-${i}`);
                 if(stepContainer) stepContainer.innerHTML = '';
             }
+
+            const modalTitle = document.getElementById('modal-title');
+            const finishButton = document.getElementById('modal-finish-btn');
+
+            if (editingItemId) {
+                modalTitle.textContent = 'עריכת מקום';
+                finishButton.textContent = 'שמור שינויים';
+                const item = allItems.find(i => i.id === editingItemId);
+                if (item) {
+                    isRestaurant = item.type === 'מסעדה/אוכל';
+                    // Pre-generate all steps to populate them
+                    for(let i=1; i<= (isRestaurant ? 9 : 7); i++) {
+                        generateStepContent(i);
+                    }
+                    // Now populate the fields
+                    document.getElementById('item-name').value = item.name || '';
+                    document.getElementById('item-destination').value = item.destination || '';
+                    document.getElementById('item-type').value = item.type || '';
+                    if (isRestaurant) {
+                        document.getElementById('item-kosher').value = item.isKosher || 'לא';
+                        document.getElementById('item-food-type').value = item.foodType || '';
+                        document.getElementById('item-location-restaurant').value = item.location || '';
+                        document.getElementById('item-hours-restaurant').value = item.hours || '';
+                        document.getElementById('item-link-restaurant').value = item.link || '';
+                        document.getElementById('item-reservation-restaurant').value = item.reservation || 'לא';
+                    } else {
+                        document.getElementById('item-location-other').value = item.location || '';
+                        document.getElementById('item-hours-other').value = item.hours || '';
+                        document.getElementById('item-link-other').value = item.link || '';
+                        document.getElementById('item-reservation-other').value = item.reservation || 'לא';
+                    }
+                }
+            } else {
+                modalTitle.textContent = 'הוספת מקום חדש';
+                finishButton.textContent = 'הוסף לדף';
+            }
+            
+            currentModalStep = 1;
             updateModalView();
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
 
         function closeModalHandler() {
+            editingItemId = null;
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             if (map) { map.remove(); map = null; marker = null; }
@@ -257,20 +307,18 @@
         
         function updateModalView() {
             const itemTypeEl = document.getElementById('item-type');
-            isRestaurant = itemTypeEl ? itemTypeEl.value === 'מסעדה/אוכל' : false;
+            isRestaurant = itemTypeEl ? itemTypeEl.value === 'מסעדה/אוכל' : isRestaurant;
             totalModalSteps = isRestaurant ? 9 : 7;
 
             document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
             const currentStepEl = document.getElementById(`step-${currentModalStep}`);
             if (currentStepEl) {
                 currentStepEl.style.display = 'block';
-                // Only generate content if it's not there yet, to preserve user input
                 if (!currentStepEl.innerHTML.trim()) {
                     generateStepContent(currentModalStep);
                 }
             }
             
-            // Special case for map: ensure it's rendered correctly
             if (document.getElementById('map-preview')) {
                 initMapForStep();
             }
@@ -320,7 +368,6 @@
             if (otherInput) {
                 otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
             }
-            // When type changes, we need to regenerate the next steps
             for(let i = currentModalStep + 1; i <= 9; i++) {
                 const stepContainer = document.getElementById(`step-${i}`);
                 if(stepContainer) stepContainer.innerHTML = '';
@@ -464,20 +511,33 @@
                         if (itemsForType.length > 0) {
                             itemsForType.forEach(item => {
                                 const card = document.createElement('div');
-                                card.className = 'bg-white p-5 rounded-xl shadow-lg flex flex-col transition-transform hover:scale-105 hover:shadow-xl';
+                                card.className = 'item-card bg-white p-5 rounded-xl shadow-lg flex flex-col transition-transform hover:scale-105 hover:shadow-xl';
+                                card.dataset.id = item.id;
+                                
                                 let detailsHtml = '';
                                 if(item.isKosher === 'כן') detailsHtml += `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">כשר</span>`;
                                 if(item.foodType) detailsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${item.foodType}</span>`;
                                 if(item.reservation && item.reservation !== 'לא') detailsHtml += `<span class="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
 
+                                const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
+
                                 card.innerHTML = `
                                     <div class="flex-grow">
-                                        <div class="flex justify-between items-start"><h5 class="text-lg font-bold text-slate-800">${item.name}</h5><button data-id="${item.id}" data-name="${item.name}" class="delete-btn text-slate-300 hover:text-red-500 text-xs"><i class="fas fa-trash"></i></button></div>
-                                        <div class="flex flex-wrap gap-2 my-2 min-h-[26px]">${detailsHtml}</div>
-                                        ${item.hours ? `<p class="text-sm text-slate-500 mt-1"><i class="fa-regular fa-clock fa-fw text-slate-400"></i> ${item.hours}</p>` : ''}
+                                        <h5 class="text-lg font-bold text-slate-800 mb-2">${item.name}</h5>
+                                        <div class="flex flex-wrap gap-2 min-h-[26px]">${detailsHtml}</div>
+                                        ${item.hours ? `<p class="text-sm text-slate-500 mt-2"><i class="fa-regular fa-clock fa-fw text-slate-400"></i> ${item.hours}</p>` : ''}
                                         ${item.location ? `<p class="text-sm text-slate-500 mt-1"><i class="fa-solid fa-location-dot fa-fw text-slate-400"></i> ${item.location}</p>` : ''}
                                     </div>
-                                    <div class="mt-4 pt-3 border-t flex justify-end">${item.link ? `<a href="${item.link}" target="_blank" class="text-blue-500 hover:underline text-sm font-semibold">פתח קישור <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>` : ''}</div>
+                                    <div class="mt-4 pt-4 border-t flex items-center justify-between gap-2">
+                                        <div class="flex gap-2">
+                                            <a href="${navLink}" target="_blank" class="action-btn bg-blue-500 text-white w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-600 transition" title="נווט עם Google Maps"><i class="fa-solid fa-diamond-turn-right"></i></a>
+                                            ${item.link ? `<a href="${item.link}" target="_blank" class="action-btn bg-green-500 text-white w-9 h-9 flex items-center justify-center rounded-full hover:bg-green-600 transition" title="פתח אתר"><i class="fa-solid fa-link"></i></a>` : ''}
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button class="edit-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-300 transition" title="עריכה"><i class="fas fa-pencil"></i></button>
+                                            <button class="delete-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:text-red-500 hover:bg-red-100 transition" title="מחיקה"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
                                 `;
                                 cardGrid.appendChild(card);
                             });
@@ -497,14 +557,63 @@
             });
         }
         
+        // --- Details Modal Logic ---
+        function openDetailsModal(itemId) {
+            const item = allItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            const modalContent = document.getElementById('details-modal-content');
+            
+            let detailsHtml = '';
+            if(item.isKosher === 'כן') detailsHtml += `<span class="text-sm font-bold text-green-700 bg-green-100 px-3 py-1 rounded-full">כשר</span>`;
+            if(item.foodType) detailsHtml += `<span class="text-sm font-bold text-sky-700 bg-sky-100 px-3 py-1 rounded-full">${item.foodType}</span>`;
+            if(item.reservation && item.reservation !== 'לא') detailsHtml += `<span class="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
+
+            const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
+
+            modalContent.innerHTML = `
+                <button id="details-modal-close" class="absolute top-4 left-4 text-slate-400 hover:text-red-500 z-10"><i class="fas fa-times fa-lg"></i></button>
+                <div class="p-6 border-b">
+                    <h3 class="text-3xl font-bold text-slate-800">${item.name}</h3>
+                    <p class="text-slate-500 mt-1">${siteData.placeTypeEmojis[item.type] || '📌'} ${item.type}</p>
+                </div>
+                <div class="p-6 flex-grow overflow-y-auto space-y-4">
+                    <div class="flex flex-wrap gap-3 items-center">${detailsHtml}</div>
+                    ${item.location ? `<div class="flex items-start gap-4"><i class="fa-solid fa-location-dot fa-fw text-slate-400 mt-1"></i><p class="text-slate-700">${item.location}</p></div>` : ''}
+                    ${item.hours ? `<div class="flex items-start gap-4"><i class="fa-regular fa-clock fa-fw text-slate-400 mt-1"></i><p class="text-slate-700">${item.hours}</p></div>` : ''}
+                </div>
+                <div class="p-4 bg-slate-100 border-t flex flex-wrap justify-center gap-3">
+                    <a href="${navLink}" target="_blank" class="flex-1 text-center bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-diamond-turn-right mr-2"></i>נווט</a>
+                    ${item.link ? `<a href="${item.link}" target="_blank" class="flex-1 text-center bg-green-500 text-white font-bold py-3 px-5 rounded-lg hover:bg-green-600 transition"><i class="fa-solid fa-link mr-2"></i>אתר</a>` : ''}
+                    <button data-id="${item.id}" class="edit-btn-modal flex-1 text-center bg-slate-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-slate-700 transition"><i class="fas fa-pencil mr-2"></i>ערוך</button>
+                </div>
+            `;
+
+            detailsModal.classList.remove('hidden');
+            detailsModal.classList.add('flex');
+            
+            document.getElementById('details-modal-close').addEventListener('click', closeDetailsModal);
+            document.querySelector('.edit-btn-modal').addEventListener('click', (e) => {
+                closeDetailsModal();
+                openModalHandler(e.currentTarget.dataset.id);
+            });
+        }
+
+        function closeDetailsModal() {
+            detailsModal.classList.add('hidden');
+            detailsModal.classList.remove('flex');
+        }
+
         // --- Event Listeners ---
         nextBtn.addEventListener('click', () => { if (currentModalStep < totalModalSteps) { currentModalStep++; updateModalView(); } });
         backBtn.addEventListener('click', () => { if (currentModalStep > 1) { currentModalStep--; updateModalView(); } });
         modal.addEventListener('click', e => { if (e.target.closest('.find-location-btn')) findLocationOnMap(e); });
         closeModalBtn.addEventListener('click', closeModalHandler);
+        detailsModal.addEventListener('click', (e) => { if (e.target.id === 'details-modal') closeDetailsModal(); });
+
 
         form.addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
                 if (!nextBtn.classList.contains('hidden')) {
                     nextBtn.click();
@@ -539,51 +648,66 @@
                 hours: isRestaurant ? getVal('item-hours-restaurant') : getVal('item-hours-other'),
                 link: isRestaurant ? getVal('item-link-restaurant') : getVal('item-link-other'),
                 reservation: isRestaurant ? getVal('item-reservation-restaurant') : getVal('item-reservation-other'),
-                createdAt: serverTimestamp(), author: currentUser.uid,
+                author: currentUser.uid,
             };
 
-            try { 
-                await addDoc(attractionsCollection, data); 
+            try {
+                if (editingItemId) {
+                    const itemRef = doc(db, 'attractions', editingItemId);
+                    await updateDoc(itemRef, data);
+                } else {
+                    data.createdAt = serverTimestamp();
+                    await addDoc(attractionsCollection, data); 
+                }
                 closeModalHandler(); 
             } 
             catch (err) { 
-                console.error("Error adding document:", err);
-                showModalError("שגיאה בהוספת הפריט."); 
+                console.error("Error saving document:", err);
+                showModalError("שגיאה בשמירת הפריט."); 
             }
         });
 
         itemsContainer.addEventListener('click', (e) => {
-            const deleteBtn = e.target.closest('.delete-btn');
-            if (deleteBtn) {
-                const itemId = deleteBtn.dataset.id;
-                const itemName = deleteBtn.dataset.name;
-                
-                const modalTitle = document.getElementById('delete-modal-title');
-                const confirmBtn = document.getElementById('delete-modal-confirm');
-                
-                modalTitle.textContent = `האם למחוק את "${itemName}"?`;
-                
-                const confirmHandler = async () => {
-                    try {
-                        await deleteDoc(doc(db, 'attractions', itemId));
-                    } catch (error) {
-                        console.error("Failed to delete item:", error);
-                    } finally {
-                        closeDeleteModal();
-                    }
-                };
+            const card = e.target.closest('.item-card');
+            const actionBtn = e.target.closest('.action-btn');
 
-                const closeDeleteModal = () => {
-                    deleteModal.classList.add('hidden');
-                    deleteModal.classList.remove('flex');
-                    confirmBtn.removeEventListener('click', confirmHandler);
-                };
+            // If an action button was clicked, don't open the details modal
+            if (actionBtn) {
+                const id = card.dataset.id;
+                const item = allItems.find(i => i.id === id);
                 
-                confirmBtn.addEventListener('click', confirmHandler, { once: true });
-                document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
+                if (actionBtn.matches('.delete-btn')) {
+                    const modalTitle = document.getElementById('delete-modal-title');
+                    const confirmBtn = document.getElementById('delete-modal-confirm');
+                    modalTitle.textContent = `האם למחוק את "${item.name}"?`;
+                    
+                    const confirmHandler = async () => {
+                        try { await deleteDoc(doc(db, 'attractions', id)); } 
+                        catch (error) { console.error("Failed to delete item:", error); } 
+                        finally { closeDeleteModal(); }
+                    };
 
-                deleteModal.classList.remove('hidden');
-                deleteModal.classList.add('flex');
+                    const closeDeleteModal = () => {
+                        deleteModal.classList.add('hidden');
+                        deleteModal.classList.remove('flex');
+                        confirmBtn.removeEventListener('click', confirmHandler);
+                    };
+                    
+                    confirmBtn.addEventListener('click', confirmHandler, { once: true });
+                    document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
+
+                    deleteModal.classList.remove('hidden');
+                    deleteModal.classList.add('flex');
+                } else if (actionBtn.matches('.edit-btn')) {
+                    openModalHandler(id);
+                }
+                // The other buttons are links, they will work automatically
+                return; 
+            }
+            
+            // If the card itself was clicked (and not a button), open details
+            if (card) {
+                openDetailsModal(card.dataset.id);
             }
         });
         
