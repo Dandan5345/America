@@ -21,46 +21,37 @@
         .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
 
-        /* Custom Checkbox Styling */
-        .checklist-item input[type="checkbox"] { display: none; }
-        .checklist-item .checkbox-icon {
-            cursor: pointer;
-            font-size: 1.5rem;
-            width: 24px;
-            text-align: center;
-        }
-        .checklist-item .fa-circle { color: #38bdf8; }
-        .checklist-item .fa-check-circle { color: #22c55e; display: none; }
-        .checklist-item input:checked ~ label .fa-circle { display: none; }
-        .checklist-item input:checked ~ label .fa-check-circle { display: inline-block; }
-        .checklist-item input:checked ~ label .item-text {
-            text-decoration: line-through;
-            color: #9ca3af;
-        }
-
+        .checklist-item input:checked + label { text-decoration: line-through; color: #9ca3af; }
+        .checklist-item input:checked + label .fa-circle { display: none; }
+        .checklist-item input:checked + label .fa-check-circle { display: inline-block; }
+        .fa-check-circle { display: none; }
+        
         .priority-3 { border-right: 4px solid #ef4444; }
         .priority-2 { border-right: 4px solid #f97316; }
         .priority-1 { border-right: 4px solid #eab308; }
 
+        /* Modal styles */
         .modal-step { display: none; }
-        .modal-step.active { display: block; animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-step.active { display: block; }
 
+        /* Loading Spinner */
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #f1f5f9; display: flex; align-items: center;
-            justify-content: center; z-index: 1000; transition: opacity 0.5s ease;
+            justify-content: center; z-index: 1000;
         }
-        #main-content { visibility: hidden; opacity: 0; transition: opacity 0.5s ease-in-out; }
         #main-content.loaded { visibility: visible; opacity: 1; }
+        #main-content { visibility: hidden; opacity: 0; transition: opacity 0.5s ease-in-out; }
     </style>
 </head>
 <body class="bg-slate-100">
 
+    <!-- Loading Spinner -->
     <div id="loader">
         <i class="fas fa-spinner fa-spin fa-3x text-blue-500"></i>
     </div>
 
+    <!-- Sidebar (Full Navigation Menu) -->
     <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
         <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
             <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
@@ -69,6 +60,7 @@
         <nav id="main-menu" class="p-4 space-y-2"></nav>
     </aside>
 
+    <!-- Main Content -->
     <div id="main-content">
         <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -96,42 +88,96 @@
                         <i class="fas fa-plus mr-2"></i> הוסף רשימה
                     </button>
                 </div>
-                <div id="checklists-container" class="space-y-6"></div>
+
+                <div id="checklists-container" class="space-y-6">
+                    <!-- Checklists from Firestore will be rendered here -->
+                </div>
             </div>
         </main>
     </div>
     
     <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
 
+    <!-- Add/Edit Checklist Modal -->
     <div id="checklist-modal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
-            <div class="p-5 border-b flex justify-between items-center">
+            <div class="p-5 border-b">
                 <h3 id="modal-title" class="text-2xl font-bold text-slate-800">יצירת רשימה חדשה</h3>
-                <button id="modal-close-btn" class="text-slate-400 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
             </div>
             <div class="p-6 space-y-6 overflow-y-auto">
-                <div id="step-0" class="modal-step"><label for="checklist-name" class="block text-sm font-bold text-slate-700 mb-2">שם הרשימה</label><input type="text" id="checklist-name" class="w-full p-2 border border-slate-300 rounded-lg" placeholder="לדוגמה: אריזה לטיסה לניו יורק"></div>
-                <div id="step-1" class="modal-step"><label class="block text-sm font-bold text-slate-700 mb-2">שאלה 1: בחר סוג רשימה</label><select id="checklist-type" class="w-full p-2 border border-slate-300 rounded-lg"><option value="">-- בחר --</option><option value="לפני הטיול">לפני הטיול</option><option value="לפני יעד">לפני יעד</option><option value="לפני מעבר">לפני מעבר</option><option value="אחר">אחר</option></select><input type="text" id="checklist-type-other" class="w-full p-2 border border-slate-300 rounded-lg mt-2 hidden" placeholder="הקלד שם לסוג הרשימה"></div>
+                <!-- Step 0: Name -->
+                <div id="step-0" class="modal-step">
+                    <label for="checklist-name" class="block text-sm font-bold text-slate-700 mb-2">שם הרשימה (לדוגמה: "אריזה לטיסה לניו יורק")</label>
+                    <input type="text" id="checklist-name" class="w-full p-2 border border-slate-300 rounded-lg" placeholder="שם ייחודי לרשימה">
+                </div>
+                <!-- Step 1: Type -->
+                <div id="step-1" class="modal-step">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">שאלה 1: בחר סוג רשימה</label>
+                    <select id="checklist-type" class="w-full p-2 border border-slate-300 rounded-lg">
+                        <option value="">-- בחר --</option>
+                        <option value="לפני הטיול">לפני הטיול</option>
+                        <option value="לפני יעד">לפני יעד</option>
+                        <option value="לפני מעבר">לפני מעבר</option>
+                        <option value="אחר">אחר</option>
+                    </select>
+                    <input type="text" id="checklist-type-other" class="w-full p-2 border border-slate-300 rounded-lg mt-2 hidden" placeholder="הקלד שם לסוג הרשימה">
+                </div>
+                <!-- Step 2: SubType / Destination -->
                 <div id="step-2" class="modal-step"></div>
+                <!-- Step 3: Tertiary Type -->
                 <div id="step-3" class="modal-step"></div>
-                <div id="step-4" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" min="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">חשיבות נמוכה</option><option value="2" selected>חשיבות בינונית</option><option value="3">חשיבות גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
+                <!-- Step 4: Items Table -->
+                <div id="step-4" class="modal-step">
+                    <h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים לרשימה</h4>
+                    <div class="bg-slate-50 p-4 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                            <input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md">
+                            <input type="number" id="item-quantity" placeholder="כמות" value="1" class="p-2 border rounded-md">
+                            <input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md">
+                            <select id="item-priority" class="p-2 border rounded-md">
+                                <option value="1">חשיבות נמוכה</option>
+                                <option value="2">חשיבות בינונית</option>
+                                <option value="3">חשיבות גבוהה</option>
+                            </select>
+                        </div>
+                        <button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button>
+                    </div>
+                    <div id="items-preview-container" class="mt-4 space-y-2"></div>
+                </div>
             </div>
             <div class="p-4 bg-slate-50 border-t flex justify-between items-center">
-                <button id="modal-back-btn" class="py-2 px-4 rounded-lg hover:bg-slate-200 transition hidden">אחורה</button>
+                <div>
+                    <button id="modal-back-btn" class="py-2 px-4 rounded-lg hover:bg-slate-200 transition">אחורה</button>
+                </div>
                 <div id="modal-steps-indicator" class="text-sm text-slate-500"></div>
-                <button id="modal-next-btn" class="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">הבא</button>
-                <button id="modal-finish-btn" class="py-2 px-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition hidden">שמור רשימה</button>
+                <div>
+                    <button id="modal-next-btn" class="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">הבא</button>
+                    <button id="modal-finish-btn" class="py-2 px-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition hidden">שמור רשימה</button>
+                    <button id="modal-close-btn" class="py-2 px-4 rounded-lg hover:bg-slate-200 transition">בטל</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="delete-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4"><div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full"><h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3><p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה.</p><div class="flex justify-center gap-4"><button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button><button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button></div></div></div>
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 text-center">
+            <h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק את הרשימה?</h3>
+            <p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה.</p>
+            <div class="flex justify-center gap-4">
+                <button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button>
+                <button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
+        // Import Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
             authDomain: "america1tour.firebaseapp.com",
@@ -141,13 +187,18 @@
             appId: "1:70515728009:web:aded0696b4f72c910b7058",
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const checklistsCollectionRef = collection(db, 'checklists');
+        const checklistsCollection = collection(db, 'checklists');
 
-        const siteData = {
-             menu: [
+        // --- Start of Application Logic ---
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            // Data for the entire site
+            const siteData = {
+                menu: [
                     { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
                     { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [ { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' } ]},
                     { id: 'niagara', page: 'niagara.html', title: '❄️ קנדה', emoji: '🇨🇦', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
@@ -159,343 +210,410 @@
                     { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
                     { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
                 ],
-            destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו", "חזרה לארץ"]
-        };
-        
-        let checklistsData = [];
-        let currentModalStep = 0;
-        let modalItems = [];
-        let editingChecklistId = null;
+                destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו", "חזרה לארץ"]
+            };
 
-        const loader = document.getElementById('loader');
-        const mainContent = document.getElementById('main-content');
-        const checklistsContainer = document.getElementById('checklists-container');
-        const checklistModal = document.getElementById('checklist-modal');
-        const deleteModal = document.getElementById('delete-modal');
-
-        const initApp = () => {
+            // DOM Elements
+            const loader = document.getElementById('loader');
+            const mainContent = document.getElementById('main-content');
             const sidebar = document.getElementById('sidebar');
             const hamburgerBtn = document.getElementById('hamburger-btn');
             const closeSidebarBtn = document.getElementById('close-sidebar-btn');
             const overlay = document.getElementById('overlay');
             const mainMenu = document.getElementById('main-menu');
+            const authContainer = document.getElementById('auth-container');
+            const checklistsContainer = document.getElementById('checklists-container');
+            
+            // Modal Elements
+            const checklistModal = document.getElementById('checklist-modal');
             const addChecklistBtn = document.getElementById('add-checklist-btn');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const modalBackBtn = document.getElementById('modal-back-btn');
+            const modalNextBtn = document.getElementById('modal-next-btn');
+            const modalFinishBtn = document.getElementById('modal-finish-btn');
+            const modalStepsIndicator = document.getElementById('modal-steps-indicator');
+            const modalTitle = document.getElementById('modal-title');
+            const allModalSteps = document.querySelectorAll('.modal-step');
 
-            const toggleSidebar = () => {
-                sidebar.classList.toggle('translate-x-full');
-                overlay.classList.toggle('hidden');
-            };
+            // Delete Modal Elements
+            const deleteModal = document.getElementById('delete-modal');
+            const deleteModalCancel = document.getElementById('delete-modal-cancel');
+            const deleteModalConfirm = document.getElementById('delete-modal-confirm');
+            
+            // --- Global State ---
+            let checklistsData = [];
+            let currentModalStep = 0;
+            let totalModalSteps = 0;
+            let modalItems = [];
+            let editingChecklistId = null;
 
-            const buildMenu = () => {
-                mainMenu.innerHTML = '';
-                siteData.menu.forEach(dest => {
-                    const div = document.createElement('div');
-                    const btn = document.createElement('button');
-                    btn.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center';
-                    btn.innerHTML = `<span>${dest.title}</span> <i class="fas fa-chevron-down chevron-icon"></i>`;
-                    const submenu = document.createElement('div');
-                    submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
-                    dest.days.forEach(day => {
-                        const link = document.createElement('a');
-                        link.href = `${dest.page}#${day.id}`;
-                        link.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md';
-                        link.textContent = `${dest.title.split(' ')[1]} ${day.label} ${dest.emoji}`;
-                        submenu.appendChild(link);
+            // --- Main Functions ---
+            
+            function renderChecklists() {
+                if (checklistsData.length === 0) {
+                    checklistsContainer.innerHTML = `<div class="text-center p-10 bg-white rounded-lg shadow-md">
+                        <i class="fas fa-folder-open fa-3x text-slate-400 mb-4"></i>
+                        <h3 class="text-xl font-bold text-slate-700">אין עדיין רשימות</h3>
+                        <p class="text-slate-500">לחץ על "הוסף רשימה" כדי להתחיל.</p>
+                    </div>`;
+                    return;
+                }
+
+                const groupedByType = groupBy(checklistsData, 'type');
+                let html = '';
+
+                for (const type in groupedByType) {
+                    html += `<details class="bg-white p-4 rounded-2xl shadow-lg" open><summary class="text-2xl font-bold text-slate-700 cursor-pointer flex justify-between items-center"><span>${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="mt-4 pt-4 border-t space-y-4">`;
+                    
+                    const listsInType = groupedByType[type];
+                    // Further grouping logic can be added here based on destination/subType if needed
+                    listsInType.forEach(list => {
+                        html += renderSingleChecklist(list);
                     });
-                    btn.onclick = () => { submenu.classList.toggle('open'); btn.querySelector('i').classList.toggle('rotate-180'); };
-                    div.append(btn, submenu);
-                    mainMenu.appendChild(div);
-                });
-            };
 
-            buildMenu();
-            hamburgerBtn.addEventListener('click', toggleSidebar);
-            closeSidebarBtn.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', toggleSidebar);
-            addChecklistBtn.addEventListener('click', () => openModal());
-
-            try {
-                const q = query(checklistsCollectionRef);
-                onSnapshot(q, (snapshot) => {
-                    checklistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    checklistsData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
-                    renderChecklists();
-                    loader.style.opacity = '0';
-                    setTimeout(() => loader.style.display = 'none', 500);
-                    mainContent.classList.add('loaded');
-                }, (error) => {
-                    console.error("Firestore snapshot error:", error);
-                    checklistsContainer.innerHTML = `<div class="text-center p-10 bg-red-100 text-red-700 rounded-lg"><h3>שגיאה בקריאת הנתונים</h3><p>${error.message}</p></div>`;
-                    loader.style.display = 'none';
-                    mainContent.classList.add('loaded');
-                });
-            } catch (error) {
-                 console.error("Error setting up Firestore listener:", error);
-                 checklistsContainer.innerHTML = `<div class="text-center p-10 bg-red-100 text-red-700 rounded-lg"><h3>שגיאה חמורה בהתחברות למסד הנתונים.</h3></div>`;
-                 loader.style.display = 'none';
-                 mainContent.classList.add('loaded');
-            }
-        };
-
-        const renderChecklists = () => {
-            if (checklistsData.length === 0) {
-                checklistsContainer.innerHTML = `<div class="text-center p-10 bg-white rounded-lg shadow-md"><i class="fas fa-folder-open fa-3x text-slate-400 mb-4"></i><h3 class="text-xl font-bold text-slate-700">אין עדיין רשימות</h3><p class="text-slate-500">לחץ על "הוסף רשימה" כדי להתחיל.</p></div>`;
-                return;
-            }
-
-            const groupBy = (array, key) => array.reduce((r, v) => { (r[v[key]] = r[v[key]] || []).push(v); return r; }, {});
-            const groupedByType = groupBy(checklistsData, 'type');
-            let html = '';
-
-            for (const type in groupedByType) {
-                html += `<details class="bg-white p-4 rounded-2xl shadow-lg" open><summary class="text-2xl font-bold text-slate-700 cursor-pointer flex justify-between items-center"><span>${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="mt-4 pt-4 border-t space-y-4">`;
-                
-                const groupedBySub = groupBy(groupedByType[type], 'subCategory');
-                for (const sub in groupedBySub) {
-                    html += `<details class="pl-4" open><summary class="text-lg font-semibold text-slate-600 cursor-pointer"><span>${sub || 'ללא תת-קטגוריה'}</span></summary><div class="mt-2 space-y-2">`;
-                    groupedBySub[sub].forEach(list => html += renderSingleChecklist(list));
                     html += `</div></details>`;
                 }
-                html += `</div></details>`;
+                checklistsContainer.innerHTML = html;
             }
-            checklistsContainer.innerHTML = html;
-        };
 
-        const renderSingleChecklist = (list) => {
-            const sortedItems = list.items ? list.items.sort((a, b) => b.priority - a.priority) : [];
-            let itemsHtml = sortedItems.map((item, index) => `
-                <div class="checklist-item flex items-center justify-between p-2 rounded-md hover:bg-slate-50 ${'priority-' + item.priority}">
-                    <input type="checkbox" id="item-${list.id}-${index}" data-list-id="${list.id}" data-item-index="${index}" ${item.checked ? 'checked' : ''}>
-                    <label for="item-${list.id}-${index}" class="flex-grow flex items-center gap-3 cursor-pointer">
-                        <span class="checkbox-icon">
-                            <i class="far fa-circle"></i><i class="fas fa-check-circle"></i>
-                        </span>
-                        <div class="item-text">
-                            <span class="font-semibold">${item.text}</span> <span class="text-sm text-slate-500">(x${item.quantity})</span>
-                            ${item.description ? `<p class="text-sm text-slate-500">${item.description}</p>` : ''}
+            function renderSingleChecklist(list) {
+                const sortedItems = list.items.sort((a, b) => b.priority - a.priority);
+                let itemsHtml = sortedItems.map((item, index) => `
+                    <div class="checklist-item flex items-center justify-between p-2 rounded-md hover:bg-slate-50 ${'priority-' + item.priority}">
+                        <div class="flex-grow">
+                            <input type="checkbox" id="item-${list.id}-${index}" class="hidden" data-list-id="${list.id}" data-item-index="${index}" ${item.checked ? 'checked' : ''}>
+                            <label for="item-${list.id}-${index}" class="flex items-center gap-3 text-lg text-slate-700 cursor-pointer">
+                                <i class="far fa-circle text-sky-500"></i>
+                                <i class="fas fa-check-circle text-green-500"></i>
+                                <div>
+                                    <span class="font-semibold">${item.text}</span> <span class="text-sm text-slate-500">(כמות: ${item.quantity})</span>
+                                    ${item.description ? `<p class="text-sm text-slate-500">${item.description}</p>` : ''}
+                                </div>
+                            </label>
                         </div>
-                    </label>
-                </div>`).join('');
+                        <div class="text-xs font-bold text-white px-2 py-1 rounded-full ${item.priority == 3 ? 'bg-red-500' : item.priority == 2 ? 'bg-orange-500' : 'bg-yellow-500'}">
+                           חשיבות ${item.priority}
+                        </div>
+                    </div>
+                `).join('');
 
-            return `<div class="bg-slate-50 p-4 rounded-xl"><div class="flex justify-between items-center mb-2"><h4 class="text-xl font-bold text-slate-800">${list.name}</h4><div><button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button><button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button></div></div><div class="space-y-2">${itemsHtml}</div></div>`;
-        };
-
-        const openModal = (listToEdit = null) => {
-            editingChecklistId = listToEdit ? listToEdit.id : null;
-            document.getElementById('modal-title').textContent = listToEdit ? 'עריכת רשימה' : 'יצירת רשימה חדשה';
-            
-            document.getElementById('checklist-name').value = listToEdit?.name || '';
-            document.getElementById('checklist-type').value = listToEdit?.type || '';
-            modalItems = listToEdit ? [...listToEdit.items] : [];
-            renderModalItems();
-
-            currentModalStep = 0;
-            updateModalStep();
-            checklistModal.classList.add('flex');
-            checklistModal.classList.remove('hidden');
-        };
-
-        const closeModal = () => {
-            checklistModal.classList.add('hidden');
-            checklistModal.classList.remove('flex');
-        };
-
-        const updateModalStep = () => {
-            const getNumberOfConfigSteps = () => {
-                const type = document.getElementById('checklist-type').value;
-                if (type === 'לפני יעד') return 3;
-                if (type === 'לפני מעבר') return 3;
-                if (type === 'לפני הטיול') return 2;
-                if (type === 'אחר' || !type) return 1;
-                return 1;
-            };
-            
-            const totalConfigSteps = getNumberOfConfigSteps();
-            const isLastConfigStep = currentModalStep >= totalConfigSteps;
-
-            document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('active'));
-            
-            if (isLastConfigStep) {
-                document.getElementById('step-4').classList.add('active');
-            } else {
-                document.getElementById(`step-${currentModalStep}`).classList.add('active');
+                return `
+                    <div class="bg-slate-50 p-4 rounded-xl">
+                        <div class="flex justify-between items-center mb-2">
+                             <h4 class="text-xl font-bold text-slate-800">${list.name}</h4>
+                             <div>
+                                <button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button>
+                                <button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button>
+                             </div>
+                        </div>
+                        <div class="space-y-2">${itemsHtml}</div>
+                    </div>`;
             }
 
-            document.getElementById('modal-back-btn').classList.toggle('hidden', currentModalStep === 0);
-            document.getElementById('modal-next-btn').classList.toggle('hidden', isLastConfigStep);
-            document.getElementById('modal-finish-btn').classList.toggle('hidden', !isLastConfigStep);
-            
-            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${totalConfigSteps + 1}`;
-            
-            if (currentModalStep === 1) generateStep2Content();
-            if (currentModalStep === 2) generateStep3Content();
-        };
-
-        const generateStepContent = (containerId, html) => {
-            document.getElementById(containerId).innerHTML = html;
-        };
-
-        const generateStep2Content = () => {
-            const type = document.getElementById('checklist-type').value;
-            let html = '';
-            if (type === 'לפני הטיול') {
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר נושא</label><select id="checklist-subcategory" class="w-full p-2 border rounded-lg"><option value="">-- בחר --</option><option>רשימת בגדים לבן</option><option>רשימת בגדים לבת</option><option>מסמכים ואישורים</option><option>הזמנות</option><option>קניות</option><option>מוצרים חשובים</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subcategory-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
-            } else if (type === 'לפני יעד' || type === 'לפני מעבר') {
-                const options = siteData.destinations.map(d => `<option value="${d}">${d}</option>`).join('');
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר יעד</label><select id="checklist-destination" class="w-full p-2 border rounded-lg">${options}</select>`;
-            }
-            generateStepContent('step-2', html);
-        };
-
-        const generateStep3Content = () => {
-            const type = document.getElementById('checklist-type').value;
-            let html = '';
-            if (type === 'לפני יעד') {
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא ליעד</label><select id="checklist-subcategory" class="w-full p-2 border rounded-lg"><option value="">-- בחר --</option><option>בגדים לבן</option><option>בגדים לבת</option><option>מסמכים ליעד</option><option>ציוד נדרש</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subcategory-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
-            } else if (type === 'לפני מעבר') {
-                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא למעבר</label><select id="checklist-subcategory" class="w-full p-2 border rounded-lg"><option value="">-- בחר --</option><option>אישורים ומסמכים</option><option>קניות</option><option>בגדים לבן</option><option>בגדים לבת</option></select>`;
-            }
-            generateStepContent('step-3', html);
-        };
-
-        const renderModalItems = () => {
-            const container = document.getElementById('items-preview-container');
-            container.innerHTML = modalItems.length === 0 ? `<p class="text-center text-slate-500">אין פריטים.</p>` : modalItems.map((item, index) => `<div class="flex items-center justify-between bg-white p-2 rounded-lg shadow-sm"><span>${item.text} (x${item.quantity})</span><button class="remove-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i class="fas fa-times-circle"></i></button></div>`).join('');
-        };
-
-        const handleFinishModal = async () => {
-            const name = document.getElementById('checklist-name').value;
-            if (!name) return alert('חובה לתת שם לרשימה.');
-            
-            let type = document.getElementById('checklist-type').value;
-            if (type === 'אחר') type = document.getElementById('checklist-type-other').value;
-
-            let subCategory = document.getElementById('checklist-subcategory')?.value || document.getElementById('checklist-destination')?.value || 'כללי';
-            const subCategoryOtherInput = document.getElementById('checklist-subcategory-other');
-            if (subCategory === 'אחר' && subCategoryOtherInput) subCategory = subCategoryOtherInput.value;
-
-            const checklistData = { name, type, subCategory, items: modalItems, updatedAt: serverTimestamp() };
-            
-            try {
-                if (editingChecklistId) {
-                    await updateDoc(doc(db, 'checklists', editingChecklistId), checklistData);
-                } else {
-                    checklistData.createdAt = serverTimestamp();
-                    await addDoc(checklistsCollectionRef, checklistData);
-                }
-                closeModal();
-            } catch (e) {
-                console.error("Error saving checklist: ", e);
-                alert("שגיאה בשמירת הרשימה.");
-            }
-        };
-
-        document.getElementById('modal-close-btn').addEventListener('click', closeModal);
-        document.getElementById('modal-back-btn').addEventListener('click', () => { currentModalStep--; updateModalStep(); });
-        document.getElementById('modal-next-btn').addEventListener('click', () => { currentModalStep++; updateModalStep(); });
-        document.getElementById('modal-finish-btn').addEventListener('click', handleFinishModal);
-        
-        document.getElementById('checklist-type').addEventListener('change', (e) => {
-            document.getElementById('checklist-type-other').classList.toggle('hidden', e.target.value !== 'אחר');
-            currentModalStep = 1; 
-            updateModalStep();
-        });
-
-        checklistModal.addEventListener('change', e => {
-            if (e.target.id === 'checklist-subcategory') {
-                const otherInput = document.getElementById('checklist-subcategory-other');
-                if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
-            }
-        });
-
-        document.getElementById('add-item-btn').addEventListener('click', () => {
-            const textInput = document.getElementById('item-text');
-            if (!textInput.value) return;
-            modalItems.push({ text: textInput.value, quantity: document.getElementById('item-quantity').value || 1, description: document.getElementById('item-description').value, priority: document.getElementById('item-priority').value, checked: false });
-            renderModalItems();
-            textInput.value = '';
-            document.getElementById('item-description').value = '';
-            textInput.focus();
-        });
-
-        document.getElementById('items-preview-container').addEventListener('click', e => {
-            const removeBtn = e.target.closest('.remove-item-btn');
-            if (removeBtn) {
-                modalItems.splice(removeBtn.dataset.index, 1);
+            // --- Modal Logic ---
+            function openModal(checklistToEdit = null) {
+                editingChecklistId = checklistToEdit ? checklistToEdit.id : null;
+                modalTitle.textContent = checklistToEdit ? 'עריכת רשימה' : 'יצירת רשימה חדשה';
+                
+                // Reset form
+                document.getElementById('checklist-name').value = checklistToEdit ? checklistToEdit.name : '';
+                document.getElementById('checklist-type').value = checklistToEdit ? checklistToEdit.type : '';
+                // more reset logic needed for other fields
+                modalItems = checklistToEdit ? [...checklistToEdit.items] : [];
                 renderModalItems();
-            }
-        });
 
-        checklistsContainer.addEventListener('change', async e => {
-            if (e.target.type === 'checkbox') {
-                const listId = e.target.dataset.listId;
-                const itemIndex = parseInt(e.target.dataset.itemIndex, 10);
-                const list = checklistsData.find(l => l.id === listId);
-                if (list) {
-                    const updatedItems = [...list.items];
-                    updatedItems[itemIndex].checked = e.target.checked;
-                    await updateDoc(doc(db, 'checklists', listId), { items: updatedItems });
+                currentModalStep = 0;
+                updateModalStep();
+                checklistModal.classList.add('flex');
+                checklistModal.classList.remove('hidden');
+            }
+
+            function closeModal() {
+                checklistModal.classList.add('hidden');
+                checklistModal.classList.remove('flex');
+            }
+
+            function updateModalStep() {
+                // Logic to determine total steps based on selections
+                const type = document.getElementById('checklist-type').value;
+                if (type === 'לפני יעד' || type === 'לפני מעבר') {
+                    totalModalSteps = 4;
+                } else if (type === 'לפני הטיול') {
+                    totalModalSteps = 3;
+                } else if (type === 'אחר') {
+                    totalModalSteps = 2;
+                } else {
+                    totalModalSteps = 1;
+                }
+                
+                allModalSteps.forEach(step => step.classList.remove('active'));
+                document.getElementById(`step-${currentModalStep}`).classList.add('active');
+                
+                modalBackBtn.classList.toggle('hidden', currentModalStep === 0);
+                modalNextBtn.classList.toggle('hidden', currentModalStep >= totalModalSteps);
+                modalFinishBtn.classList.toggle('hidden', currentModalStep < totalModalSteps);
+                
+                modalStepsIndicator.textContent = `שלב ${currentModalStep + 1} מתוך ${totalModalSteps + 1}`;
+                
+                // Dynamic step content generation
+                if (currentModalStep === 1) generateStep2();
+                if (currentModalStep === 2) generateStep3();
+            }
+
+            function generateStep2() {
+                const type = document.getElementById('checklist-type').value;
+                const container = document.getElementById('step-2');
+                let html = '';
+                if (type === 'לפני הטיול') {
+                    html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר נושא</label>
+                            <select id="checklist-subtype" class="w-full p-2 border rounded-lg">
+                                <option>רשימת בגדים לבן</option>
+                                <option>רשימת בגדים לבת</option>
+                                <option>מסמכים ואישורים</option>
+                                <option>הזמנות</option>
+                                <option>קניות</option>
+                                <option>מוצרים חשובים</option>
+                                <option value="אחר">אחר</option>
+                            </select>
+                            <input type="text" id="checklist-subtype-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
+                } else if (type === 'לפני יעד' || type === 'לפני מעבר') {
+                    const options = siteData.destinations.map(d => `<option>${d}</option>`).join('');
+                    html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר יעד</label>
+                            <select id="checklist-destination" class="w-full p-2 border rounded-lg">${options}</select>`;
+                } else {
+                    html = ''; // No step 2 for 'other'
+                }
+                container.innerHTML = html;
+            }
+            
+            function generateStep3() {
+                // Similar logic for step 3 based on previous choices
+                const container = document.getElementById('step-3');
+                container.innerHTML = ''; // Clear previous content
+                const type = document.getElementById('checklist-type').value;
+                let html = '';
+                if (type === 'לפני יעד') {
+                    html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא ליעד</label>
+                            <select id="checklist-subtype" class="w-full p-2 border rounded-lg">
+                                <option>בגדים לבן</option>
+                                <option>בגדים לבת</option>
+                                <option>מסמכים ליעד</option>
+                                <option>ציוד נדרש</option>
+                                <option value="אחר">אחר</option>
+                            </select>
+                            <input type="text" id="checklist-subtype-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
+                } else if (type === 'לפני מעבר') {
+                    html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא למעבר</label>
+                            <select id="checklist-subtype" class="w-full p-2 border rounded-lg">
+                                <option>אישורים ומסמכים</option>
+                                <option>קניות</option>
+                                <option>בגדים לבן</option>
+                                <option>בגדים לבת</option>
+                            </select>`;
+                }
+                container.innerHTML = html;
+            }
+
+            function renderModalItems() {
+                const container = document.getElementById('items-preview-container');
+                if (modalItems.length === 0) {
+                    container.innerHTML = `<p class="text-center text-slate-500">אין עדיין פריטים ברשימה.</p>`;
+                    return;
+                }
+                container.innerHTML = modalItems.map((item, index) => `
+                    <div class="flex items-center justify-between bg-white p-2 rounded-lg shadow-sm">
+                        <span>${item.text} (x${item.quantity}) - חשיבות ${item.priority}</span>
+                        <button class="remove-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i class="fas fa-times-circle"></i></button>
+                    </div>
+                `).join('');
+            }
+            
+            async function handleFinishModal() {
+                const name = document.getElementById('checklist-name').value;
+                if (!name) { alert('חובה לתת שם לרשימה.'); return; }
+                
+                let type = document.getElementById('checklist-type').value;
+                if (type === 'אחר') type = document.getElementById('checklist-type-other').value;
+
+                let destination = document.getElementById('checklist-destination')?.value || null;
+                let subType = document.getElementById('checklist-subtype')?.value || null;
+                if (subType === 'אחר') subType = document.getElementById('checklist-subtype-other')?.value || null;
+
+                const checklistData = { name, type, destination, subType, items: modalItems, updatedAt: serverTimestamp() };
+                
+                try {
+                    if (editingChecklistId) {
+                        const docRef = doc(db, 'checklists', editingChecklistId);
+                        await updateDoc(docRef, checklistData);
+                    } else {
+                        checklistData.createdAt = serverTimestamp();
+                        await addDoc(checklistsCollection, checklistData);
+                    }
+                    closeModal();
+                } catch (e) {
+                    console.error("Error saving checklist: ", e);
+                    alert("אירעה שגיאה בשמירת הרשימה.");
                 }
             }
-        });
+            
+            // --- Event Listeners ---
+            addChecklistBtn.addEventListener('click', () => openModal());
+            modalCloseBtn.addEventListener('click', closeModal);
+            modalBackBtn.addEventListener('click', () => { currentModalStep--; updateModalStep(); });
+            modalNextBtn.addEventListener('click', () => { currentModalStep++; updateModalStep(); });
+            modalFinishBtn.addEventListener('click', handleFinishModal);
+            
+            document.getElementById('checklist-type').addEventListener('change', (e) => {
+                document.getElementById('checklist-type-other').classList.toggle('hidden', e.target.value !== 'אחר');
+                updateModalStep(); // Recalculate steps
+            });
 
-        checklistsContainer.addEventListener('click', e => {
-            const deleteBtn = e.target.closest('.delete-btn');
-            if (deleteBtn) {
-                const listId = deleteBtn.dataset.listId;
-                const list = checklistsData.find(l => l.id === listId);
-                if (!list) return;
-                
-                let step = 1;
-                const modalTitle = document.getElementById('delete-modal-title');
-                const confirmBtn = document.getElementById('delete-modal-confirm');
-                
-                modalTitle.textContent = `האם למחוק את "${list.name}"?`;
-                confirmBtn.textContent = 'מחק';
-                confirmBtn.className = 'py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600';
-                
-                const confirmHandler = async () => {
-                    if (step === 1) {
-                        modalTitle.textContent = 'מחיקה היא סופית. למחוק בכל זאת?';
-                        confirmBtn.textContent = 'כן, מחק סופית';
-                        confirmBtn.className = 'py-2 px-6 bg-red-700 text-white font-bold rounded-lg hover:bg-red-800';
-                        step = 2;
-                    } else {
-                        await deleteDoc(doc(db, 'checklists', listId));
-                        closeDeleteModal();
+            document.getElementById('step-2').addEventListener('change', (e) => {
+                 if (e.target.id === 'checklist-subtype') {
+                    document.getElementById('checklist-subtype-other').classList.toggle('hidden', e.target.value !== 'אחר');
+                 }
+            });
+
+            document.getElementById('add-item-btn').addEventListener('click', () => {
+                const text = document.getElementById('item-text').value;
+                if (!text) return;
+                modalItems.push({
+                    text,
+                    quantity: document.getElementById('item-quantity').value || 1,
+                    description: document.getElementById('item-description').value,
+                    priority: document.getElementById('item-priority').value,
+                    checked: false
+                });
+                renderModalItems();
+                // Clear inputs
+                document.getElementById('item-text').value = '';
+                document.getElementById('item-description').value = '';
+            });
+
+            document.getElementById('items-preview-container').addEventListener('click', (e) => {
+                if (e.target.closest('.remove-item-btn')) {
+                    const index = e.target.closest('.remove-item-btn').dataset.index;
+                    modalItems.splice(index, 1);
+                    renderModalItems();
+                }
+            });
+
+            // Delegated listeners for checklist items
+            checklistsContainer.addEventListener('change', async (e) => {
+                if (e.target.type === 'checkbox') {
+                    const listId = e.target.dataset.listId;
+                    const itemIndex = parseInt(e.target.dataset.itemIndex, 10);
+                    const isChecked = e.target.checked;
+                    
+                    const list = checklistsData.find(l => l.id === listId);
+                    if (list) {
+                        const updatedItems = [...list.items];
+                        updatedItems[itemIndex].checked = isChecked;
+                        const docRef = doc(db, 'checklists', listId);
+                        await updateDoc(docRef, { items: updatedItems });
                     }
-                };
+                }
+            });
 
-                const closeDeleteModal = () => {
-                    deleteModal.classList.add('hidden');
-                    deleteModal.classList.remove('flex');
-                    confirmBtn.removeEventListener('click', confirmHandler);
-                    document.getElementById('delete-modal-cancel').removeEventListener('click', closeDeleteModal);
-                };
-                
-                confirmBtn.addEventListener('click', confirmHandler);
-                document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
+            checklistsContainer.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-btn');
+                if (deleteBtn) {
+                    const listId = deleteBtn.dataset.listId;
+                    const list = checklistsData.find(l => l.id === listId);
+                    deleteModal.classList.remove('hidden');
+                    deleteModal.classList.add('flex');
+                    
+                    let confirmationStep = 1;
+                    deleteModalConfirm.textContent = 'מחק';
+                    deleteModalTitle.textContent = `האם למחוק את "${list.name}"?`;
+                    
+                    const confirmHandler = async () => {
+                        if (confirmationStep === 1) {
+                            deleteModalConfirm.textContent = 'לחץ שוב למחיקה סופית';
+                            deleteModalConfirm.classList.replace('bg-red-500', 'bg-red-700');
+                            confirmationStep = 2;
+                        } else {
+                            await deleteDoc(doc(db, 'checklists', listId));
+                            closeDeleteModal();
+                        }
+                    };
+                    
+                    const closeDeleteModal = () => {
+                        deleteModal.classList.add('hidden');
+                        deleteModal.classList.remove('flex');
+                        deleteModalConfirm.removeEventListener('click', confirmHandler);
+                    };
 
-                deleteModal.classList.remove('hidden');
-                deleteModal.classList.add('flex');
+                    deleteModalConfirm.addEventListener('click', confirmHandler, { once: true });
+                    deleteModalCancel.addEventListener('click', closeDeleteModal, { once: true });
+                }
+
+                const editBtn = e.target.closest('.edit-btn');
+                if(editBtn) {
+                    const listId = editBtn.dataset.listId;
+                    const listToEdit = checklistsData.find(l => l.id === listId);
+                    if (listToEdit) openModal(listToEdit);
+                }
+            });
+
+            // --- Utility Functions ---
+            function groupBy(array, key) {
+                return array.reduce((result, currentValue) => {
+                    (result[currentValue[key]] = result[currentValue[key]] || []).push(currentValue);
+                    return result;
+                }, {});
             }
 
-            const editBtn = e.target.closest('.edit-btn');
-            if (editBtn) {
-                const listToEdit = checklistsData.find(l => l.id === editBtn.dataset.listId);
-                if (listToEdit) openModal(listToEdit);
-            }
-        });
+            // --- Authentication Check ---
+            onAuthStateChanged(auth, user => {
+                if (user) {
+                    // --- User is Logged In ---
+                    const displayName = user.displayName || user.email.split('@')[0];
+                    authContainer.innerHTML = `
+                        <span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName}</span>
+                        <button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
+                    
+                    document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
 
-        onAuthStateChanged(auth, user => {
-            if (user) {
-                const authContainer = document.getElementById('auth-container');
-                const displayName = user.displayName || user.email.split('@')[0];
-                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName}</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
-                document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
-                initApp();
-            } else {
-                window.location.replace('login.html');
+                    buildMenu();
+                    hamburgerBtn.addEventListener('click', toggleSidebar);
+                    closeSidebarBtn.addEventListener('click', toggleSidebar);
+                    overlay.addEventListener('click', toggleSidebar);
+
+                    // Subscribe to checklist changes
+                    onSnapshot(checklistsCollection, (snapshot) => {
+                        checklistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        renderChecklists();
+                        loader.style.display = 'none';
+                        mainContent.classList.add('loaded');
+                    });
+
+                } else {
+                    window.location.replace('login.html');
+                }
+            });
+
+             function buildMenu() {
+                mainMenu.innerHTML = '';
+                siteData.menu.forEach(destination => {
+                    const destinationDiv = document.createElement('div');
+                    const button = document.createElement('button');
+                    button.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center transition-colors';
+                    button.innerHTML = `<span>${destination.title}</span> <i class="fas fa-chevron-down chevron-icon"></i>`;
+                    const submenu = document.createElement('div');
+                    submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
+                    destination.days.forEach(day => {
+                        const dayLink = document.createElement('a');
+                        dayLink.href = `${destination.page}#${day.id}`;
+                        dayLink.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md transition-colors';
+                        dayLink.textContent = `${destination.title.split(' ')[1]} ${day.label} ${destination.emoji}`;
+                        submenu.appendChild(dayLink);
+                    });
+                    button.addEventListener('click', () => { submenu.classList.toggle('open'); button.querySelector('i').classList.toggle('rotate-180'); });
+                    destinationDiv.appendChild(button);
+                    destinationDiv.appendChild(submenu);
+                    mainMenu.appendChild(destinationDiv);
+                });
             }
         });
     </script>
