@@ -1,0 +1,21 @@
+{
+  "name": "השם המלא של האפליקציה שלך",
+  "short_name": "שם קצר",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d47a1",
+  "description": "תיאור קצר של האתר",
+  "icons": [
+    {
+      "src": "https://i.imgur.com/zDu7f3z.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.imgur.com/kjGfZAl.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
