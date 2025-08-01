@@ -1,478 +1,478 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>מסע חלומות 🗽 רשימות וצ'ק-ליסטים</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מסע חלומות 🗽 רשימות וצ'ק-ליסטים</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-  <!-- Libraries -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Assistant', sans-serif; }
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+        .submenu.open { max-height: 1200px; }
+        
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        .chevron-icon { transition: transform 0.3s ease-out; }
+        details[open] > summary .chevron-icon { transform: rotate(180deg); }
 
-  <style>
-    body { font-family: 'Assistant', sans-serif; }
-    #sidebar { transition: transform 0.3s ease-in-out; }
-    .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
-    .submenu.open { max-height: 1200px; }
-    details > summary { list-style: none; }
-    details > summary::-webkit-details-marker { display: none; }
-    .chevron-icon { transition: transform 0.3s ease-out; }
-    details[open] > summary .chevron-icon { transform: rotate(180deg); }
-    .checklist-item input:checked + label { text-decoration: line-through; color: #9ca3af; }
-    .checklist-item input:checked + label .fa-circle { display: none; }
-    .fa-check-circle { display: none; }
-    #loader {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: #f1f5f9; display: flex; align-items: center; justify-content: center; z-index: 100;
-    }
-  </style>
+        .checklist-item input:checked + label { text-decoration: line-through; color: #9ca3af; }
+        .checklist-item input:checked + label .fa-circle { display: none; }
+        .checklist-item input:checked + label .fa-check-circle { display: inline-block; }
+        .fa-check-circle { display: none; }
+        
+        .priority-3 { border-right: 4px solid #ef4444; }
+        .priority-2 { border-right: 4px solid #f97316; }
+        .priority-1 { border-right: 4px solid #eab308; }
+
+        .modal-step { display: none; }
+        .modal-step.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f1f5f9; display: flex; align-items: center;
+            justify-content: center; z-index: 1000; transition: opacity 0.5s ease;
+        }
+        #main-content { visibility: hidden; opacity: 0; transition: opacity 0.5s ease-in-out; }
+        #main-content.loaded { visibility: visible; opacity: 1; }
+    </style>
 </head>
 <body class="bg-slate-100">
 
-  <!-- Loading Spinner -->
-  <div id="loader">
-    <i class="fas fa-spinner fa-spin fa-3x text-blue-500"></i>
-  </div>
-
-  <!-- Sidebar (Full Navigation Menu) -->
-  <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
-    <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
-      <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
-      <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
+    <div id="loader">
+        <i class="fas fa-spinner fa-spin fa-3x text-blue-500"></i>
     </div>
-    <nav id="main-menu" class="p-4 space-y-2"></nav>
-  </aside>
 
-  <!-- Main Content -->
-  <div id="main-content" class="min-h-screen hidden">
-    <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <div class="flex items-center gap-4">
-            <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" title="חזרה לדף הבית">
-              <i class="fas fa-home fa-lg"></i>
-            </a>
-            <h1 class="text-xl font-bold text-slate-800">צ'קליסטים דינמיים</h1>
-          </div>
-          <div class="flex items-center gap-4">
-            <div id="auth-container" class="flex items-center"></div>
-            <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none"><i class="fas fa-bars fa-lg"></i></button>
-          </div>
+    <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
+        <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
+            <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
+            <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
         </div>
-      </div>
-    </header>
+        <nav id="main-menu" class="p-4 space-y-2"></nav>
+    </aside>
 
-    <main class="p-4 sm:p-6 lg:p-8">
-      <div class="max-w-4xl mx-auto">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-extrabold text-slate-800">צ'קליסטים</h2>
-          <button id="open-modal-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            צור צ'קליסט חדש
-          </button>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl shadow-lg">
-          <details id="main-checklist" class="group" open>
-            <summary class="text-2xl font-bold text-slate-700 cursor-pointer flex justify-between items-center">
-              <span>כל הצ'קליסטים</span>
-              <i class="fa-solid fa-chevron-down chevron-icon"></i>
-            </summary>
-            <div id="checklists-container" class="mt-6 space-y-8 border-t pt-6">
-              <!-- Checklist sections will be injected here -->
-            </div>
-          </details>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Overlay for sidebar -->
-  <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
-
-  <!-- Create/Edit Checklist Modal -->
-  <div id="checklist-modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl p-6 relative">
-      <button id="close-modal-btn" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
-        <i class="fas fa-times fa-lg"></i>
-      </button>
-      <h2 id="modal-title" class="text-xl font-bold mb-4">צור צ'קליסט חדש</h2>
-      <form id="checklist-form" class="space-y-4">
-        <!-- 1. שם הצ'קליסט -->
-        <div>
-          <label for="checklist-name" class="block text-sm font-medium text-gray-700">שם הצ'קליסט</label>
-          <input type="text" id="checklist-name" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
-        </div>
-        <!-- 2. סוג הצ'קליסט -->
-        <div>
-          <label for="checklist-category" class="block text-sm font-medium text-gray-700">סוג צ'קליסט</label>
-          <select id="checklist-category" class="mt-1 block w-full border border-gray-300 rounded-md p-2" required>
-            <option value="">בחר סוג</option>
-            <option value="before-trip">צ'קליסט לפני הטיול</option>
-            <option value="before-destination">צ'קליסט לפני יעד</option>
-            <option value="before-transfer">צ'קליסט לפני מעבר</option>
-            <option value="other">אחר</option>
-          </select>
-        </div>
-        <!-- 2a. שדה שם סוג במידה ובחר 'אחר' -->
-        <div id="other-category-container" class="hidden">
-          <label for="other-category" class="block text-sm font-medium text-gray-700">הכנס שם סוג חדש</label>
-          <input type="text" id="other-category" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
-        </div>
-        <!-- 3. תת-קטגוריה (דינמי) -->
-        <div id="subcategory-container" class="hidden">
-          <label for="checklist-subcategory" class="block text-sm font-medium text-gray-700">בחר תת-קטגוריה</label>
-          <select id="checklist-subcategory" class="mt-1 block w-full border border-gray-300 rounded-md p-2"></select>
-          <div id="other-subcategory-container" class="mt-2 hidden">
-            <label for="other-subcategory" class="block text-sm font-medium text-gray-700">הכנס שם תת-קטגוריה חדש</label>
-            <input type="text" id="other-subcategory" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
-          </div>
-        </div>
-        <!-- 4. טבלת פריטים -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">פריטי הצ'קליסט</label>
-          <div id="items-container" class="space-y-2"></div>
-          <button type="button" id="add-item-btn" class="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">
-            הוסף פריט
-          </button>
-        </div>
-        <!-- שמירה -->
-        <div class="text-left">
-          <button type="button" id="save-checklist-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            שמור צ'קליסט
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import {
-      getFirestore, collection, addDoc, onSnapshot,
-      doc, updateDoc, deleteDoc, serverTimestamp,
-      query, orderBy
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
-      authDomain: "america1tour.firebaseapp.com",
-      projectId: "america1tour",
-      storageBucket: "america1tour.firebasestorage.app",
-      messagingSenderId: "70515728009",
-      appId: "1:70515728009:web:aded0696b4f72c910b7058",
-      measurementId: "G-S29LD2DT7S"
-    };
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // DOM elements
-    const loader = document.getElementById('loader');
-    const mainContent = document.getElementById('main-content');
-    const sidebar = document.getElementById('sidebar');
-    const hamburgerBtn = document.getElementById('hamburger-btn');
-    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-    const overlay = document.getElementById('overlay');
-    const mainMenu = document.getElementById('main-menu');
-    const authContainer = document.getElementById('auth-container');
-
-    const openModalBtn = document.getElementById('open-modal-btn');
-    const modalOverlay = document.getElementById('checklist-modal-overlay');
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    const modalTitle = document.getElementById('modal-title');
-    const form = document.getElementById('checklist-form');
-    const nameInput = document.getElementById('checklist-name');
-    const categorySelect = document.getElementById('checklist-category');
-    const otherCategoryContainer = document.getElementById('other-category-container');
-    const otherCategoryInput = document.getElementById('other-category');
-    const subcategoryContainer = document.getElementById('subcategory-container');
-    const subcategorySelect = document.getElementById('checklist-subcategory');
-    const otherSubcategoryContainer = document.getElementById('other-subcategory-container');
-    const otherSubcategoryInput = document.getElementById('other-subcategory');
-    const itemsContainer = document.getElementById('items-container');
-    const addItemBtn = document.getElementById('add-item-btn');
-    const saveBtn = document.getElementById('save-checklist-btn');
-    const checklistsContainer = document.getElementById('checklists-container');
-
-    let editChecklistId = null;
-
-    // Sidebar toggle
-    function toggleSidebar() {
-      sidebar.classList.toggle('translate-x-full');
-      overlay.classList.toggle('hidden');
-    }
-    hamburgerBtn.addEventListener('click', toggleSidebar);
-    closeSidebarBtn.addEventListener('click', toggleSidebar);
-    overlay.addEventListener('click', toggleSidebar);
-
-    // Build navigation menu
-    function buildMenu() {
-      const siteData = {/* same menu data as before */};
-      mainMenu.innerHTML = '';
-      siteData.menu.forEach(dest => {
-        const destinationDiv = document.createElement('div');
-        const button = document.createElement('button');
-        button.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center transition-colors';
-        button.innerHTML = `<span>${dest.title}</span> <i class="fas fa-chevron-down chevron-icon"></i>`;
-        const submenu = document.createElement('div');
-        submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
-        dest.days.forEach(day => {
-          const link = document.createElement('a');
-          link.href = `${dest.page}#${day.id}`;
-          link.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md transition-colors';
-          link.textContent = `${dest.title.split(' ')[1]} ${day.label} ${dest.emoji}`;
-          submenu.appendChild(link);
-        });
-        button.addEventListener('click', () => {
-          submenu.classList.toggle('open');
-          button.querySelector('i').classList.toggle('rotate-180');
-        });
-        destinationDiv.appendChild(button);
-        destinationDiv.appendChild(submenu);
-        mainMenu.appendChild(destinationDiv);
-      });
-    }
-
-    // Modal controls
-    function openModal(editData = null) {
-      modalOverlay.classList.remove('hidden');
-      modalOverlay.classList.add('flex');
-      if (editData) {
-        modalTitle.textContent = 'ערוך צ\'קליסט';
-        editChecklistId = editData.id;
-        fillForm(editData);
-      } else {
-        modalTitle.textContent = 'צור צ\'קליסט חדש';
-        editChecklistId = null;
-        form.reset();
-        otherCategoryContainer.classList.add('hidden');
-        subcategoryContainer.classList.add('hidden');
-        itemsContainer.innerHTML = '';
-      }
-    }
-    function closeModal() {
-      modalOverlay.classList.add('hidden');
-      modalOverlay.classList.remove('flex');
-    }
-    openModalBtn.addEventListener('click', () => openModal());
-    closeModalBtn.addEventListener('click', closeModal);
-
-    // Dynamic form logic
-    categorySelect.addEventListener('change', () => {
-      const val = categorySelect.value;
-      otherCategoryContainer.classList.toggle('hidden', val !== 'other');
-      if (val === 'other') {
-        subcategoryContainer.classList.add('hidden');
-      } else {
-        // populate subcategorySelect based on val
-        let options = [];
-        if (val === 'before-trip') {
-          options = [
-            {label: 'רשימת בגדים – דורון', value: 'clothes-doron'},
-            {label: 'רשימת בגדים – רוני', value: 'clothes-roni'},
-            {label: 'מסמכים ואישורים', value: 'docs'},
-            {label: 'כרטיסי טיסה/רכבות/רכב', value: 'tickets'},
-            {label: 'קניות/מוצרים חשובים', value: 'shopping'},
-            {label: 'אחר', value: 'other'}
-          ];
-        } else if (val === 'before-destination' || val === 'before-transfer') {
-          options = [
-            {label: 'ניו-יורק', value: 'new-york'},
-            {label: 'מפלי הניאגרה', value: 'niagara'},
-            {label: 'וושינגטון די.סי', value: 'dc'},
-            {label: 'אורלנדו', value: 'orlando'},
-            {label: 'מיאמי', value: 'miami'},
-            {label: 'פונטה-קאנה', value: 'punta-cana'},
-            {label: 'אריזונה', value: 'arizona'},
-            {label: 'לוס אנג\'לס', value: 'la'},
-            {label: 'סן פרנסיסקו', value: 'sf'},
-            {label: 'חזרה לארץ', value: 'return'}
-          ];
-        }
-        subcategorySelect.innerHTML = `<option value="">בחר...</option>` +
-          options.map(o => `<option value="${o.value}">${o.label}</option>`).join('');
-        subcategoryContainer.classList.remove('hidden');
-        otherSubcategoryContainer.classList.add('hidden');
-      }
-    });
-    subcategorySelect.addEventListener('change', () => {
-      if (subcategorySelect.value === 'other') {
-        otherSubcategoryContainer.classList.remove('hidden');
-      } else {
-        otherSubcategoryContainer.classList.add('hidden');
-      }
-    });
-
-    // Items table logic
-    function addItemRow(data = {}) {
-      const row = document.createElement('div');
-      row.className = 'flex gap-2';
-      row.innerHTML = `
-        <input type="text" placeholder="שם פריט" class="flex-1 border p-1" value="${data.label||''}" required>
-        <input type="number" placeholder="כמות" class="w-20 border p-1" value="${data.quantity||1}" min="1" required>
-        <input type="text" placeholder="תיאור" class="flex-1 border p-1" value="${data.description||''}">
-        <input type="range" min="1" max="3" value="${data.importance||2}" class="w-24" title="רמת חשיבות">
-        <button type="button" class="text-red-500 hover:text-red-700">&times;</button>
-      `;
-      // remove
-      row.querySelector('button').addEventListener('click', () => row.remove());
-      itemsContainer.appendChild(row);
-    }
-    addItemBtn.addEventListener('click', () => addItemRow());
-
-    // Fill form for editing
-    function fillForm(docData) {
-      nameInput.value = docData.title;
-      categorySelect.value = docData.category;
-      categorySelect.dispatchEvent(new Event('change'));
-      if (docData.category === 'other') {
-        otherCategoryInput.value = docData.subCategory;
-      } else {
-        subcategorySelect.value = docData.subCategory;
-        subcategorySelect.dispatchEvent(new Event('change'));
-        if (docData.subCategory === 'other') {
-          otherSubcategoryInput.value = docData.otherSub;
-        }
-      }
-      itemsContainer.innerHTML = '';
-      // sort items by importance desc
-      docData.items.sort((a,b)=>b.importance - a.importance)
-        .forEach(item => addItemRow(item));
-    }
-
-    // Save checklist (add or update)
-    saveBtn.addEventListener('click', async () => {
-      const title = nameInput.value.trim();
-      let category = categorySelect.value;
-      if (category === 'other') {
-        category = otherCategoryInput.value.trim();
-      }
-      let subCategory = '';
-      if (categorySelect.value !== 'other') {
-        subCategory = subcategorySelect.value === 'other'
-          ? otherSubcategoryInput.value.trim()
-          : subcategorySelect.value;
-      }
-      const items = Array.from(itemsContainer.children).map(row => {
-        const [labelEl, qtyEl, descEl, impEl] = row.querySelectorAll('input');
-        return {
-          label: labelEl.value.trim(),
-          quantity: Number(qtyEl.value),
-          description: descEl.value.trim(),
-          importance: Number(impEl.value)
-        };
-      });
-      const data = {
-        title, category, subCategory,
-        items, updatedAt: serverTimestamp(),
-        createdBy: auth.currentUser.uid
-      };
-      if (editChecklistId) {
-        const ref = doc(db, 'checklists', editChecklistId);
-        await updateDoc(ref, data);
-      } else {
-        data.createdAt = serverTimestamp();
-        await addDoc(collection(db, 'checklists'), data);
-      }
-      closeModal();
-    });
-
-    // Render checklists
-    function renderChecklists(snapshot) {
-      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      checklistsContainer.innerHTML = '';
-      // group by category
-      const byCat = {};
-      docs.forEach(d => {
-        if (!byCat[d.category]) byCat[d.category] = [];
-        byCat[d.category].push(d);
-      });
-      Object.entries(byCat).forEach(([cat, list]) => {
-        const section = document.createElement('div');
-        section.innerHTML = `<h3 class="text-xl font-semibold">${cat}</h3>`;
-        // group by subCategory
-        const bySub = {};
-        list.forEach(d => {
-          const sub = d.subCategory || 'כללי';
-          if (!bySub[sub]) bySub[sub] = [];
-          bySub[sub].push(d);
-        });
-        Object.entries(bySub).forEach(([sub, items]) => {
-          const det = document.createElement('details');
-          det.className = 'mt-2';
-          det.innerHTML = `
-            <summary class="cursor-pointer font-medium">${sub} (${items.length})</summary>
-            <div class="mt-2 space-y-4"></div>
-          `;
-          const container = det.querySelector('div');
-          items.forEach(d => {
-            const card = document.createElement('div');
-            card.className = 'p-4 border rounded';
-            // sort items by importance desc
-            d.items.sort((a,b)=>b.importance - a.importance);
-            const listHtml = d.items.map(it =>
-              `<li>${it.label} (x${it.quantity}) - חשיבות: ${it.importance}${it.description? ' – '+it.description : ''}</li>`
-            ).join('');
-            card.innerHTML = `
-              <div class="flex justify-between items-center">
-                <h4 class="font-semibold">${d.title}</h4>
-                <div class="space-x-2">
-                  <button data-id="${d.id}" class="edit-btn text-blue-600 hover:underline">ערוך</button>
-                  <button data-id="${d.id}" class="delete-btn text-red-600 hover:underline">מחק</button>
+    <div id="main-content">
+        <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center gap-4">
+                        <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" title="חזרה לדף הבית"><i class="fas fa-home fa-lg"></i></a>
+                        <h1 class="text-xl font-bold text-slate-800">רשימות וצ'ק-ליסטים</h1>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div id="auth-container" class="flex items-center"></div>
+                        <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none"><i class="fas fa-bars fa-lg"></i></button>
+                    </div>
                 </div>
-              </div>
-              <ul class="mt-2 list-disc list-inside text-sm">${listHtml}</ul>
-            `;
-            container.appendChild(card);
-          });
-          section.appendChild(det);
-        });
-        checklistsContainer.appendChild(section);
-      });
+            </div>
+        </header>
 
-      // attach edit/delete handlers
-      document.querySelectorAll('.edit-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.dataset.id;
-          const docData = docs.find(d => d.id === id);
-          openModal(docData);
-        });
-      });
-      document.querySelectorAll('.delete-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          if (confirm('למחוק צ\'קליסט זה?')) {
-            await deleteDoc(doc(db, 'checklists', btn.dataset.id));
-          }
-        });
-      });
-    }
+        <main class="p-4 sm:p-6 lg:p-8">
+            <div class="max-w-5xl mx-auto">
+                <div class="flex justify-between items-center mb-10">
+                    <div class="text-right">
+                        <h2 class="text-4xl font-extrabold text-slate-800">ניהול רשימות</h2>
+                        <p class="mt-2 text-lg text-slate-600">כל מה שצריך לארוז ולזכור, מסונכרן בזמן אמת.</p>
+                    </div>
+                    <button id="add-checklist-btn" class="bg-blue-600 text-white font-bold py-3 px-5 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+                        <i class="fas fa-plus mr-2"></i> הוסף רשימה
+                    </button>
+                </div>
+                <div id="checklists-container" class="space-y-6"></div>
+            </div>
+        </main>
+    </div>
+    
+    <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
 
-    // Listen to Firestore
-    function listenChecklists() {
-      const q = query(collection(db, 'checklists'), orderBy('createdAt'));
-      onSnapshot(q, renderChecklists);
-    }
+    <div id="checklist-modal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-5 border-b flex justify-between items-center">
+                <h3 id="modal-title" class="text-2xl font-bold text-slate-800">יצירת רשימה חדשה</h3>
+                <button id="modal-close-btn" class="text-slate-400 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-6 overflow-y-auto">
+                <div id="step-0" class="modal-step"><label for="checklist-name" class="block text-sm font-bold text-slate-700 mb-2">שם הרשימה</label><input type="text" id="checklist-name" class="w-full p-2 border border-slate-300 rounded-lg" placeholder="לדוגמה: אריזה לטיסה לניו יורק"></div>
+                <div id="step-1" class="modal-step"><label class="block text-sm font-bold text-slate-700 mb-2">שאלה 1: בחר סוג רשימה</label><select id="checklist-type" class="w-full p-2 border border-slate-300 rounded-lg"><option value="">-- בחר --</option><option value="לפני הטיול">לפני הטיול</option><option value="לפני יעד">לפני יעד</option><option value="לפני מעבר">לפני מעבר</option><option value="אחר">אחר</option></select><input type="text" id="checklist-type-other" class="w-full p-2 border border-slate-300 rounded-lg mt-2 hidden" placeholder="הקלד שם לסוג הרשימה"></div>
+                <div id="step-2" class="modal-step"></div>
+                <div id="step-3" class="modal-step"></div>
+                <div id="step-4" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" min="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">חשיבות נמוכה</option><option value="2" selected>חשיבות בינונית</option><option value="3">חשיבות גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
+            </div>
+            <div class="p-4 bg-slate-50 border-t flex justify-between items-center">
+                <button id="modal-back-btn" class="py-2 px-4 rounded-lg hover:bg-slate-200 transition hidden">אחורה</button>
+                <div id="modal-steps-indicator" class="text-sm text-slate-500"></div>
+                <button id="modal-next-btn" class="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">הבא</button>
+                <button id="modal-finish-btn" class="py-2 px-4 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition hidden">שמור רשימה</button>
+            </div>
+        </div>
+    </div>
 
-    // Auth state
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        const displayName = user.displayName || user.email.split('@')[0];
-        authContainer.innerHTML = `
-          <span class="text-sm font-semibold text-slate-700">${displayName}</span>
-          <button id="sign-out-btn" class="ml-2 p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket"></i></button>
-        `;
-        document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
-        buildMenu();
-        listenChecklists();
-        loader.style.display = 'none';
-        mainContent.classList.remove('hidden');
-      } else {
-        window.location.replace('login.html');
-      }
-    });
-  </script>
+    <div id="delete-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4"><div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full"><h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3><p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה.</p><div class="flex justify-center gap-4"><button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button><button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button></div></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, serverTimestamp, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
+            authDomain: "america1tour.firebaseapp.com",
+            projectId: "america1tour",
+            storageBucket: "america1tour.firebasestorage.app",
+            messagingSenderId: "70515728009",
+            appId: "1:70515728009:web:aded0696b4f72c910b7058",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const checklistsCollectionRef = collection(db, 'checklists');
+
+        const siteData = {
+            menu: [
+                    { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
+                    { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [ { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' } ]},
+                    { id: 'niagara', page: 'niagara.html', title: '❄️ קנדה', emoji: '🇨🇦', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
+                    { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
+                    { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
+                    { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
+                    { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
+                    { id: 'arizona', page: 'arizona.html', title: '🏜️ אריזונה', emoji: '🏜️', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' } ]},
+                    { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
+                    { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
+                ],
+            destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו", "חזרה לארץ"]
+        };
+        
+        let checklistsData = [];
+        let currentModalStep = 0;
+        let modalItems = [];
+        let editingChecklistId = null;
+
+        const loader = document.getElementById('loader');
+        const mainContent = document.getElementById('main-content');
+        const checklistsContainer = document.getElementById('checklists-container');
+        const checklistModal = document.getElementById('checklist-modal');
+        const deleteModal = document.getElementById('delete-modal');
+
+        const initApp = () => {
+            const sidebar = document.getElementById('sidebar');
+            const hamburgerBtn = document.getElementById('hamburger-btn');
+            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+            const overlay = document.getElementById('overlay');
+            const mainMenu = document.getElementById('main-menu');
+            const addChecklistBtn = document.getElementById('add-checklist-btn');
+
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('translate-x-full');
+                overlay.classList.toggle('hidden');
+            };
+
+            const buildMenu = () => {
+                mainMenu.innerHTML = '';
+                siteData.menu.forEach(dest => {
+                    const div = document.createElement('div');
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center';
+                    btn.innerHTML = `<span>${dest.title}</span> <i class="fas fa-chevron-down chevron-icon"></i>`;
+                    const submenu = document.createElement('div');
+                    submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
+                    dest.days.forEach(day => {
+                        const link = document.createElement('a');
+                        link.href = `${dest.page}#${day.id}`;
+                        link.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md';
+                        link.textContent = `${dest.title.split(' ')[1]} ${day.label} ${dest.emoji}`;
+                        submenu.appendChild(link);
+                    });
+                    btn.onclick = () => { submenu.classList.toggle('open'); btn.querySelector('i').classList.toggle('rotate-180'); };
+                    div.append(btn, submenu);
+                    mainMenu.appendChild(div);
+                });
+            };
+
+            buildMenu();
+            hamburgerBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
+            addChecklistBtn.addEventListener('click', () => openModal());
+
+            try {
+                const q = query(checklistsCollectionRef);
+                onSnapshot(q, (snapshot) => {
+                    checklistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    checklistsData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                    renderChecklists();
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                    mainContent.classList.add('loaded');
+                }, (error) => {
+                    console.error("Firestore snapshot error:", error);
+                    checklistsContainer.innerHTML = `<div class="text-center p-10 bg-red-100 text-red-700 rounded-lg"><h3>שגיאה בקריאת הנתונים</h3><p>${error.message}</p></div>`;
+                    loader.style.display = 'none';
+                    mainContent.classList.add('loaded');
+                });
+            } catch (error) {
+                 console.error("Error setting up Firestore listener:", error);
+                 checklistsContainer.innerHTML = `<div class="text-center p-10 bg-red-100 text-red-700 rounded-lg"><h3>שגיאה חמורה בהתחברות למסד הנתונים.</h3></div>`;
+                 loader.style.display = 'none';
+                 mainContent.classList.add('loaded');
+            }
+        };
+
+        const renderChecklists = () => {
+            if (checklistsData.length === 0) {
+                checklistsContainer.innerHTML = `<div class="text-center p-10 bg-white rounded-lg shadow-md"><i class="fas fa-folder-open fa-3x text-slate-400 mb-4"></i><h3 class="text-xl font-bold text-slate-700">אין עדיין רשימות</h3><p class="text-slate-500">לחץ על "הוסף רשימה" כדי להתחיל.</p></div>`;
+                return;
+            }
+
+            const groupBy = (array, key) => array.reduce((r, v) => { (r[v[key]] = r[v[key]] || []).push(v); return r; }, {});
+            const groupedByType = groupBy(checklistsData, 'type');
+            let html = '';
+
+            for (const type in groupedByType) {
+                html += `<details class="bg-white p-4 rounded-2xl shadow-lg" open><summary class="text-2xl font-bold text-slate-700 cursor-pointer flex justify-between items-center"><span>${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="mt-4 pt-4 border-t space-y-4">`;
+                groupedByType[type].forEach(list => html += renderSingleChecklist(list));
+                html += `</div></details>`;
+            }
+            checklistsContainer.innerHTML = html;
+        };
+
+        const renderSingleChecklist = (list) => {
+            const sortedItems = list.items ? list.items.sort((a, b) => b.priority - a.priority) : [];
+            let itemsHtml = sortedItems.map((item, index) => `
+                <div class="checklist-item flex items-center justify-between p-2 rounded-md hover:bg-slate-50 ${'priority-' + item.priority}">
+                    <div class="flex-grow">
+                        <input type="checkbox" id="item-${list.id}-${index}" class="hidden" data-list-id="${list.id}" data-item-index="${index}" ${item.checked ? 'checked' : ''}>
+                        <label for="item-${list.id}-${index}" class="flex items-center gap-3 text-lg text-slate-700 cursor-pointer">
+                            <i class="far fa-circle text-sky-500"></i><i class="fas fa-check-circle text-green-500"></i>
+                            <div>
+                                <span class="font-semibold">${item.text}</span> <span class="text-sm text-slate-500">(x${item.quantity})</span>
+                                ${item.description ? `<p class="text-sm text-slate-500">${item.description}</p>` : ''}
+                            </div>
+                        </label>
+                    </div>
+                </div>`).join('');
+
+            return `<div class="bg-slate-50 p-4 rounded-xl"><div class="flex justify-between items-center mb-2"><h4 class="text-xl font-bold text-slate-800">${list.name}</h4><div><button class="edit-btn p-2 text-slate-500 hover:text-blue-600" data-list-id="${list.id}"><i class="fas fa-pencil-alt"></i></button><button class="delete-btn p-2 text-slate-500 hover:text-red-600" data-list-id="${list.id}"><i class="fas fa-trash-alt"></i></button></div></div><div class="space-y-2">${itemsHtml}</div></div>`;
+        };
+
+        const openModal = (listToEdit = null) => {
+            editingChecklistId = listToEdit ? listToEdit.id : null;
+            document.getElementById('modal-title').textContent = listToEdit ? 'עריכת רשימה' : 'יצירת רשימה חדשה';
+            
+            document.getElementById('checklist-name').value = listToEdit?.name || '';
+            document.getElementById('checklist-type').value = listToEdit?.type || '';
+            modalItems = listToEdit ? [...listToEdit.items] : [];
+            renderModalItems();
+
+            currentModalStep = 0;
+            updateModalStep();
+            checklistModal.classList.add('flex');
+            checklistModal.classList.remove('hidden');
+        };
+
+        const closeModal = () => {
+            checklistModal.classList.add('hidden');
+            checklistModal.classList.remove('flex');
+        };
+
+        const updateModalStep = () => {
+            let configStepsCount;
+            const type = document.getElementById('checklist-type').value;
+            if (type === 'לפני יעד' || type === 'לפני מעבר') configStepsCount = 3;
+            else if (type === 'לפני הטיול') configStepsCount = 2;
+            else configStepsCount = 1;
+
+            const isLastStep = currentModalStep >= configStepsCount;
+            
+            document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('active'));
+            if (isLastStep) {
+                document.getElementById('step-4').classList.add('active');
+            } else {
+                document.getElementById(`step-${currentModalStep}`).classList.add('active');
+            }
+
+            document.getElementById('modal-back-btn').classList.toggle('hidden', currentModalStep === 0);
+            document.getElementById('modal-next-btn').classList.toggle('hidden', isLastStep);
+            document.getElementById('modal-finish-btn').classList.toggle('hidden', !isLastStep);
+            
+            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${configStepsCount + 1}`;
+            
+            if (currentModalStep === 1) generateStep2Content();
+            if (currentModalStep === 2) generateStep3Content();
+        };
+
+        const generateStepContent = (containerId, html) => {
+            document.getElementById(containerId).innerHTML = html;
+        };
+
+        const generateStep2Content = () => {
+            const type = document.getElementById('checklist-type').value;
+            let html = '';
+            if (type === 'לפני הטיול') {
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר נושא</label><select id="checklist-subtype" class="w-full p-2 border rounded-lg"><option>רשימת בגדים לבן</option><option>רשימת בגדים לבת</option><option>מסמכים ואישורים</option><option>הזמנות</option><option>קניות</option><option>מוצרים חשובים</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subtype-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
+            } else if (type === 'לפני יעד' || type === 'לפני מעבר') {
+                const options = siteData.destinations.map(d => `<option value="${d}">${d}</option>`).join('');
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 2: בחר יעד</label><select id="checklist-destination" class="w-full p-2 border rounded-lg">${options}</select>`;
+            }
+            generateStepContent('step-2', html);
+        };
+
+        const generateStep3Content = () => {
+            const type = document.getElementById('checklist-type').value;
+            let html = '';
+            if (type === 'לפני יעד') {
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא ליעד</label><select id="checklist-subtype" class="w-full p-2 border rounded-lg"><option>בגדים לבן</option><option>בגדים לבת</option><option>מסמכים ליעד</option><option>ציוד נדרש</option><option value="אחר">אחר</option></select><input type="text" id="checklist-subtype-other" class="w-full p-2 border rounded-lg mt-2 hidden" placeholder="הקלד שם לנושא">`;
+            } else if (type === 'לפני מעבר') {
+                html = `<label class="block text-sm font-bold text-slate-700 mb-2">שאלה 3: בחר נושא למעבר</label><select id="checklist-subtype" class="w-full p-2 border rounded-lg"><option>אישורים ומסמכים</option><option>קניות</option><option>בגדים לבן</option><option>בגדים לבת</option></select>`;
+            }
+            generateStepContent('step-3', html);
+        };
+
+        const renderModalItems = () => {
+            const container = document.getElementById('items-preview-container');
+            container.innerHTML = modalItems.length === 0 ? `<p class="text-center text-slate-500">אין פריטים.</p>` : modalItems.map((item, index) => `<div class="flex items-center justify-between bg-white p-2 rounded-lg shadow-sm"><span>${item.text} (x${item.quantity})</span><button class="remove-item-btn text-red-500 hover:text-red-700" data-index="${index}"><i class="fas fa-times-circle"></i></button></div>`).join('');
+        };
+
+        const handleFinishModal = async () => {
+            const name = document.getElementById('checklist-name').value;
+            if (!name) return alert('חובה לתת שם לרשימה.');
+            
+            let type = document.getElementById('checklist-type').value;
+            if (type === 'אחר') type = document.getElementById('checklist-type-other').value;
+
+            let subType = document.getElementById('checklist-subtype')?.value || null;
+            if (subType === 'אחר') subType = document.getElementById('checklist-subtype-other')?.value;
+
+            const checklistData = { name, type, destination: document.getElementById('checklist-destination')?.value || null, subType, items: modalItems, updatedAt: serverTimestamp() };
+            
+            try {
+                if (editingChecklistId) {
+                    await updateDoc(doc(db, 'checklists', editingChecklistId), checklistData);
+                } else {
+                    checklistData.createdAt = serverTimestamp();
+                    await addDoc(checklistsCollectionRef, checklistData);
+                }
+                closeModal();
+            } catch (e) {
+                console.error("Error saving checklist: ", e);
+                alert("שגיאה בשמירת הרשימה.");
+            }
+        };
+
+        document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+        document.getElementById('modal-back-btn').addEventListener('click', () => { currentModalStep--; updateModalStep(); });
+        document.getElementById('modal-next-btn').addEventListener('click', () => { currentModalStep++; updateModalStep(); });
+        document.getElementById('modal-finish-btn').addEventListener('click', handleFinishModal);
+        
+        document.getElementById('checklist-type').addEventListener('change', (e) => {
+            document.getElementById('checklist-type-other').classList.toggle('hidden', e.target.value !== 'אחר');
+            updateModalStep();
+        });
+
+        checklistModal.addEventListener('change', e => {
+            if (e.target.id === 'checklist-subtype') {
+                const otherInput = document.getElementById('checklist-subtype-other');
+                if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
+            }
+        });
+
+        document.getElementById('add-item-btn').addEventListener('click', () => {
+            const textInput = document.getElementById('item-text');
+            if (!textInput.value) return;
+            modalItems.push({ text: textInput.value, quantity: document.getElementById('item-quantity').value || 1, description: document.getElementById('item-description').value, priority: document.getElementById('item-priority').value, checked: false });
+            renderModalItems();
+            textInput.value = '';
+            document.getElementById('item-description').value = '';
+            textInput.focus();
+        });
+
+        document.getElementById('items-preview-container').addEventListener('click', e => {
+            const removeBtn = e.target.closest('.remove-item-btn');
+            if (removeBtn) {
+                modalItems.splice(removeBtn.dataset.index, 1);
+                renderModalItems();
+            }
+        });
+
+        checklistsContainer.addEventListener('change', async e => {
+            if (e.target.type === 'checkbox') {
+                const listId = e.target.dataset.listId;
+                const itemIndex = parseInt(e.target.dataset.itemIndex, 10);
+                const list = checklistsData.find(l => l.id === listId);
+                if (list) {
+                    const updatedItems = [...list.items];
+                    updatedItems[itemIndex].checked = e.target.checked;
+                    await updateDoc(doc(db, 'checklists', listId), { items: updatedItems });
+                }
+            }
+        });
+
+        checklistsContainer.addEventListener('click', e => {
+            const deleteBtn = e.target.closest('.delete-btn');
+            if (deleteBtn) {
+                const listId = deleteBtn.dataset.listId;
+                const list = checklistsData.find(l => l.id === listId);
+                if (!list) return;
+                
+                let step = 1;
+                const modalTitle = document.getElementById('delete-modal-title');
+                const confirmBtn = document.getElementById('delete-modal-confirm');
+                
+                modalTitle.textContent = `האם למחוק את "${list.name}"?`;
+                confirmBtn.textContent = 'מחק';
+                confirmBtn.className = 'py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600';
+                
+                const confirmHandler = async () => {
+                    if (step === 1) {
+                        modalTitle.textContent = 'מחיקה היא סופית. למחוק בכל זאת?';
+                        confirmBtn.textContent = 'כן, מחק סופית';
+                        confirmBtn.className = 'py-2 px-6 bg-red-700 text-white font-bold rounded-lg hover:bg-red-800';
+                        step = 2;
+                    } else {
+                        await deleteDoc(doc(db, 'checklists', listId));
+                        closeDeleteModal();
+                    }
+                };
+
+                const closeDeleteModal = () => {
+                    deleteModal.classList.add('hidden');
+                    deleteModal.classList.remove('flex');
+                    confirmBtn.removeEventListener('click', confirmHandler);
+                    document.getElementById('delete-modal-cancel').removeEventListener('click', closeDeleteModal);
+                };
+                
+                confirmBtn.addEventListener('click', confirmHandler);
+                document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
+
+                deleteModal.classList.remove('hidden');
+                deleteModal.classList.add('flex');
+            }
+
+            const editBtn = e.target.closest('.edit-btn');
+            if (editBtn) {
+                const listToEdit = checklistsData.find(l => l.id === editBtn.dataset.listId);
+                if (listToEdit) openModal(listToEdit);
+            }
+        });
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                const authContainer = document.getElementById('auth-container');
+                const displayName = user.displayName || user.email.split('@')[0];
+                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName}</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
+                document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
+                initApp();
+            } else {
+                window.location.replace('login.html');
+            }
+        });
+    </script>
 </body>
 </html>
