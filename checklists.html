@@ -192,6 +192,7 @@
         let currentModalStep = 0;
         let modalItems = [];
         let editingChecklistId = null;
+        let numQuestionSteps = 0; // Global for modal steps
 
         // --- DOM Elements ---
         const loader = document.getElementById('loader');
@@ -372,20 +373,19 @@
             const type = document.getElementById('checklist-type').value;
 
             // Determine the number of question steps before the final "add items" step
-            let numQuestionSteps;
             if (type.includes('יעד') || type.includes('מעבר')) {
-                numQuestionSteps = 4; // Name -> Type -> Destination -> SubType
+                numQuestionSteps = 3; // Name -> Type -> Destination -> SubType
             } else if (type.includes('הטיול')) {
-                numQuestionSteps = 3; // Name -> Type -> SubType
+                numQuestionSteps = 2; // Name -> Type -> SubType
             } else { // This covers 'אחר' and the initial empty state
-                numQuestionSteps = 2; // Name -> Type
+                numQuestionSteps = 1; // Name -> Type
             }
 
             // Hide all steps first
             document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('active'));
             
             // Show the correct step
-            if (currentModalStep < numQuestionSteps) {
+            if (currentModalStep <= numQuestionSteps) {
                 // We are in a question step
                 document.getElementById(`step-${currentModalStep}`).classList.add('active');
             } else {
@@ -394,12 +394,29 @@
             }
 
             // Update button visibility
+            const atLastQuestionStep = currentModalStep === numQuestionSteps;
+            const onItemsStep = currentModalStep > numQuestionSteps;
+
             document.getElementById('modal-back-btn').classList.toggle('hidden', currentModalStep === 0);
-            document.getElementById('modal-next-btn').classList.toggle('hidden', currentModalStep >= numQuestionSteps -1);
-            document.getElementById('modal-finish-btn').classList.toggle('hidden', currentModalStep < numQuestionSteps);
+            document.getElementById('modal-next-btn').classList.toggle('hidden', atLastQuestionStep || onItemsStep);
+            document.getElementById('modal-finish-btn').classList.toggle('hidden', !atLastQuestionStep);
+
+            // Special case for finish button if it's the last step
+            if(atLastQuestionStep) {
+                 document.getElementById('modal-finish-btn').classList.remove('hidden');
+                 document.getElementById('modal-next-btn').classList.add('hidden');
+            } else {
+                 document.getElementById('modal-finish-btn').classList.add('hidden');
+                 document.getElementById('modal-next-btn').classList.remove('hidden');
+            }
+            if(onItemsStep) {
+                document.getElementById('modal-finish-btn').classList.remove('hidden');
+                document.getElementById('modal-next-btn').classList.add('hidden');
+            }
+
 
             // Update step indicator
-            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${numQuestionSteps + 1}`;
+            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${numQuestionSteps + 2}`;
             
             // Generate dynamic content for the next step if needed
             if (currentModalStep === 1) generateStep2Content();
@@ -440,6 +457,13 @@
         };
 
         const handleFinishModal = async () => {
+            // Move to the items step if we are not there yet
+            if(currentModalStep <= numQuestionSteps) {
+                currentModalStep++;
+                updateModalStep();
+                return;
+            }
+
             const name = document.getElementById('checklist-name').value;
             if (!name) return alert('חובה לתת שם לרשימה.');
             
