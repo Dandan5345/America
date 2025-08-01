@@ -134,7 +134,7 @@
                 <div id="step-1" class="modal-step"><label class="block text-sm font-bold text-slate-700 mb-2">שאלה 1: בחר סוג רשימה</label><select id="checklist-type" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"><option value="">-- בחר --</option><option value="לפני הטיול">✈️ לפני הטיול</option><option value="לפני יעד">🗺️ לפני יעד</option><option value="לפני מעבר">🚚 לפני מעבר</option><option value="אחר">📋 אחר</option></select><input type="text" id="checklist-type-other" class="w-full p-3 border border-slate-300 rounded-lg mt-2 hidden" placeholder="הקלד שם לסוג הרשימה"></div>
                 <div id="step-2" class="modal-step"></div>
                 <div id="step-3" class="modal-step"></div>
-                <div id="step-4" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים לרשימה</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">🟡 נמוכה</option><option value="2" selected>🟠 בינונית</option><option value="3">🔴 גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
+                <div id="step-items" class="modal-step"><h4 class="text-lg font-bold text-slate-700 mb-3">הוספת פריטים לרשימה</h4><div class="bg-slate-50 p-4 rounded-lg"><div class="grid grid-cols-1 md:grid-cols-5 gap-3"><input type="text" id="item-text" placeholder="שם הפריט" class="md:col-span-2 p-2 border rounded-md"><input type="number" id="item-quantity" placeholder="כמות" value="1" class="p-2 border rounded-md"><input type="text" id="item-description" placeholder="תיאור (אופציונלי)" class="p-2 border rounded-md"><select id="item-priority" class="p-2 border rounded-md"><option value="1">🟡 נמוכה</option><option value="2" selected>🟠 בינונית</option><option value="3">🔴 גבוהה</option></select></div><button id="add-item-btn" class="mt-3 bg-green-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-600 transition w-full">הוסף פריט</button></div><div id="items-preview-container" class="mt-4 space-y-2"></div></div>
             </div>
             <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
                 <button id="modal-back-btn" class="py-2 px-4 rounded-lg hover:bg-slate-200 transition hidden">אחורה</button>
@@ -190,7 +190,6 @@
         // --- Global State ---
         let checklistsData = [];
         let currentModalStep = 0;
-        let totalModalSteps = 0;
         let modalItems = [];
         let editingChecklistId = null;
 
@@ -356,8 +355,10 @@
             modalItems = listToEdit ? JSON.parse(JSON.stringify(listToEdit.items)) : [];
             renderModalItems();
 
+            // Always start from the beginning
             currentModalStep = 0;
             updateModalStep(true);
+
             checklistModal.classList.add('flex');
             checklistModal.classList.remove('hidden');
         };
@@ -369,22 +370,38 @@
 
         const updateModalStep = (isOpening = false) => {
             const type = document.getElementById('checklist-type').value;
-            if (type.includes('יעד') || type.includes('מעבר')) totalModalSteps = 4;
-            else if (type.includes('הטיול')) totalModalSteps = 3;
-            else if (type.includes('אחר') || type === '') totalModalSteps = 1;
-            else totalModalSteps = 1;
 
-            if (!isOpening) currentModalStep = Math.min(currentModalStep, totalModalSteps);
+            // Determine the number of question steps before the final "add items" step
+            let numQuestionSteps;
+            if (type.includes('יעד') || type.includes('מעבר')) {
+                numQuestionSteps = 4; // Name -> Type -> Destination -> SubType
+            } else if (type.includes('הטיול')) {
+                numQuestionSteps = 3; // Name -> Type -> SubType
+            } else { // This covers 'אחר' and the initial empty state
+                numQuestionSteps = 2; // Name -> Type
+            }
 
+            // Hide all steps first
             document.querySelectorAll('.modal-step').forEach(s => s.classList.remove('active'));
-            document.getElementById(`step-${currentModalStep}`).classList.add('active');
             
+            // Show the correct step
+            if (currentModalStep < numQuestionSteps) {
+                // We are in a question step
+                document.getElementById(`step-${currentModalStep}`).classList.add('active');
+            } else {
+                // We are in the final item-adding step
+                document.getElementById('step-items').classList.add('active');
+            }
+
+            // Update button visibility
             document.getElementById('modal-back-btn').classList.toggle('hidden', currentModalStep === 0);
-            document.getElementById('modal-next-btn').classList.toggle('hidden', currentModalStep >= totalModalSteps);
-            document.getElementById('modal-finish-btn').classList.toggle('hidden', currentModalStep < totalModalSteps);
+            document.getElementById('modal-next-btn').classList.toggle('hidden', currentModalStep >= numQuestionSteps -1);
+            document.getElementById('modal-finish-btn').classList.toggle('hidden', currentModalStep < numQuestionSteps);
+
+            // Update step indicator
+            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${numQuestionSteps + 1}`;
             
-            document.getElementById('modal-steps-indicator').textContent = `שלב ${currentModalStep + 1} מתוך ${totalModalSteps + 1}`;
-            
+            // Generate dynamic content for the next step if needed
             if (currentModalStep === 1) generateStep2Content();
             if (currentModalStep === 2) generateStep3Content();
         };
@@ -457,8 +474,16 @@
 
         // --- Event Listeners ---
         document.getElementById('modal-close-btn').addEventListener('click', closeModal);
-        document.getElementById('modal-back-btn').addEventListener('click', () => { currentModalStep--; updateModalStep(); });
-        document.getElementById('modal-next-btn').addEventListener('click', () => { currentModalStep++; updateModalStep(); });
+        document.getElementById('modal-back-btn').addEventListener('click', () => { 
+            if (currentModalStep > 0) {
+                currentModalStep--;
+                updateModalStep();
+            }
+        });
+        document.getElementById('modal-next-btn').addEventListener('click', () => { 
+            currentModalStep++;
+            updateModalStep();
+        });
         document.getElementById('modal-finish-btn').addEventListener('click', handleFinishModal);
         
         document.getElementById('checklist-type').addEventListener('change', (e) => {
