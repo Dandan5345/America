@@ -402,6 +402,8 @@
                     ]},
                     { title: "תאריכים וסוג", fields: [
                         {id: 'dates', label: 'תאריכי איסוף והחזרה', type: 'daterange', required: true},
+                        {id: 'pickup_time', label: 'שעת איסוף', type: 'time', required: true},
+                        {id: 'return_time', label: 'שעת החזרה', type: 'time', required: true},
                         {id: 'car_type', label: 'סוג רכב', type: 'select', options: ['דלק', 'היברידי', 'חשמלי'], required: true},
                     ]},
                     { title: "עלות ופרטים נוספים", fields: [
@@ -417,6 +419,8 @@
                         { id: 'airline', label: 'חברת תעופה', required: true },
                         { id: 'flight_number', label: 'מספר טיסה', required: true},
                         { id: 'dates', label: 'תאריך טיסה', type: 'date', required: true },
+                        { id: 'departure_time', label: 'שעת המראה (שעון מקומי יציאה)', type: 'time', required: true },
+                        { id: 'arrival_time', label: 'שעת נחיתה (שעון מקומי יעד)', type: 'time', required: true },
                         { id: 'total_flight_time', label: 'זמן טיסה כולל (כולל קונקשנים)', required: true },
                         { id: 'price_per_person', label: 'מחיר לאדם (בדולרים)', type: 'number', required: true },
                     ]},
@@ -538,7 +542,7 @@
                         <div id="seats-container" class="flex flex-wrap gap-2"></div>
                         <button type="button" id="add-seat-btn" class="mt-2 text-sm text-blue-600 hover:underline"><i class="fas fa-plus mr-1"></i>הוסף מקום ישיבה</button>
                     </fieldset>`;
-                default: // text, url, number
+                default: // text, url, number, time
                     return `<label class="block"><span class="text-sm font-semibold text-slate-600">${field.label}</span>
                                  <input type="${field.type || 'text'}" id="${field.id}" value="${value}" class="mt-1 block w-full p-2 border rounded-md shadow-sm">
                                  </label>`;
@@ -864,6 +868,9 @@
                 viewFlightDetails(item);
                 return;
             }
+            if (item.type === 'car_rental') {
+                 // Eventually create a custom view for cars too
+            }
             // Generic details for other types
             const content = DOM.detailsModal.querySelector('.modal-content');
             let html = `
@@ -912,6 +919,8 @@
                         <div class="bg-slate-50 p-4 rounded-lg">
                             <h4 class="font-bold text-slate-700 mb-3 border-b pb-2">פרטי טיסה</h4>
                             <ul class="space-y-2 text-sm text-slate-600">
+                                ${item.departure_time ? `<li><strong>שעת המראה:</strong> ${item.departure_time} (שעון מקומי)</li>` : ''}
+                                ${item.arrival_time ? `<li><strong>שעת נחיתה:</strong> ${item.arrival_time} (שעון מקומי)</li>` : ''}
                                 <li><strong>זמן טיסה כולל:</strong> ${item.total_flight_time}</li>
                                 <li><strong>מחיר לאדם:</strong> $${(item.price_per_person || 0).toLocaleString()}</li>
                                 <li><strong>עלות כוללת:</strong> $${totalCost.toLocaleString()}</li>
@@ -927,9 +936,9 @@
                      <div class="bg-slate-50 p-4 rounded-lg">
                         <h4 class="font-bold text-slate-700 mb-3 border-b pb-2">כבודה (לנוסע)</h4>
                         <div class="grid grid-cols-3 gap-4 text-center">
-                            <div><i class="fas fa-briefcase text-2xl text-slate-500"></i><p class="font-bold">${item.hand_bag_count}</p><p class="text-xs">תיק יד</p></div>
-                            <div><i class="fas fa-suitcase-rolling text-2xl text-slate-500"></i><p class="font-bold">${item.trolley_count} (${item.trolley_weight})</p><p class="text-xs">טרולי</p></div>
-                            <div><i class="fas fa-suitcase text-2xl text-slate-500"></i><p class="font-bold">${item.checked_bags_count} (${item.checked_bags_weight})</p><p class="text-xs">מזוודה</p></div>
+                            <div><i class="fas fa-briefcase text-2xl text-slate-500"></i><p class="font-bold">${item.hand_bag_count || 0}</p><p class="text-xs">תיק יד</p></div>
+                            <div><i class="fas fa-suitcase-rolling text-2xl text-slate-500"></i><p class="font-bold">${item.trolley_count || 0} (${item.trolley_weight || ''})</p><p class="text-xs">טרולי</p></div>
+                            <div><i class="fas fa-suitcase text-2xl text-slate-500"></i><p class="font-bold">${item.checked_bags_count || 0} (${item.checked_bags_weight || ''})</p><p class="text-xs">מזוודה</p></div>
                         </div>
                     </div>
                     ${item.additional_details ? `<div class="bg-slate-50 p-4 rounded-lg"><h4 class="font-bold text-slate-700 mb-2">פרטים נוספים</h4><p class="text-sm text-slate-600 whitespace-pre-wrap">${item.additional_details}</p></div>` : ''}
