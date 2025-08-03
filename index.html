@@ -22,7 +22,7 @@
         
         .modal { transition: opacity 0.3s ease; }
         
-        details > summary { list-style: none; }
+        details > summary { list-style: none; cursor: pointer; }
         details > summary::-webkit-details-marker { display: none; }
         .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
@@ -128,7 +128,7 @@
                         <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">🏨 סיכום המלונות שלנו</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                     </section>
-
+                    
                     <!-- Flight Summary -->
                     <section id="flight-summary-section">
                         <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">✈️ סיכום הטיסות שלנו</h3>
@@ -145,6 +145,20 @@
                         </h3>
                         <div class="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg">
                             <table id="final-summary-table" class="w-full"></table>
+                        </div>
+                    </section>
+
+                     <!-- Destination Costs -->
+                     <section>
+                        <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">💸 סיכומי עלויות לפי יעד</h3>
+                        <div class="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg">
+                            <details id="destination-costs-summary" class="group">
+                                <summary class="text-xl font-bold text-slate-700 cursor-pointer flex justify-between items-center">
+                                    <span>פתח סיכומי עלויות</span>
+                                    <i class="fa-solid fa-chevron-down chevron-icon"></i>
+                                </summary>
+                                <div id="destination-costs-container" class="mt-6 space-y-8 border-t pt-6"></div>
+                            </details>
                         </div>
                     </section>
                     
@@ -196,7 +210,20 @@
             ],
             locations: {
                 jerusalem: { coords: [31.77, 35.21], name: "ירושלים" }, nyc: { coords: [40.71, -74.00], name: "ניו יורק" }, niagara: { coords: [43.08, -79.07], name: "ניאגרה" }, toronto: { coords: [43.65, -79.38], name: "טורונטו" }, dc: { coords: [38.90, -77.03], name: "וושינגטון" }, orlando: { coords: [28.53, -81.37], name: "אורלנדו" }, miami: { coords: [25.76, -80.19], name: "מיאמי" }, puntaCana: { coords: [18.58, -68.40], name: "פונטה קאנה" }, arizona: { coords: [33.44, -112.07], name: "אריזונה" }, la: { coords: [34.05, -118.24], name: "לוס אנג'לס" }, sf: { coords: [37.77, -122.41], name: "סן פרנסיסקו" }
-            }
+            },
+            destinationCosts: [
+                {
+                    title: '❄️🇨🇦 קנדה: 4 ימים בניאגרה וטורונטו',
+                    currency: 'CAD',
+                    items: [
+                        { category: 'יום 1: הגעה לניאגרה', cost: 97, cost_ils: 262 },
+                        { category: 'יום 2: שישי בניאגרה', cost: 134, cost_ils: 364 },
+                        { category: 'יום 3: שבת ומעבר לטורונטו', cost: 158, cost_ils: 428 },
+                        { category: 'יום 4: יום אחרון בטורונטו', cost: 38, cost_ils: 103 }
+                    ],
+                    total: { category: 'סה"כ לאדם (4 ימים)', cost: 427, cost_ils: 1157 }
+                }
+            ]
         };
 
         // --- DOM Elements ---
@@ -345,7 +372,7 @@
                 container.appendChild(card);
             });
         }
-        
+
         function buildFlightCards(flights) {
             const container = document.querySelector('#flight-summary-section .grid');
             if (!container) return;
@@ -403,6 +430,21 @@
                     <tr class="text-lg font-bold"><td class="pt-4 pr-2">עלות לאדם</td><td class="pt-4 pl-2 text-left font-mono">~${perPerson.toLocaleString()} ₪</td></tr>
                 </tbody>`;
         }
+        
+        function buildDestinationCostSummaries() {
+            const container = document.getElementById('destination-costs-container');
+            if (!container || !siteData.destinationCosts) return;
+            container.innerHTML = '';
+            siteData.destinationCosts.forEach(dest => {
+                const details = document.createElement('details');
+                details.className = 'group';
+                details.open = true; // Open by default
+                let itemsHTML = '';
+                dest.items.forEach(item => { itemsHTML += `<tr class="border-b border-slate-200 last:border-b-0"><td class="py-2 px-3">${item.category}</td><td class="py-2 px-3 font-mono text-center">${item.cost}</td><td class="py-2 px-3 font-mono text-center">~${item.cost_ils}</td></tr>`; });
+                details.innerHTML = `<summary class="text-lg font-semibold text-slate-700 cursor-pointer flex justify-between items-center p-3 bg-slate-50 rounded-lg"><span>${dest.title}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="mt-4 overflow-x-auto"><table class="w-full text-sm text-right"><thead class="bg-slate-100"><tr><th class="p-2 font-semibold text-right">קטגוריה</th><th class="p-2 font-semibold text-center">עלות (${dest.currency})</th><th class="p-2 font-semibold text-center">עלות (₪)</th></tr></thead><tbody>${itemsHTML}</tbody><tfoot class="border-t-2 border-slate-300"><tr class="font-bold text-slate-800"><td class="p-2">${dest.total.category}</td><td class="p-2 font-mono text-center">~${dest.total.cost}$</td><td class="p-2 font-mono text-center">~${dest.total.cost_ils}₪</td></tr></tfoot></table></div>`;
+                container.appendChild(details);
+            });
+        }
 
 
         function buildTripMap() {
@@ -432,6 +474,7 @@
         // --- Initial build calls ---
         buildMenu();
         buildTripMap();
+        buildDestinationCostSummaries();
 
         // --- Auth & Data Loading ---
         onAuthStateChanged(auth, user => {
