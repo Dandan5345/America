@@ -20,7 +20,7 @@
         #trip-map-container { height: 450px; border-radius: 1rem; z-index: 0; }
         .leaflet-div-icon { background: transparent; border: none; font-size: 1.5rem; text-align: center; }
         
-        #nav-modal { transition: opacity 0.3s ease; }
+        .modal { transition: opacity 0.3s ease; }
         
         details > summary { list-style: none; }
         details > summary::-webkit-details-marker { display: none; }
@@ -45,7 +45,7 @@
     <!-- Scrollable Content Wrapper -->
     <div class="relative z-10">
         <!-- Navigation Modal -->
-        <div id="nav-modal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden opacity-0">
+        <div id="nav-modal" class="modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden opacity-0">
             <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
                 <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
                 <div id="nav-modal-content" class="flex flex-col gap-4">
@@ -56,6 +56,22 @@
                 <button id="nav-modal-close" class="mt-6 text-slate-500 hover:text-slate-700">סגור</button>
             </div>
         </div>
+        
+        <!-- TopCashback Edit Modal -->
+        <div id="cashback-modal" class="modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden opacity-0">
+            <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+                <h3 class="text-xl font-bold text-slate-800 mb-4">עדכון החזר TopCashback</h3>
+                <div class="flex flex-col gap-4">
+                    <label for="cashback-amount" class="text-slate-600">הזן את סכום ההחזר בשקלים (לדוגמה: -3068)</label>
+                    <input type="number" id="cashback-amount" class="form-input w-full p-3 text-center text-lg font-mono border rounded-lg" placeholder="-3068">
+                </div>
+                <div class="mt-6 flex gap-4">
+                    <button id="cashback-modal-close" class="flex-1 py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button>
+                    <button id="cashback-modal-save" class="flex-1 py-2 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">שמור</button>
+                </div>
+            </div>
+        </div>
+
 
         <!-- Sidebar (Full Navigation Menu) -->
         <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
@@ -73,9 +89,7 @@
                     <div class="flex items-center justify-between h-16">
                         <h1 class="text-xl font-bold text-slate-800">✨ מסע חלומות 2025-26 ✨</h1>
                         <div class="flex items-center gap-4">
-                            <a id="auth-button" href="login.html" class="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-md">
-                                <i class="fa-solid fa-spinner fa-spin"></i> טוען...
-                            </a>
+                            <div id="auth-container"></div>
                             <button id="navigate-hotel-btn" class="p-2 text-slate-600 hover:text-blue-600" aria-label="נווט למלון"><i class="fas fa-hotel fa-lg"></i></button>
                             <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none"><i class="fas fa-bars fa-lg"></i></button>
                         </div>
@@ -91,14 +105,14 @@
                         <h2 class="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg">ההרפתקה הגדולה שלנו מחוף לחוף</h2>
                         <p class="mt-4 text-lg text-slate-200 max-w-3xl mx-auto">זהו מרכז הבקרה של הטיול! מכאן אפשר לנווט לכל המידע החשוב.</p>
                         <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
-                            <a id="protected-link-checklists" href="checklists.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
+                            <a href="checklists.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
                                 <i class="fas fa-list-check text-3xl mb-2"></i><span class="font-bold">רשימות וצ'ק-ליסטים</span>
                             </a>
-                            <a id="protected-link-attractions" href="attractions.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
+                            <a href="attractions.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
                                 <i class="fas fa-map-marked-alt text-3xl mb-2"></i><span class="font-bold">אטרקציות ומסעדות</span>
                             </a>
-                            <a id="protected-link-summary" href="summary.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
-                                <i class="fas fa-plane-departure text-3xl mb-2"></i><span class="font-bold">סיכום מלונות ומעברים</span>
+                            <a href="summary.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
+                                <i class="fas fa-plane-departure text-3xl mb-2"></i><span class="font-bold">ניהול לוגיסטיקה</span>
                             </a>
                         </div>
                     </section>
@@ -110,44 +124,30 @@
                     </section>
 
                     <!-- Hotel Summary -->
-                    <section id="hotel-summary">
+                    <section id="hotel-summary-section">
                         <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">🏨 סיכום המלונות שלנו</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                    </section>
+
+                    <!-- Flight Summary -->
+                    <section id="flight-summary-section">
+                        <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">✈️ סיכום הטיסות שלנו</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                     </section>
 
                     <!-- Cost Summaries -->
                     <section>
-                        <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">📊 סיכומי עלויות</h3>
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div>
-                                <h4 class="font-bold text-xl text-white mb-4 drop-shadow-sm">✈️🚂🚗 עלויות תחבורה (לזוג)</h4>
-                                <div class="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-lg overflow-x-auto">
-                                    <table class="w-full text-sm text-right">
-                                        <thead class="bg-slate-50"><tr><th class="p-3 font-semibold">קטע</th><th class="p-3 font-semibold">אמצעי</th><th class="p-3 font-semibold">זמן</th><th class="p-3 font-semibold">עלות (₪)</th></tr></thead>
-                                        <tbody id="transport-table-body" class="divide-y divide-slate-200"></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-xl text-white mb-4 drop-shadow-sm">💰 השורה התחתונה (לזוג)</h4>
-                                <div class="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg"><table id="final-summary-table" class="w-full"></table></div>
-                            </div>
+                        <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md flex items-center justify-center gap-4">
+                            <span>📊 סיכומי עלויות</span>
+                            <button id="edit-cashback-btn" class="p-2 text-white/70 hover:text-white" title="ערוך החזר כספי">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </h3>
+                        <div class="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg">
+                            <table id="final-summary-table" class="w-full"></table>
                         </div>
                     </section>
                     
-                    <!-- Destination Costs -->
-                    <section>
-                        <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">💸 סיכומי עלויות לפי יעד</h3>
-                        <div class="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg">
-                            <details id="destination-costs-summary" class="group">
-                                <summary class="text-xl font-bold text-slate-700 cursor-pointer flex justify-between items-center">
-                                    <span>פתח סיכומי עלויות</span>
-                                    <i class="fa-solid fa-chevron-down chevron-icon"></i>
-                                </summary>
-                                <div id="destination-costs-container" class="mt-6 space-y-8 border-t pt-6"></div>
-                            </details>
-                        </div>
-                    </section>
                 </div>
             </main>
         </div>
@@ -155,358 +155,316 @@
         <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
     </div>
 
-    <script>
-        // All your existing site data and functions are here
-        document.addEventListener('DOMContentLoaded', function () {
-            const siteData = {
-                menu: [
-                    { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
-                    { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [
-                        { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' }
-                    ]},
-                    { id: 'niagara', page: 'niagara.html', title: '❄️ קנדה', emoji: '🇨🇦', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
-                    { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
-                    { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
-                    { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
-                    { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
-                    { id: 'arizona', page: 'arizona.html', title: '🏜️ אריזונה', emoji: '🏜️', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' } ]},
-                    { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
-                    { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
-                ],
-                hotels: [
-                    { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23-30.12", price: "₪9,800", kitchen: true, breakfast: "לא להסתמך", link: "https://www.marriott.com/en-us/hotels/nyctp-towneplace-suites-new-york-manhattan-chelsea/overview/", address: "140 W 28th St, New York, NY 10001" },
-                    { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", price: "₪4,448", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/nycox-moxy-nyc-chelsea/overview/", address: "105 W 28th St, New York, NY 10001" },
-                    { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01.01-03.01", price: "₪1,735", kitchen: false, breakfast: false, link: "https://www.fallsvierhotel.com/", address: "6732 Fallsview Blvd, Niagara Falls, ON L2G 3W6, Canada" },
-                    { name: "InterContinental Toronto Centre", dest: "טורונטו", dates: "03.01-04.01", price: "₪902", kitchen: false, breakfast: false, link: "https://www.ihg.com/intercontinental/hotels/us/en/toronto/yyztc/hoteldetail", address: "225 Front St W, Toronto, ON M5V 2X3, Canada" },
-                    { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04.01-07.01", price: "₪1,896", kitchen: false, breakfast: false, link: "https://www.hotelmadera.com/", address: "1310 New Hampshire Ave NW, Washington, DC 20036" },
-                    { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07.01-12.01", price: "₪2,688", kitchen: true, breakfast: true, link: "https://www.marriott.com/en-us/hotels/mcots-towneplace-suites-orlando-southwest-near-universal/overview/", address: "5801 Universal Blvd, Orlando, FL 32819" },
-                    { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12.01-15.01", price: "₪2,783", kitchen: false, breakfast: false, link: "https://www.upsunhotel.com/", address: "2216 Park Ave, Miami Beach, FL 33139" },
-                    { name: "Fortune House Hotel Suites", dest: "מיאמי", dates: "15.01-18.01", price: "₪3,383", kitchen: true, breakfast: false, link: "https://www.fortunehousehotel.com/", address: "185 SE 14th Terrace, Miami, FL 33131" },
-                    { name: "Majestic Mirage Punta Cana", dest: "פונטה קאנה", dates: "18.01-22.01", price: "₪7,231", kitchen: "הכל כלול", breakfast: "הכל כלול", link: "https://www.majestic-resorts.com/en/hotels/majestic-mirage-punta-cana/", address: "Playa Arena Gorda, Bavaro, Punta Cana" },
-                    { name: "פרטי המלון יתווספו", dest: "אריזונה", dates: "22.01-27.01", price: "יתווסף", kitchen: null, breakfast: null, link: "#", address: "פרטי הכתובת יתווספו" },
-                    { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "27.01-01.02", price: "₪4,182", kitchen: true, breakfast: false, link: "#", address: "S Hope St, Los Angeles, CA" },
-                    { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01.02-05.02", price: "₪3,213", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/sfovc-marriott-vacation-club-pulse-san-francisco/overview/", address: "1200 Sutter St, San Francisco, CA 94109" }
-                ],
-                transport: [
-                    { segment: "טיסות ארוכות", means: "✈️", duration: "12+ שעות", cost: 7745 },
-                    { segment: "ניו יורק → באפלו", means: "✈️", duration: "~1.5 שעות", cost: 826 },
-                    { segment: "טורונטו → וושינגטון", means: "✈️", duration: "~1.5 שעות", cost: 1540 },
-                    { segment: "וושינגטון → אורלנדו", means: "✈️", duration: "~2.5 שעות", cost: 794 },
-                    { segment: "אורלנדו → מיאמי", means: "🚂", duration: "~3.5 שעות", cost: 360 },
-                    { segment: "מיאמי → פונטה קאנה", means: "✈️", duration: "~2.5 שעות", cost: 1044 },
-                    { segment: "פונטה קאנה → אריזונה", means: "✈️", duration: "~8 שעות", cost: 2000 },
-                    { segment: "אריזונה → לוס אנג'לס", means: "✈️", duration: "~1.5 שעות", cost: 800 },
-                    { segment: "לוס אנג'לס → סן פרנסיסקו", means: "✈️", duration: "~1.5 שעות", cost: 788 },
-                    { segment: "השכרת רכב - LA", means: "🚗", duration: "5 ימים", cost: 1600 }
-                ],
-                locations: {
-                    jerusalem: { coords: [31.77, 35.21], name: "ירושלים" }, nyc: { coords: [40.71, -74.00], name: "ניו יורק" }, niagara: { coords: [43.08, -79.07], name: "ניאגרה" }, toronto: { coords: [43.65, -79.38], name: "טורונטו" }, dc: { coords: [38.90, -77.03], name: "וושינגטון" }, orlando: { coords: [28.53, -81.37], name: "אורלנדו" }, miami: { coords: [25.76, -80.19], name: "מיאמי" }, puntaCana: { coords: [18.58, -68.40], name: "פונטה קאנה" }, arizona: { coords: [33.44, -112.07], name: "אריזונה" }, la: { coords: [34.05, -118.24], name: "לוס אנג'לס" }, sf: { coords: [37.77, -122.41], name: "סן פרנסיסקו" }
-                },
-                destinationCosts: [
-                    {
-                        title: '❄️🇨🇦 קנדה: 4 ימים בניאגרה וטורונטו',
-                        currency: 'CAD',
-                        items: [
-                            { category: 'יום 1: הגעה לניאגרה', cost: 97, cost_ils: 262 },
-                            { category: 'יום 2: שישי בניאגרה', cost: 134, cost_ils: 364 },
-                            { category: 'יום 3: שבת ומעבר לטורונטו', cost: 158, cost_ils: 428 },
-                            { category: 'יום 4: יום אחרון בטורונטו', cost: 38, cost_ils: 103 }
-                        ],
-                        total: { category: 'סה"כ לאדם (4 ימים)', cost: 427, cost_ils: 1157 }
-                    }
-                ]
-            };
-
-            const sidebar = document.getElementById('sidebar');
-            const hamburgerBtn = document.getElementById('hamburger-btn');
-            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-            const overlay = document.getElementById('overlay');
-            const mainMenu = document.getElementById('main-menu');
-            const navModal = document.getElementById('nav-modal');
-            const navModalClose = document.getElementById('nav-modal-close');
-            const navigateHotelBtn = document.getElementById('navigate-hotel-btn');
-
-            function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
-            
-            function openNavModal(title, address, message) {
-                document.getElementById('nav-modal-title').textContent = title;
-                const navContent = document.getElementById('nav-modal-content');
-                const navMessage = document.getElementById('nav-modal-message');
-                const wazeLink = document.getElementById('nav-waze-link');
-                const gmapsLink = document.getElementById('nav-gmaps-link');
-
-                if (address && address !== "פרטי הכתובת יתווספו") {
-                    const encodedAddress = encodeURIComponent(address);
-                    wazeLink.href = `https://waze.com/ul?q=${encodedAddress}`;
-                    gmapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
-                    navContent.classList.remove('hidden');
-                    navMessage.classList.add('hidden');
-                } else {
-                    navContent.classList.add('hidden');
-                    navMessage.textContent = message || "פרטי הניווט עבור מלון זה עדיין לא זמינים.";
-                    navMessage.classList.remove('hidden');
-                }
-                navModal.classList.remove('hidden');
-                setTimeout(() => navModal.classList.remove('opacity-0'), 10);
-            }
-
-            function closeNavModal() { navModal.classList.add('opacity-0'); setTimeout(() => navModal.classList.add('hidden'), 300); }
-
-            function parseDateRange(dateString) {
-                const parts = dateString.split('-');
-                let startDay, startMonth, endDay, endMonth;
-                
-                if (parts.length === 2 && parts[0].indexOf('.') === -1 && parts[1].indexOf('.') !== -1) {
-                    startDay = parseInt(parts[0], 10);
-                    [endDay, endMonth] = parts[1].split('.').map(Number);
-                    startMonth = endMonth;
-                } 
-                else if (parts.length === 2 && parts[0].indexOf('.') !== -1 && parts[1].indexOf('.') !== -1) {
-                    [startDay, startMonth] = parts[0].split('.').map(Number);
-                    [endDay, endMonth] = parts[1].split('.').map(Number);
-                } 
-                else {
-                    return { start: null, end: null };
-                }
-
-                const startYear = startMonth === 12 ? 2025 : 2026;
-                const endYear = endMonth === 12 ? 2025 : 2026;
-
-                const startDate = new Date(startYear, startMonth - 1, startDay);
-                const endDate = new Date(endYear, endMonth - 1, endDay);
-                endDate.setHours(23, 59, 59, 999);
-
-                return { start: startDate, end: endDate };
-            }
-
-            function navigateToCurrentHotel() {
-                const today = new Date();
-                let targetHotel = null;
-
-                for (const hotel of siteData.hotels) {
-                    const range = parseDateRange(hotel.dates);
-                    if (range.start && range.end && today >= range.start && today <= range.end) {
-                        targetHotel = hotel;
-                        break;
-                    }
-                }
-                
-                if (!targetHotel) {
-                     const upcomingHotels = siteData.hotels
-                        .map(hotel => ({ hotel, range: parseDateRange(hotel.dates) }))
-                        .filter(item => item.range.start && item.range.start > today)
-                        .sort((a, b) => a.range.start - b.range.start);
-
-                    if (upcomingHotels.length > 0) {
-                        targetHotel = upcomingHotels[0].hotel;
-                    }
-                }
-
-                if (targetHotel) {
-                    openNavModal(`נווט אל: ${targetHotel.name}`, targetHotel.address);
-                } else {
-                    openNavModal('המסע הסתיים', null, 'מקווים שנהניתם, הטיול הגיע לסיומו!');
-                }
-            }
-
-            function buildMenu() {
-                siteData.menu.forEach(destination => {
-                    const destinationDiv = document.createElement('div');
-                    const button = document.createElement('button');
-                    button.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center transition-colors';
-                    button.innerHTML = `<span>${destination.title}</span> <i class="fas fa-chevron-down chevron-icon"></i>`;
-                    const submenu = document.createElement('div');
-                    submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
-                    destination.days.forEach(day => {
-                        const dayLink = document.createElement('a');
-                        dayLink.href = `${destination.page}#${day.id}`;
-                        dayLink.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md transition-colors';
-                        dayLink.textContent = `${destination.title.split(' ')[1]} ${day.label} ${destination.emoji}`;
-                        submenu.appendChild(dayLink);
-                    });
-                    button.addEventListener('click', () => { submenu.classList.toggle('open'); button.querySelector('i').classList.toggle('rotate-180'); });
-                    destinationDiv.appendChild(button);
-                    destinationDiv.appendChild(submenu);
-                    mainMenu.appendChild(destinationDiv);
-                });
-            }
-            
-            function buildHotelCards() {
-                const container = document.querySelector('#hotel-summary .grid');
-                if (!container) return;
-                container.innerHTML = '';
-                siteData.hotels.forEach(hotel => {
-                    let kitchenIcon = '', breakfastIcon = '';
-                    if (hotel.kitchen === "הכל כלול") { kitchenIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-star fa-fw text-amber-500"></i> <strong>הכל כלול</strong></li>`; }
-                    else if (hotel.kitchen !== null) { kitchenIcon = hotel.kitchen ? `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-green-500"></i> <strong>מטבחון:</strong> כן</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-red-500"></i> <strong>מטבחון:</strong> אין</li>`; }
-                    if (hotel.breakfast === "הכל כלול") {} 
-                    else if (typeof hotel.breakfast === 'string' && hotel.breakfast !== null) { breakfastIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-yellow-500"></i> <strong>א. בוקר:</strong> ${hotel.breakfast}</li>`; }
-                    else if (hotel.breakfast !== null) { breakfastIcon = hotel.breakfast ? `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-green-500"></i> <strong>א. בוקר:</strong> כלולה</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-red-500"></i> <strong>א. בוקר:</strong> אין</li>`; }
-                    const card = document.createElement('div');
-                    card.className = "bg-white p-5 rounded-2xl shadow-lg flex flex-col";
-                    card.innerHTML = `<h4 class="font-bold text-lg text-slate-800">${hotel.name}</h4><p class="text-sm text-slate-500 mb-3">${hotel.dest} | ${hotel.dates}</p><ul class="space-y-2 text-slate-600 text-sm mb-4">${kitchenIcon}${breakfastIcon}<li class="flex items-center gap-2"><i class="fa-solid fa-tag fa-fw text-blue-500"></i> <strong>מחיר:</strong> ${hotel.price}</li></ul><div class="mt-auto grid grid-cols-2 gap-2"><a href="${hotel.link}" target="_blank" class="text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition ${hotel.link === '#' ? 'opacity-50 cursor-not-allowed' : ''}">לאתר <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a><button data-address="${hotel.address}" data-name="${hotel.name}" class="nav-btn text-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition">נווט <i class="fa-solid fa-diamond-turn-right text-xs"></i></button></div>`;
-                    container.appendChild(card);
-                });
-            }
-
-            function buildCostTables() {
-                const transportBody = document.getElementById('transport-table-body');
-                if (!transportBody) return;
-                transportBody.innerHTML = '';
-                let totalTransport = siteData.transport.reduce((sum, item) => sum + item.cost, 0);
-                siteData.transport.forEach(item => { transportBody.innerHTML += `<tr class="text-slate-600"><td class="p-3">${item.segment}</td><td class="p-3 text-center">${item.means}</td><td class="p-3 text-center">${item.duration}</td><td class="p-3 font-mono text-left">${item.cost.toLocaleString()}</td></tr>`; });
-                transportBody.innerHTML += `<tr class="font-bold bg-slate-100 text-slate-800"><td class="p-3">סה"כ</td><td></td><td></td><td class="p-3 font-mono text-left">${totalTransport.toLocaleString()}</td></tr>`;
-                const summaryBody = document.getElementById('final-summary-table');
-                if (!summaryBody) return;
-                const totalHotels = siteData.hotels.reduce((sum, hotel) => { const price = parseFloat(String(hotel.price).replace(/[^0-9.-]+/g,"")); return sum + (isNaN(price) ? 0 : price); }, 0);
-                const subTotal = totalHotels + totalTransport;
-                const cashback = -3068;
-                const finalTotal = subTotal + cashback;
-                const perPerson = Math.round(finalTotal / 2);
-                summaryBody.innerHTML = `<tbody class="divide-y divide-slate-200 text-slate-700"><tr><td class="py-3 pr-2">🏨 סה"כ מלונות</td><td class="py-3 pl-2 text-left font-mono">${Math.round(totalHotels).toLocaleString()} ₪</td></tr><tr><td class="py-3 pr-2">✈️ סה"כ תחבורה</td><td class="py-3 pl-2 text-left font-mono">${totalTransport.toLocaleString()} ₪</td></tr><tr class="font-semibold"><td class="py-3 pr-2">סה"כ (לפני החזר)</td><td class="py-3 pl-2 text-left font-mono">${Math.round(subTotal).toLocaleString()} ₪</td></tr><tr><td class="py-3 pr-2 text-green-600">💸 החזר כספי (TopCashback)</td><td class="py-3 pl-2 text-left font-mono text-green-600">${cashback.toLocaleString()} ₪</td></tr><tr class="text-xl font-bold bg-slate-100 rounded-lg"><td class="p-4">סה"כ סופי</td><td class="p-4 text-left font-mono">${Math.round(finalTotal).toLocaleString()} ₪</td></tr><tr class="text-lg font-bold"><td class="pt-4 pr-2">עלות לאדם</td><td class="pt-4 pl-2 text-left font-mono">~${perPerson.toLocaleString()} ₪</td></tr></tbody>`;
-            }
-
-            function buildDestinationCostSummaries() {
-                const container = document.getElementById('destination-costs-container');
-                if (!container || !siteData.destinationCosts) return;
-                container.innerHTML = '';
-                siteData.destinationCosts.forEach(dest => {
-                    const details = document.createElement('details');
-                    details.className = 'group';
-                    details.open = true; // Open by default
-                    let itemsHTML = '';
-                    dest.items.forEach(item => { itemsHTML += `<tr class="border-b border-slate-200 last:border-b-0"><td class="py-2 px-3">${item.category}</td><td class="py-2 px-3 font-mono text-center">${item.cost}</td><td class="py-2 px-3 font-mono text-center">~${item.cost_ils}</td></tr>`; });
-                    details.innerHTML = `<summary class="text-lg font-semibold text-slate-700 cursor-pointer flex justify-between items-center p-3 bg-slate-50 rounded-lg"><span>${dest.title}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary><div class="mt-4 overflow-x-auto"><table class="w-full text-sm text-right"><thead class="bg-slate-100"><tr><th class="p-2 font-semibold text-right">קטגוריה</th><th class="p-2 font-semibold text-center">עלות (${dest.currency})</th><th class="p-2 font-semibold text-center">עלות (₪)</th></tr></thead><tbody>${itemsHTML}</tbody><tfoot class="border-t-2 border-slate-300"><tr class="font-bold text-slate-800"><td class="p-2">${dest.total.category}</td><td class="p-2 font-mono text-center">~${dest.total.cost}$</td><td class="p-2 font-mono text-center">~${dest.total.cost_ils}₪</td></tr></tfoot></table></div>`;
-                    container.appendChild(details);
-                });
-            }
-
-            function buildTripMap() {
-                const mapContainer = document.getElementById('trip-map-container');
-                if (!mapContainer || mapContainer._leaflet_id) return;
-                const tripMap = L.map('trip-map-container').setView([38, -95], 3.5);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 20 }).addTo(tripMap);
-                const pathCoords = Object.values(siteData.locations).map(loc => loc.coords);
-                Object.values(siteData.locations).forEach(loc => { L.marker(loc.coords, { icon: L.divIcon({ className: 'leaflet-div-icon', html: '📍' }) }).addTo(tripMap).bindTooltip(loc.name, {permanent: true, direction: 'top', offset: [0, -10]}).openTooltip(); });
-                L.polyline(pathCoords, { color: '#38bdf8', weight: 3, opacity: 0.7, dashArray: '5, 10' }).addTo(tripMap);
-            }
-
-            // Event Listeners
-            hamburgerBtn.addEventListener('click', toggleSidebar);
-            closeSidebarBtn.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', toggleSidebar);
-            navModalClose.addEventListener('click', closeNavModal);
-            navigateHotelBtn.addEventListener('click', navigateToCurrentHotel);
-            
-            document.querySelector('#hotel-summary').addEventListener('click', function(e) {
-                const navBtn = e.target.closest('.nav-btn');
-                if (navBtn) { openNavModal(`נווט אל ${navBtn.dataset.name}`, navBtn.dataset.address); }
-            });
-
-            // Initial build calls
-            buildMenu();
-            buildHotelCards();
-            buildCostTables();
-            buildDestinationCostSummaries();
-            buildTripMap();
-        });
-    </script>
-
-    <!-- Firebase Authentication Logic -->
     <script type="module">
-      // Import the functions you need from the SDKs you need
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-      import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-      // Your web app's Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
-        authDomain: "america1tour.firebaseapp.com",
-        projectId: "america1tour",
-        storageBucket: "america1tour.firebasestorage.app",
-        messagingSenderId: "70515728009",
-        appId: "1:70515728009:web:aded0696b4f72c910b7058",
-        measurementId: "G-S29LD2DT7S"
-      };
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
+            authDomain: "america1tour.firebaseapp.com",
+            projectId: "america1tour",
+            storageBucket: "america1tour.firebasestorage.app",
+            messagingSenderId: "70515728009",
+            appId: "1:70515728009:web:aded0696b4f72c910b7058",
+        };
 
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const logisticsCollection = collection(db, 'logistics_v2');
+        const configDocRef = doc(db, 'trip_config', 'main');
 
-      // --- Authentication Management ---
+        let allLogisticsItems = [];
+        let topCashbackAmountILS = -3068; // Default value
 
-      onAuthStateChanged(auth, user => {
-        const authButton = document.getElementById('auth-button');
-        const protectedLinks = [
-            document.getElementById('protected-link-checklists'),
-            document.getElementById('protected-link-attractions'),
-            document.getElementById('protected-link-summary')
-        ];
+        const siteData = {
+            menu: [
+                { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
+                { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [
+                    { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' }
+                ]},
+                { id: 'niagara', page: 'niagara.html', title: '❄️ קנדה', emoji: '🇨🇦', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
+                { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
+                { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
+                { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
+                { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
+                { id: 'arizona', page: 'arizona.html', title: '🏜️ אריזונה', emoji: '🏜️', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' } ]},
+                { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
+                { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
+            ],
+            locations: {
+                jerusalem: { coords: [31.77, 35.21], name: "ירושלים" }, nyc: { coords: [40.71, -74.00], name: "ניו יורק" }, niagara: { coords: [43.08, -79.07], name: "ניאגרה" }, toronto: { coords: [43.65, -79.38], name: "טורונטו" }, dc: { coords: [38.90, -77.03], name: "וושינגטון" }, orlando: { coords: [28.53, -81.37], name: "אורלנדו" }, miami: { coords: [25.76, -80.19], name: "מיאמי" }, puntaCana: { coords: [18.58, -68.40], name: "פונטה קאנה" }, arizona: { coords: [33.44, -112.07], name: "אריזונה" }, la: { coords: [34.05, -118.24], name: "לוס אנג'לס" }, sf: { coords: [37.77, -122.41], name: "סן פרנסיסקו" }
+            }
+        };
 
-        if (user) {
-            // User is signed in
-            const displayName = user.displayName || user.email.split('@')[0];
-            authButton.innerHTML = `<i class="fa-solid fa-user-check"></i> שלום, ${displayName}`;
-            authButton.href = '#';
-            authButton.title = 'לחץ להתנתקות';
+        // --- DOM Elements ---
+        const sidebar = document.getElementById('sidebar');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const overlay = document.getElementById('overlay');
+        const mainMenu = document.getElementById('main-menu');
+        const navModal = document.getElementById('nav-modal');
+        const navModalClose = document.getElementById('nav-modal-close');
+        const navigateHotelBtn = document.getElementById('navigate-hotel-btn');
+        const cashbackModal = document.getElementById('cashback-modal');
+        const editCashbackBtn = document.getElementById('edit-cashback-btn');
+        const cashbackModalClose = document.getElementById('cashback-modal-close');
+        const cashbackModalSave = document.getElementById('cashback-modal-save');
+        const cashbackAmountInput = document.getElementById('cashback-amount');
+
+        // --- Functions ---
+        function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
+        
+        function openNavModal(title, address, message) {
+            document.getElementById('nav-modal-title').textContent = title;
+            const navContent = document.getElementById('nav-modal-content');
+            const navMessage = document.getElementById('nav-modal-message');
+            const wazeLink = document.getElementById('nav-waze-link');
+            const gmapsLink = document.getElementById('nav-gmaps-link');
+
+            if (address) {
+                const encodedAddress = encodeURIComponent(address);
+                wazeLink.href = `https://waze.com/ul?q=${encodedAddress}`;
+                gmapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                navContent.classList.remove('hidden');
+                navMessage.classList.add('hidden');
+            } else {
+                navContent.classList.add('hidden');
+                navMessage.textContent = message || "פרטי הניווט עבור מלון זה עדיין לא זמינים.";
+                navMessage.classList.remove('hidden');
+            }
+            navModal.classList.remove('hidden');
+            setTimeout(() => navModal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeNavModal() { navModal.classList.add('opacity-0'); setTimeout(() => navModal.classList.add('hidden'), 300); }
+
+        function openCashbackModal() {
+            cashbackAmountInput.value = topCashbackAmountILS;
+            cashbackModal.classList.remove('hidden');
+            setTimeout(() => cashbackModal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeCashbackModal() { cashbackModal.classList.add('opacity-0'); setTimeout(() => cashbackModal.classList.add('hidden'), 300); }
+
+        async function saveCashback() {
+            const newAmount = parseFloat(cashbackAmountInput.value);
+            if (!isNaN(newAmount)) {
+                try {
+                    await setDoc(configDocRef, { topCashbackAmount: newAmount }, { merge: true });
+                    closeCashbackModal();
+                } catch (error) {
+                    console.error("Error saving cashback amount:", error);
+                    alert("שגיאה בשמירת הסכום.");
+                }
+            } else {
+                alert("אנא הזן מספר תקין.");
+            }
+        }
+
+        function parseDateRange(dateString) {
+            if (!dateString || !dateString.includes(' - ')) return { start: null, end: null };
+            const parts = dateString.split(' - ');
+            const [startDay, startMonth, startYear] = parts[0].split('/').map(Number);
+            const [endDay, endMonth, endYear] = parts[1].split('/').map(Number);
+
+            const startDate = new Date(startYear, startMonth - 1, startDay);
+            const endDate = new Date(endYear, endMonth - 1, endDay);
+            endDate.setHours(23, 59, 59, 999);
+            return { start: startDate, end: endDate };
+        }
+
+        function navigateToCurrentHotel(hotels) {
+            const today = new Date();
+            let targetHotel = null;
+
+            for (const hotel of hotels) {
+                const range = parseDateRange(hotel.dates);
+                if (range.start && range.end && today >= range.start && today <= range.end) {
+                    targetHotel = hotel;
+                    break;
+                }
+            }
             
-            authButton.onclick = (e) => {
-                e.preventDefault();
-                signOut(auth).catch(error => console.error("Sign out error", error));
-            };
+            if (!targetHotel) {
+                const upcomingHotels = hotels
+                    .map(hotel => ({ hotel, range: parseDateRange(hotel.dates) }))
+                    .filter(item => item.range.start && item.range.start > today)
+                    .sort((a, b) => a.range.start - b.range.start);
 
-            // Enable protected links
-            protectedLinks.forEach(link => {
-                if(link) link.dataset.protected = "false";
-            });
+                if (upcomingHotels.length > 0) {
+                    targetHotel = upcomingHotels[0].hotel;
+                }
+            }
 
-        } else {
-            // User is signed out
-            authButton.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> התחברות';
-            authButton.href = 'login.html';
-            authButton.title = 'עבור לדף התחברות';
-            authButton.onclick = null;
+            if (targetHotel) {
+                openNavModal(`נווט אל: ${targetHotel.name}`, targetHotel.address);
+            } else {
+                openNavModal('המסע הסתיים', null, 'מקווים שנהניתם, הטיול הגיע לסיומו!');
+            }
+        }
 
-            // Disable protected links
-             protectedLinks.forEach(link => {
-                if(link) link.dataset.protected = "true";
+        function buildMenu() {
+            siteData.menu.forEach(destination => {
+                const destinationDiv = document.createElement('div');
+                const button = document.createElement('button');
+                button.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center transition-colors';
+                button.innerHTML = `<span>${destination.title}</span> <i class="fas fa-chevron-down chevron-icon"></i>`;
+                const submenu = document.createElement('div');
+                submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
+                destination.days.forEach(day => {
+                    const dayLink = document.createElement('a');
+                    dayLink.href = `${destination.page}#${day.id}`;
+                    dayLink.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md transition-colors';
+                    dayLink.textContent = `${destination.title.split(' ')[1]} ${day.label} ${destination.emoji}`;
+                    submenu.appendChild(dayLink);
+                });
+                button.addEventListener('click', () => { submenu.classList.toggle('open'); button.querySelector('i').classList.toggle('rotate-180'); });
+                destinationDiv.appendChild(button);
+                destinationDiv.appendChild(submenu);
+                mainMenu.appendChild(destinationDiv);
             });
         }
-      });
+        
+        function buildHotelCards(hotels) {
+            const container = document.querySelector('#hotel-summary-section .grid');
+            if (!container) return;
+            container.innerHTML = '';
+            hotels.forEach(hotel => {
+                let kitchenIcon = '', breakfastIcon = '';
+                if (hotel.kitchen === "הכל כלול") { kitchenIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-star fa-fw text-amber-500"></i> <strong>הכל כלול</strong></li>`; }
+                else if (hotel.kitchenette !== null) { kitchenIcon = hotel.kitchenette ? `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-green-500"></i> <strong>מטבחון:</strong> כן</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-red-500"></i> <strong>מטבחון:</strong> אין</li>`; }
+                if (hotel.breakfast === "הכל כלול") {} 
+                else if (hotel.breakfast !== null) { breakfastIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-blue-500"></i> <strong>א. בוקר:</strong> ${hotel.breakfast}</li>`; }
+                
+                const card = document.createElement('div');
+                card.className = "bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg flex flex-col";
+                card.innerHTML = `<h4 class="font-bold text-lg text-slate-800">${hotel.name}</h4><p class="text-sm text-slate-500 mb-3">${hotel.destination} | ${hotel.dates}</p><ul class="space-y-2 text-slate-600 text-sm mb-4">${kitchenIcon}${breakfastIcon}<li class="flex items-center gap-2"><i class="fa-solid fa-tag fa-fw text-blue-500"></i> <strong>מחיר:</strong> $${(hotel.price || 0).toLocaleString()}</li></ul><div class="mt-auto pt-4 border-t grid grid-cols-2 gap-2"><a href="${hotel.link}" target="_blank" class="text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition ${!hotel.link ? 'opacity-50 cursor-not-allowed' : ''}">לאתר <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a><button data-address="${hotel.address}" data-name="${hotel.name}" class="nav-btn text-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition">נווט <i class="fa-solid fa-diamond-turn-right text-xs"></i></button></div>`;
+                container.appendChild(card);
+            });
+        }
+        
+        function buildFlightCards(flights) {
+            const container = document.querySelector('#flight-summary-section .grid');
+            if (!container) return;
+            container.innerHTML = '';
+            flights.forEach(flight => {
+                const card = document.createElement('a');
+                card.href = `summary.html?view=${flight.id}`;
+                card.className = "main-nav-button bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg flex items-center gap-4 text-right";
+                
+                const title = `טיסה: ${flight.from?.destination || ''} ← ${flight.to?.destination || ''}`;
+                const details = `<p class="text-sm text-slate-500">${flight.airline}</p><p class="text-sm text-slate-600 font-semibold">${flight.dates || ''}</p>`;
 
-      // Add a single event listener to the body to handle clicks on protected links
-      document.body.addEventListener('click', function(e) {
-          // Find the closest ancestor that is a link
-          const link = e.target.closest('a');
-          
-          if (link && link.dataset.protected === "true") {
-              e.preventDefault(); // Stop the link from navigating
+                card.innerHTML = `
+                    <i class="fas fa-plane-departure fa-2x text-sky-500"></i>
+                    <div>
+                        <h4 class="font-bold text-lg text-slate-800">${title}</h4>
+                        ${details}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
-              // Use the existing modal to show a message
-              const navModal = document.getElementById('nav-modal');
-              const navModalTitle = document.getElementById('nav-modal-title');
-              const navModalContent = document.getElementById('nav-modal-content');
-              const navModalMessage = document.getElementById('nav-modal-message');
-              const navModalClose = document.getElementById('nav-modal-close');
+        function buildCostTables() {
+            const hotels = allLogisticsItems.filter(item => item.type === 'hotel');
+            const flights = allLogisticsItems.filter(item => item.type === 'flight');
+            const cars = allLogisticsItems.filter(item => item.type === 'car_rental');
+            
+            const summaryBody = document.getElementById('final-summary-table');
+            if (!summaryBody) return;
+            
+            const USD_TO_ILS_RATE = 3.40;
 
-              navModalTitle.textContent = 'נדרשת התחברות';
-              navModalContent.classList.add('hidden'); // Hide the Waze/Google Maps buttons
-              navModalMessage.classList.remove('hidden');
-              navModalMessage.textContent = 'כדי לגשת לעמוד זה, עליך להתחבר תחילה.';
-              
-              navModal.classList.remove('hidden');
-              setTimeout(() => navModal.classList.remove('opacity-0'), 10);
-          }
-      }, true); // Use capture phase to ensure it runs before the link's default action
+            const totalHotelsUSD = hotels.reduce((sum, hotel) => sum + (hotel.price || 0), 0);
+            const totalFlightsUSD = flights.reduce((sum, flight) => {
+                const numSeats = flight.seats?.length || 1;
+                return sum + ((flight.price_per_person || 0) * numSeats);
+            }, 0);
+            const totalCarsUSD = cars.reduce((sum, car) => sum + (car.price || 0), 0);
 
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log('SW registered'))
-        .catch(err => console.log('SW failed:', err));
-    });
-  }
+            const totalHotelsILS = totalHotelsUSD * USD_TO_ILS_RATE;
+            const totalTransportILS = (totalFlightsUSD + totalCarsUSD) * USD_TO_ILS_RATE;
 
+            const subTotal = totalHotelsILS + totalTransportILS;
+            const finalTotal = subTotal + topCashbackAmountILS;
+            const perPerson = Math.round(finalTotal / 2);
+
+            summaryBody.innerHTML = `
+                <tbody class="divide-y divide-slate-200 text-slate-700">
+                    <tr><td class="py-3 pr-2">🏨 סה"כ מלונות</td><td class="py-3 pl-2 text-left font-mono">${Math.round(totalHotelsILS).toLocaleString()} ₪</td></tr>
+                    <tr><td class="py-3 pr-2">✈️ סה"כ תחבורה</td><td class="py-3 pl-2 text-left font-mono">${Math.round(totalTransportILS).toLocaleString()} ₪</td></tr>
+                    <tr class="font-semibold"><td class="py-3 pr-2">סה"כ (לפני החזר)</td><td class="py-3 pl-2 text-left font-mono">${Math.round(subTotal).toLocaleString()} ₪</td></tr>
+                    <tr><td class="py-3 pr-2 text-green-600">💸 החזר כספי (TopCashback)</td><td class="py-3 pl-2 text-left font-mono text-green-600">${topCashbackAmountILS.toLocaleString()} ₪</td></tr>
+                    <tr class="text-xl font-bold bg-slate-100 rounded-lg"><td class="p-4">סה"כ סופי</td><td class="p-4 text-left font-mono">${Math.round(finalTotal).toLocaleString()} ₪</td></tr>
+                    <tr class="text-lg font-bold"><td class="pt-4 pr-2">עלות לאדם</td><td class="pt-4 pl-2 text-left font-mono">~${perPerson.toLocaleString()} ₪</td></tr>
+                </tbody>`;
+        }
+
+
+        function buildTripMap() {
+            const mapContainer = document.getElementById('trip-map-container');
+            if (!mapContainer || mapContainer._leaflet_id) return;
+            const tripMap = L.map('trip-map-container').setView([38, -95], 3.5);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 20 }).addTo(tripMap);
+            const pathCoords = Object.values(siteData.locations).map(loc => loc.coords);
+            Object.values(siteData.locations).forEach(loc => { L.marker(loc.coords, { icon: L.divIcon({ className: 'leaflet-div-icon', html: '📍' }) }).addTo(tripMap).bindTooltip(loc.name, {permanent: true, direction: 'top', offset: [0, -10]}).openTooltip(); });
+            L.polyline(pathCoords, { color: '#38bdf8', weight: 3, opacity: 0.7, dashArray: '5, 10' }).addTo(tripMap);
+        }
+
+        // --- Event Listeners ---
+        hamburgerBtn.addEventListener('click', toggleSidebar);
+        closeSidebarBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+        navModalClose.addEventListener('click', closeNavModal);
+        editCashbackBtn.addEventListener('click', openCashbackModal);
+        cashbackModalClose.addEventListener('click', closeCashbackModal);
+        cashbackModalSave.addEventListener('click', saveCashback);
+        
+        document.querySelector('#hotel-summary-section').addEventListener('click', function(e) {
+            const navBtn = e.target.closest('.nav-btn');
+            if (navBtn) { openNavModal(`נווט אל ${navBtn.dataset.name}`, navBtn.dataset.address); }
+        });
+
+        // --- Initial build calls ---
+        buildMenu();
+        buildTripMap();
+
+        // --- Auth & Data Loading ---
+        onAuthStateChanged(auth, user => {
+            const authContainer = document.getElementById('auth-container');
+            if (user) {
+                const displayName = user.displayName || user.email.split('@')[0];
+                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span>`;
+                
+                onSnapshot(query(logisticsCollection), (snapshot) => {
+                    allLogisticsItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const hotels = allLogisticsItems.filter(item => item.type === 'hotel');
+                    const flights = allLogisticsItems.filter(item => item.type === 'flight');
+                    
+                    buildHotelCards(hotels);
+                    buildFlightCards(flights);
+                    buildCostTables();
+                    navigateHotelBtn.onclick = () => navigateToCurrentHotel(hotels);
+                });
+
+                onSnapshot(configDocRef, (doc) => {
+                    if (doc.exists()) {
+                        topCashbackAmountILS = doc.data().topCashbackAmount || -3068;
+                    } else {
+                        topCashbackAmountILS = -3068; // Default if not set
+                    }
+                    buildCostTables(); // Rerender costs when cashback amount changes
+                });
+
+            } else {
+                authContainer.innerHTML = `<a href="login.html" class="text-sm font-semibold text-blue-600 hover:underline">התחבר</a>`;
+                signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
+            }
+        });
     </script>
 </body>
 </html>
