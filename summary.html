@@ -255,8 +255,9 @@
                         <li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-blue-500"></i> <strong>א. בוקר:</strong> ${item.breakfast}</li>
                         <li class="flex items-center gap-2"><i class="fa-solid fa-building-user fa-fw text-slate-500"></i> <strong>הוזמן דרך:</strong> ${item.booked_via}</li>
                     </ul>
+                    ${item.additional_details ? `<div class="mt-2 p-3 bg-slate-100 rounded-lg text-sm text-slate-700"><p class="font-bold mb-1">פרטים נוספים:</p><p class="whitespace-pre-wrap">${item.additional_details}</p></div>` : ''}
                 </div>
-                <div class="mt-auto grid grid-cols-2 gap-2">
+                <div class="mt-4 pt-4 border-t grid grid-cols-2 gap-2">
                     <a href="${item.link}" target="_blank" class="text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition ${item.link ? '' : 'opacity-50 cursor-not-allowed'}">לאתר <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>
                     <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.address)}" target="_blank" class="text-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition ${item.address ? '' : 'opacity-50 cursor-not-allowed'}">נווט <i class="fa-solid fa-diamond-turn-right text-xs"></i></a>
                 </div>`;
@@ -359,6 +360,7 @@
                         {id: 'kitchenette', label: 'האם יש מטבחון?', type: 'radio', options: ['כן', 'לא', 'חלקי'], required: true},
                         {id: 'kitchenette_details', label: 'פרט', type: 'textarea', condition: {field: 'kitchenette', value: 'חלקי'}},
                         {id: 'breakfast', label: 'ארוחת בוקר', type: 'select', options: ['כלולה', 'לא כלולה', 'לא להסתמך', 'הכל כלול'], required: true},
+                        {id: 'additional_details', label: 'פירוט נוסף (אופציונלי)', type: 'textarea'}
                     ]},
                 ],
                 transport: { title: "איזה סוג מעבר?", fields: [{ id: 'subType', type: 'radio', options: [{value: 'flight', label: '✈️ טיסה'}, {value: 'car_rental', label: '🚗 השכרת רכב'}] }] },
@@ -376,6 +378,7 @@
                         {id: 'price', label: 'מחיר (סך הכל)', type: 'number', required: true},
                         {id: 'insurance', label: 'פרטי ביטוח (אופציונלי)', type: 'textarea'},
                         {id: 'booking_link', label: 'קישור להזמנה (אופציונלי)', type: 'url'},
+                        {id: 'additional_details', label: 'פירוט נוסף (אופציונלי)', type: 'textarea'}
                     ]}
                 ],
                 flight: [
@@ -386,7 +389,11 @@
                         { id: 'total_flight_time', label: 'זמן טיסה כולל (כולל קונקשנים)', required: true },
                         { id: 'price_per_person', label: 'מחיר לאדם', type: 'number', required: true },
                     ]},
-                    { title: "כבודה ומקומות ישיבה", fields: [ { id: 'luggage', type: 'luggage' }, { id: 'seats', type: 'seats' } ]}
+                    { title: "כבודה, ישיבה ופרטים נוספים", fields: [ 
+                        { id: 'luggage', type: 'luggage' }, 
+                        { id: 'seats', type: 'seats' },
+                        {id: 'additional_details', label: 'פירוט נוסף (אופציונלי)', type: 'textarea'}
+                    ]}
                 ]
             };
             
@@ -456,7 +463,7 @@
                                  </label>`;
                 case 'textarea':
                     return `<label class="block"><span class="text-sm font-semibold text-slate-600">${field.label}</span>
-                                 <textarea id="${field.id}" class="mt-1 block w-full p-2 border rounded-md shadow-sm">${value}</textarea>
+                                 <textarea id="${field.id}" class="mt-1 block w-full p-2 border rounded-md shadow-sm" rows="3">${modalState.data[field.id] || ''}</textarea>
                                  </label>`;
                 case 'addressmap':
                     return `<div>
@@ -556,7 +563,7 @@
             DOM.modalFinishBtn.classList.toggle('hidden', !isLastStep || isChoiceStep);
         }
 
-        function collectStepData(preserveCoords = false) {
+        function collectStepData() {
             const stepDefinitions = getStepDefinition();
             if (!stepDefinitions.length) return false;
             const stepDef = stepDefinitions[modalState.currentStep - 1];
@@ -574,7 +581,7 @@
                         destination: document.getElementById(`${legId}_destination`)?.value,
                         airport_name: document.getElementById(`${legId}_airport_name`)?.value,
                         airport_address: document.getElementById(`${legId}_airport_address`)?.value,
-                        coords: preserveCoords ? existingData.coords : modalState.data[legId]?.coords,
+                        coords: existingData.coords,
                     });
                     
                     modalState.data.from = collectLegData('from', modalState.data.from);
@@ -616,7 +623,7 @@
 
         async function handleFormSubmit(e) {
             e.preventDefault();
-            if (!collectStepData(true)) return;
+            if (!collectStepData()) return;
 
             const finalData = { ...modalState.data };
             finalData.type = modalState.subType || modalState.mainType;
@@ -624,16 +631,36 @@
             delete finalData.mainType;
             delete finalData.subType;
 
+            // Firestore does not accept 'undefined' values. This function cleans the object.
+            const cleanDataForFirebase = (obj) => {
+                if (obj === null || obj === undefined) return null;
+                if (Array.isArray(obj)) return obj.map(item => cleanDataForFirebase(item));
+                if (typeof obj !== 'object') return obj;
+
+                const newObj = {};
+                for (const key in obj) {
+                    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                        const value = obj[key];
+                        if (value !== undefined) {
+                            newObj[key] = cleanDataForFirebase(value);
+                        }
+                    }
+                }
+                return newObj;
+            };
+
+            const cleanedData = cleanDataForFirebase(finalData);
+
             try {
                 if (editingItem && editingItem.id) {
-                    await updateDoc(doc(db, 'logistics_v2', editingItem.id), finalData);
+                    await updateDoc(doc(db, 'logistics_v2', editingItem.id), cleanedData);
                 } else {
-                    finalData.createdAt = serverTimestamp();
-                    await addDoc(logisticsCollection, finalData);
+                    cleanedData.createdAt = serverTimestamp();
+                    await addDoc(logisticsCollection, cleanedData);
                 }
                 closeModal();
             } catch (err) {
-                console.error("Error saving item:", err);
+                console.error("Error saving document:", err);
                 DOM.modalError.textContent = 'שגיאה בשמירת הפריט.';
             }
         }
@@ -700,7 +727,7 @@
             const finalMap = modalState.maps['final-route'];
             if (!finalMap) return;
             
-            collectStepData(true); 
+            collectStepData(); 
 
             Object.values(finalMap._layers).forEach(layer => {
                 if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.PolylineDecorator) {
@@ -790,9 +817,9 @@
             let html = '';
             for (const [key, value] of Object.entries(item)) {
                 if (key === 'id' || key === 'createdAt' || key === 'type' || !value) continue;
-                html += `<div class="grid grid-cols-3 gap-4">
+                html += `<div class="grid grid-cols-3 gap-4 border-b py-2">
                     <p class="font-semibold text-slate-500 col-span-1">${key}</p>
-                    <p class="text-slate-800 col-span-2">${value.toString()}</p>
+                    <p class="text-slate-800 col-span-2 whitespace-pre-wrap">${typeof value === 'object' ? JSON.stringify(value, null, 2) : value}</p>
                 </div>`;
             }
             DOM.detailsModalBody.innerHTML = html;
@@ -845,7 +872,7 @@
         
         DOM.modalNextBtn.addEventListener('click', () => {
             const wasChoiceStep = !modalState.mainType || (modalState.mainType === 'transport' && !modalState.subType);
-            if (collectStepData(true)) {
+            if (collectStepData()) {
                 modalState.currentStep = wasChoiceStep ? 1 : modalState.currentStep + 1;
                 generateStepContent();
                 updateModalNav();
@@ -857,7 +884,7 @@
         });
 
         DOM.modalBackBtn.addEventListener('click', () => {
-            collectStepData(true);
+            collectStepData();
             if (modalState.currentStep === 1) {
                 if (modalState.subType) { modalState.subType = null; modalState.data.subType = null; } 
                 else if (modalState.mainType) { modalState.mainType = null; modalState.data.mainType = null; }
