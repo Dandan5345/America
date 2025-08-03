@@ -4,37 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מסע חלומות 🗽 סיכום מלונות ומעברים</title>
-    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <style>
         body { font-family: 'Assistant', sans-serif; background-color: #f1f5f9; }
-        #nav-modal { transition: opacity 0.3s ease; }
+        .modal { transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+        .modal-step { display: none; animation: fadeIn 0.5s; }
+        .modal-step.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-slate-100">
-
-    <!-- Navigation Modal -->
-    <div id="nav-modal" class="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden opacity-0">
-        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
-            <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
-            <div id="nav-modal-content" class="flex flex-col gap-4">
-                <a id="nav-waze-link" href="#" target="_blank" class="block w-full text-center bg-[#33ccff] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#00bfff] transition text-lg"><i class="fa-brands fa-waze"></i> Waze</a>
-                <a id="nav-gmaps-link" href="#" target="_blank" class="block w-full text-center bg-[#4285F4] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#3367D6] transition text-lg"><i class="fa-solid fa-map-location-dot"></i> Google Maps</a>
-            </div>
-            <p id="nav-modal-message" class="text-slate-600 hidden"></p>
-            <button id="nav-modal-close" class="mt-6 text-slate-500 hover:text-slate-700">סגור</button>
-        </div>
-    </div>
 
     <!-- Header -->
     <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <a href="index.html" class="text-xl font-bold text-slate-800 hover:text-blue-600 transition">✨ מסע חלומות 2025-26 ✨</a>
-                <!-- Hamburger menu can be added here if needed -->
+                <div id="auth-container"></div>
             </div>
         </div>
     </header>
@@ -44,13 +34,16 @@
             <div class="text-center">
                 <h2 class="text-4xl font-extrabold text-slate-800">סיכום מלונות ומעברים</h2>
                 <p class="mt-4 text-lg text-slate-600">ריכוז כל המידע הלוגיסטי של הטיול.</p>
+                <button id="open-add-modal-btn" class="mt-6 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
+                    <i class="fas fa-plus mr-2"></i>הוספת פריט לוגיסטי
+                </button>
             </div>
 
             <!-- Hotel Summary -->
             <section id="hotel-summary">
                 <h3 class="text-3xl font-bold text-slate-800 mb-6 text-center">🏨 סיכום המלונות שלנו</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Hotel cards will be injected here -->
+                <div id="hotel-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Hotel cards will be injected here by JS -->
                 </div>
             </section>
 
@@ -62,8 +55,10 @@
                         <h4 class="font-bold text-xl text-slate-700 mb-4">✈️🚂🚗 עלויות תחבורה (לזוג)</h4>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-right">
-                                <thead class="bg-slate-50"><tr><th class="p-3 font-semibold">קטע</th><th class="p-3 font-semibold">אמצעי</th><th class="p-3 font-semibold">זמן</th><th class="p-3 font-semibold">עלות (₪)</th></tr></thead>
-                                <tbody id="transport-table-body" class="divide-y divide-slate-200"></tbody>
+                                <thead class="bg-slate-50"><tr><th class="p-3 font-semibold">קטע</th><th class="p-3 font-semibold">אמצעי</th><th class="p-3 font-semibold">זמן</th><th class="p-3 font-semibold">עלות (₪)</th><th class="p-3"></th></tr></thead>
+                                <tbody id="transport-table-body" class="divide-y divide-slate-200">
+                                    <!-- Transport rows will be injected here by JS -->
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -75,116 +70,371 @@
             </section>
         </div>
     </main>
+    
+    <!-- Add/Edit Modal -->
+    <div id="item-modal" class="modal fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4 opacity-0">
+        <div class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[95vh] flex flex-col transform scale-95">
+            <div class="p-5 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <h3 id="modal-title" class="text-2xl font-bold text-slate-800">הוספת פריט חדש</h3>
+                <button id="modal-close-btn" class="text-slate-400 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
+            </div>
+            <form id="item-form" class="flex-grow overflow-y-auto p-6 space-y-6">
+                <!-- Steps will be injected here -->
+            </form>
+            <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
+                <button type="button" id="modal-back-btn" class="py-2 px-5 rounded-lg hover:bg-slate-200 transition hidden font-semibold">אחורה</button>
+                <div id="modal-error-message" class="text-red-500 text-sm font-bold h-5"></div>
+                <button type="button" id="modal-next-btn" class="py-2 px-5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">הבא</button>
+                <button type="submit" form="item-form" id="modal-finish-btn" class="py-2 px-5 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition hidden">שמור פריט</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-confirm-modal" class="modal fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center opacity-0">
+         <div class="modal-content bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full transform scale-95">
+            <div class="text-red-500 mb-4"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
+            <h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3>
+            <div class="flex justify-center gap-4 mt-6">
+                <button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button>
+                <button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button>
+            </div>
+        </div>
+    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const siteData = {
-                hotels: [
-                    { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23-30.12", price: "₪9,800", kitchen: true, breakfast: "לא להסתמך", link: "https://www.marriott.com/en-us/hotels/nyctp-towneplace-suites-new-york-manhattan-chelsea/overview/", address: "140 W 28th St, New York, NY 10001" },
-                    { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", price: "₪4,448", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/nycox-moxy-nyc-chelsea/overview/", address: "105 W 28th St, New York, NY 10001" },
-                    { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01.01-03.01", price: "₪1,735", kitchen: false, breakfast: false, link: "https://www.fallsvierhotel.com/", address: "6732 Fallsview Blvd, Niagara Falls, ON L2G 3W6, Canada" },
-                    { name: "InterContinental Toronto Centre", dest: "טורונטו", dates: "03.01-04.01", price: "₪902", kitchen: false, breakfast: false, link: "https://www.ihg.com/intercontinental/hotels/us/en/toronto/yyztc/hoteldetail", address: "225 Front St W, Toronto, ON M5V 2X3, Canada" },
-                    { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04.01-07.01", price: "₪1,896", kitchen: false, breakfast: false, link: "https://www.hotelmadera.com/", address: "1310 New Hampshire Ave NW, Washington, DC 20036" },
-                    { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07.01-12.01", price: "₪2,688", kitchen: true, breakfast: true, link: "https://www.marriott.com/en-us/hotels/mcots-towneplace-suites-orlando-southwest-near-universal/overview/", address: "5801 Universal Blvd, Orlando, FL 32819" },
-                    { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12.01-15.01", price: "₪2,783", kitchen: false, breakfast: false, link: "https://www.upsunhotel.com/", address: "2216 Park Ave, Miami Beach, FL 33139" },
-                    { name: "Fortune House Hotel Suites", dest: "מיאמי", dates: "15.01-18.01", price: "₪3,383", kitchen: true, breakfast: false, link: "https://www.fortunehousehotel.com/", address: "185 SE 14th Terrace, Miami, FL 33131" },
-                    { name: "Majestic Mirage Punta Cana", dest: "פונטה קאנה", dates: "18.01-22.01", price: "₪7,231", kitchen: "הכל כלול", breakfast: "הכל כלול", link: "https://www.majestic-resorts.com/en/hotels/majestic-mirage-punta-cana/", address: "Playa Arena Gorda, Bavaro, Punta Cana" },
-                    { name: "פרטי המלון יתווספו", dest: "אריזונה", dates: "22.01-27.01", price: "יתווסף", kitchen: null, breakfast: null, link: "#", address: "פרטי הכתובת יתווספו" },
-                    { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "27.01-01.02", price: "₪4,182", kitchen: true, breakfast: false, link: "#", address: "S Hope St, Los Angeles, CA" },
-                    { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01.02-05.02", price: "₪3,213", kitchen: false, breakfast: false, link: "https://www.marriott.com/en-us/hotels/sfovc-marriott-vacation-club-pulse-san-francisco/overview/", address: "1200 Sutter St, San Francisco, CA 94109" }
-                ],
-                transport: [
-                    { segment: "טיסות ארוכות", means: "✈️", duration: "12+ שעות", cost: 7745 },
-                    { segment: "ניו יורק → באפלו", means: "✈️", duration: "~1.5 שעות", cost: 826 },
-                    { segment: "טורונטו → וושינגטון", means: "✈️", duration: "~1.5 שעות", cost: 1540 },
-                    { segment: "וושינגטון → אורלנדו", means: "✈️", duration: "~2.5 שעות", cost: 794 },
-                    { segment: "אורלנדו → מיאמי", means: "🚂", duration: "~3.5 שעות", cost: 360 },
-                    { segment: "מיאמי → פונטה קאנה", means: "✈️", duration: "~2.5 שעות", cost: 1044 },
-                    { segment: "פונטה קאנה → אריזונה", means: "✈️", duration: "~8 שעות", cost: 2000 },
-                    { segment: "אריזונה → לוס אנג'לס", means: "✈️", duration: "~1.5 שעות", cost: 800 },
-                    { segment: "לוס אנג'לס → סן פרנסיסקו", means: "✈️", duration: "~1.5 שעות", cost: 788 },
-                    { segment: "השכרת רכב - LA", means: "🚗", duration: "5 ימים", cost: 1600 }
-                ]
-            };
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            const navModal = document.getElementById('nav-modal');
-            const navModalClose = document.getElementById('nav-modal-close');
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
+            authDomain: "america1tour.firebaseapp.com",
+            projectId: "america1tour",
+            storageBucket: "america1tour.firebasestorage.app",
+            messagingSenderId: "70515728009",
+            appId: "1:70515728009:web:aded0696b4f72c910b7058",
+        };
 
-            function openNavModal(title, address, message) {
-                document.getElementById('nav-modal-title').textContent = title;
-                const navContent = document.getElementById('nav-modal-content');
-                const navMessage = document.getElementById('nav-modal-message');
-                if (address && address !== "פרטי הכתובת יתווספו") {
-                    const encodedAddress = encodeURIComponent(address);
-                    document.getElementById('nav-waze-link').href = `https://waze.com/ul?q=${encodedAddress}`;
-                    document.getElementById('nav-gmaps-link').href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
-                    navContent.classList.remove('hidden');
-                    navMessage.classList.add('hidden');
-                } else {
-                    navContent.classList.add('hidden');
-                    navMessage.textContent = message || "פרטי הניווט עבור מלון זה עדיין לא זמינים.";
-                    navMessage.classList.remove('hidden');
-                }
-                navModal.classList.remove('hidden');
-                setTimeout(() => navModal.classList.remove('opacity-0'), 10);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const hotelsCollection = collection(db, 'logistics_hotels');
+        const transportCollection = collection(db, 'logistics_transport');
+
+        let allHotels = [];
+        let allTransport = [];
+        let editingItem = { id: null, type: null };
+        let currentModalStep = 1;
+        
+        const DOM = {
+            hotelContainer: document.getElementById('hotel-cards-container'),
+            transportContainer: document.getElementById('transport-table-body'),
+            summaryContainer: document.getElementById('final-summary-table'),
+            modal: document.getElementById('item-modal'),
+            modalTitle: document.getElementById('modal-title'),
+            modalForm: document.getElementById('item-form'),
+            modalNextBtn: document.getElementById('modal-next-btn'),
+            modalBackBtn: document.getElementById('modal-back-btn'),
+            modalFinishBtn: document.getElementById('modal-finish-btn'),
+            modalError: document.getElementById('modal-error-message'),
+            deleteModal: document.getElementById('delete-confirm-modal'),
+        };
+
+        function renderApp() {
+            renderHotelCards();
+            renderTransportTable();
+            renderSummary();
+        }
+
+        function renderHotelCards() {
+            DOM.hotelContainer.innerHTML = '';
+            allHotels.sort((a,b) => a.createdAt.seconds - b.createdAt.seconds).forEach(hotel => {
+                let kitchenIcon = '', breakfastIcon = '';
+                if (hotel.kitchen === "הכל כלול") { kitchenIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-star fa-fw text-amber-500"></i> <strong>הכל כלול</strong></li>`; }
+                else { kitchenIcon = hotel.kitchen ? `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-green-500"></i> <strong>מטבחון:</strong> כן</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-red-500"></i> <strong>מטבחון:</strong> אין</li>`; }
+                
+                if (hotel.breakfast === "הכל כלול") {}
+                else if (hotel.breakfast !== 'כלולה' && hotel.breakfast !== 'אין') { breakfastIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-yellow-500"></i> <strong>א. בוקר:</strong> ${hotel.breakfast}</li>`; }
+                else { breakfastIcon = hotel.breakfast === 'כלולה' ? `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-green-500"></i> <strong>א. בוקר:</strong> כלולה</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-red-500"></i> <strong>א. בוקר:</strong> אין</li>`; }
+
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-2xl shadow-lg flex flex-col";
+                card.innerHTML = `
+                    <div class="flex-grow">
+                        <div class="flex justify-between items-start">
+                           <h4 class="font-bold text-lg text-slate-800">${hotel.name}</h4>
+                           <div class="flex gap-2">
+                             <button class="edit-btn text-slate-400 hover:text-blue-500" data-id="${hotel.id}" data-type="hotel"><i class="fas fa-pencil"></i></button>
+                             <button class="delete-btn text-slate-400 hover:text-red-500" data-id="${hotel.id}" data-name="${hotel.name}" data-type="hotel"><i class="fas fa-trash"></i></button>
+                           </div>
+                        </div>
+                        <p class="text-sm text-slate-500 mb-3">${hotel.dest} | ${hotel.dates}</p>
+                        <ul class="space-y-2 text-slate-600 text-sm mb-4">
+                            ${kitchenIcon}
+                            ${breakfastIcon}
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-tag fa-fw text-blue-500"></i> <strong>מחיר:</strong> ${hotel.price.toLocaleString()} ₪</li>
+                        </ul>
+                    </div>
+                    <div class="mt-auto grid grid-cols-2 gap-2">
+                        <a href="${hotel.link}" target="_blank" class="text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition ${hotel.link ? '' : 'opacity-50 cursor-not-allowed'}">לאתר <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>
+                        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hotel.address)}" target="_blank" class="text-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition ${hotel.address ? '' : 'opacity-50 cursor-not-allowed'}">נווט <i class="fa-solid fa-diamond-turn-right text-xs"></i></a>
+                    </div>`;
+                DOM.hotelContainer.appendChild(card);
+            });
+        }
+
+        function renderTransportTable() {
+            DOM.transportContainer.innerHTML = '';
+            let totalTransport = allTransport.reduce((sum, item) => sum + item.cost, 0);
+            allTransport.sort((a,b) => a.createdAt.seconds - b.createdAt.seconds).forEach(item => {
+                const row = document.createElement('tr');
+                row.className = "text-slate-600";
+                row.innerHTML = `
+                    <td class="p-3">${item.segment}</td>
+                    <td class="p-3 text-center">${item.means}</td>
+                    <td class="p-3 text-center">${item.duration}</td>
+                    <td class="p-3 font-mono text-left">${item.cost.toLocaleString()}</td>
+                    <td class="p-3 text-center">
+                        <button class="edit-btn text-slate-400 hover:text-blue-500" data-id="${item.id}" data-type="transport"><i class="fas fa-pencil"></i></button>
+                        <button class="delete-btn text-slate-400 hover:text-red-500" data-id="${item.id}" data-name="${item.segment}" data-type="transport"><i class="fas fa-trash"></i></button>
+                    </td>`;
+                DOM.transportContainer.appendChild(row);
+            });
+            if (totalTransport > 0) {
+                DOM.transportContainer.innerHTML += `<tr class="font-bold bg-slate-100 text-slate-800"><td class="p-3">סה"כ</td><td></td><td></td><td class="p-3 font-mono text-left">${totalTransport.toLocaleString()}</td><td></td></tr>`;
+            }
+        }
+
+        function renderSummary() {
+            const totalHotels = allHotels.reduce((sum, hotel) => sum + hotel.price, 0);
+            const totalTransport = allTransport.reduce((sum, item) => sum + item.cost, 0);
+            const subTotal = totalHotels + totalTransport;
+            const cashback = -3068; // This can be made dynamic later if needed
+            const finalTotal = subTotal + cashback;
+            const perPerson = Math.round(finalTotal / 2);
+            DOM.summaryContainer.innerHTML = `
+                <tbody class="divide-y divide-slate-200 text-slate-700">
+                    <tr><td class="py-3 pr-2">🏨 סה"כ מלונות</td><td class="py-3 pl-2 text-left font-mono">${Math.round(totalHotels).toLocaleString()} ₪</td></tr>
+                    <tr><td class="py-3 pr-2">✈️ סה"כ תחבורה</td><td class="py-3 pl-2 text-left font-mono">${totalTransport.toLocaleString()} ₪</td></tr>
+                    <tr class="font-semibold"><td class="py-3 pr-2">סה"כ (לפני החזר)</td><td class="py-3 pl-2 text-left font-mono">${Math.round(subTotal).toLocaleString()} ₪</td></tr>
+                    <tr><td class="py-3 pr-2 text-green-600">💸 החזר כספי (TopCashback)</td><td class="py-3 pl-2 text-left font-mono text-green-600">${cashback.toLocaleString()} ₪</td></tr>
+                    <tr class="text-xl font-bold bg-slate-100 rounded-lg"><td class="p-4">סה"כ סופי</td><td class="p-4 text-left font-mono">${Math.round(finalTotal).toLocaleString()} ₪</td></tr>
+                    <tr class="text-lg font-bold"><td class="pt-4 pr-2">עלות לאדם</td><td class="pt-4 pl-2 text-left font-mono">~${perPerson.toLocaleString()} ₪</td></tr>
+                </tbody>`;
+        }
+        
+        // Modal Logic
+        const modalSteps = {
+            hotel: [
+                { id: 'name', label: 'שם המלון', type: 'text', placeholder: 'לדוגמה: Moxy NYC Chelsea' },
+                { id: 'dest', label: 'יעד', type: 'text', placeholder: 'לדוגמה: ניו יורק' },
+                { id: 'dates', label: 'תאריכים', type: 'text', placeholder: 'לדוגמה: 30.12-01.01' },
+                { id: 'price', label: 'מחיר (בש"ח)', type: 'number', placeholder: '4448' },
+                { id: 'kitchen', label: 'מטבחון', type: 'select', options: ['כן', 'אין', 'הכל כלול'] },
+                { id: 'breakfast', label: 'ארוחת בוקר', type: 'select', options: ['כלולה', 'אין', 'לא להסתמך', 'הכל כלול'] },
+                { id: 'link', label: 'קישור לאתר', type: 'url', placeholder: 'https://example.com' },
+                { id: 'address', label: 'כתובת מלאה לניווט', type: 'text', placeholder: '105 W 28th St, New York, NY' },
+            ],
+            transport: [
+                { id: 'segment', label: 'קטע המעבר', type: 'text', placeholder: 'לדוגמה: ניו יורק ← באפלו' },
+                { id: 'means', label: 'אמצעי', type: 'select', options: ['✈️', '🚂', '🚗', '🚌'] },
+                { id: 'duration', label: 'משך זמן', type: 'text', placeholder: '~1.5 שעות' },
+                { id: 'cost', label: 'עלות (בש"ח)', type: 'number', placeholder: '826' },
+            ]
+        };
+
+        function openModal(type = null, id = null) {
+            editingItem = { id, type };
+            currentModalStep = 1;
+
+            if (id) { // Editing
+                const data = type === 'hotel' ? allHotels.find(h => h.id === id) : allTransport.find(t => t.id === id);
+                DOM.modalTitle.textContent = `עריכת ${type === 'hotel' ? 'מלון' : 'מעבר'}`;
+                generateModalSteps(type, data);
+            } else { // Adding
+                DOM.modalTitle.textContent = 'הוספת פריט חדש';
+                generateModalSteps('typeSelector');
             }
 
-            function closeNavModal() { navModal.classList.add('opacity-0'); setTimeout(() => navModal.classList.add('hidden'), 300); }
-            
-            function buildHotelCards() {
-                const container = document.querySelector('#hotel-summary .grid');
-                if (!container) return;
-                container.innerHTML = '';
-                siteData.hotels.forEach(hotel => {
-                    let kitchenIcon = '', breakfastIcon = '';
-                    if (hotel.kitchen === "הכל כלול") { kitchenIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-star fa-fw text-amber-500"></i> <strong>הכל כלול</strong></li>`; }
-                    else if (hotel.kitchen !== null) { kitchenIcon = hotel.kitchen ? `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-green-500"></i> <strong>מטבחון:</strong> כן</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-red-500"></i> <strong>מטבחון:</strong> אין</li>`; }
-                    if (hotel.breakfast === "הכל כלול") {} 
-                    else if (typeof hotel.breakfast === 'string' && hotel.breakfast !== null) { breakfastIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-yellow-500"></i> <strong>א. בוקר:</strong> ${hotel.breakfast}</li>`; }
-                    else if (hotel.breakfast !== null) { breakfastIcon = hotel.breakfast ? `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-green-500"></i> <strong>א. בוקר:</strong> כלולה</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-red-500"></i> <strong>א. בוקר:</strong> אין</li>`; }
-                    const card = document.createElement('div');
-                    card.className = "bg-white p-5 rounded-2xl shadow-lg flex flex-col";
-                    card.innerHTML = `<h4 class="font-bold text-lg text-slate-800">${hotel.name}</h4><p class="text-sm text-slate-500 mb-3">${hotel.dest} | ${hotel.dates}</p><ul class="space-y-2 text-slate-600 text-sm mb-4">${kitchenIcon}${breakfastIcon}<li class="flex items-center gap-2"><i class="fa-solid fa-tag fa-fw text-blue-500"></i> <strong>מחיר:</strong> ${hotel.price}</li></ul><div class="mt-auto grid grid-cols-2 gap-2"><a href="${hotel.link}" target="_blank" class="text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition ${hotel.link === '#' ? 'opacity-50 cursor-not-allowed' : ''}">לאתר <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a><button data-address="${hotel.address}" data-name="${hotel.name}" class="nav-btn text-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition">נווט <i class="fa-solid fa-diamond-turn-right text-xs"></i></button></div>`;
-                    container.appendChild(card);
+            updateModalView();
+            DOM.modal.classList.remove('hidden');
+            setTimeout(() => {
+                DOM.modal.classList.remove('opacity-0');
+                DOM.modal.querySelector('.modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            DOM.modal.classList.add('opacity-0');
+            DOM.modal.querySelector('.modal-content').classList.add('scale-95');
+            setTimeout(() => DOM.modal.classList.add('hidden'), 300);
+        }
+
+        function generateModalSteps(type, data = {}) {
+            DOM.modalForm.innerHTML = '';
+            let stepsHtml = '';
+            if (type === 'typeSelector') {
+                stepsHtml = `<div class="modal-step" data-step="1">
+                    <label class="block text-lg font-bold text-slate-700 mb-3">איזה פריט ברצונך להוסיף?</label>
+                    <select id="item-type" class="w-full p-3 border rounded-lg">
+                        <option value="hotel">🏨 מלון</option>
+                        <option value="transport">✈️ מעבר / טיסה</option>
+                    </select>
+                </div>`;
+            } else {
+                modalSteps[type].forEach((step, i) => {
+                    const value = data[step.id] || '';
+                    stepsHtml += `<div class="modal-step" data-step="${i + 1}">
+                        <label class="block text-lg font-bold text-slate-700 mb-3">${step.label}</label>`;
+                    if (step.type === 'select') {
+                        stepsHtml += `<select id="${step.id}" class="w-full p-3 border rounded-lg">
+                            ${step.options.map(opt => `<option value="${opt}" ${opt === value ? 'selected' : ''}>${opt}</option>`).join('')}
+                        </select>`;
+                    } else {
+                        stepsHtml += `<input type="${step.type}" id="${step.id}" value="${value}" placeholder="${step.placeholder}" class="w-full p-3 border rounded-lg">`;
+                    }
+                    stepsHtml += `</div>`;
                 });
             }
+            DOM.modalForm.innerHTML = stepsHtml;
+        }
 
-            function buildCostTables() {
-                const transportBody = document.getElementById('transport-table-body');
-                if (!transportBody) return;
-                transportBody.innerHTML = '';
-                let totalTransport = siteData.transport.reduce((sum, item) => sum + item.cost, 0);
-                siteData.transport.forEach(item => { transportBody.innerHTML += `<tr class="text-slate-600"><td class="p-3">${item.segment}</td><td class="p-3 text-center">${item.means}</td><td class="p-3 text-center">${item.duration}</td><td class="p-3 font-mono text-left">${item.cost.toLocaleString()}</td></tr>`; });
-                transportBody.innerHTML += `<tr class="font-bold bg-slate-100 text-slate-800"><td class="p-3">סה"כ</td><td></td><td></td><td class="p-3 font-mono text-left">${totalTransport.toLocaleString()}</td></tr>`;
-                const summaryBody = document.getElementById('final-summary-table');
-                if (!summaryBody) return;
-                const totalHotels = siteData.hotels.reduce((sum, hotel) => { const price = parseFloat(String(hotel.price).replace(/[^0-9.-]+/g,"")); return sum + (isNaN(price) ? 0 : price); }, 0);
-                const subTotal = totalHotels + totalTransport;
-                const cashback = -3068;
-                const finalTotal = subTotal + cashback;
-                const perPerson = Math.round(finalTotal / 2);
-                summaryBody.innerHTML = `<tbody class="divide-y divide-slate-200 text-slate-700"><tr><td class="py-3 pr-2">🏨 סה"כ מלונות</td><td class="py-3 pl-2 text-left font-mono">${Math.round(totalHotels).toLocaleString()} ₪</td></tr><tr><td class="py-3 pr-2">✈️ סה"כ תחבורה</td><td class="py-3 pl-2 text-left font-mono">${totalTransport.toLocaleString()} ₪</td></tr><tr class="font-semibold"><td class="py-3 pr-2">סה"כ (לפני החזר)</td><td class="py-3 pl-2 text-left font-mono">${Math.round(subTotal).toLocaleString()} ₪</td></tr><tr><td class="py-3 pr-2 text-green-600">💸 החזר כספי (TopCashback)</td><td class="py-3 pl-2 text-left font-mono text-green-600">${cashback.toLocaleString()} ₪</td></tr><tr class="text-xl font-bold bg-slate-100 rounded-lg"><td class="p-4">סה"כ סופי</td><td class="p-4 text-left font-mono">${Math.round(finalTotal).toLocaleString()} ₪</td></tr><tr class="text-lg font-bold"><td class="pt-4 pr-2">עלות לאדם</td><td class="pt-4 pl-2 text-left font-mono">~${perPerson.toLocaleString()} ₪</td></tr></tbody>`;
-            }
+        function updateModalView() {
+            const steps = DOM.modalForm.querySelectorAll('.modal-step');
+            steps.forEach(s => s.classList.remove('active'));
+            const currentStepEl = DOM.modalForm.querySelector(`[data-step="${currentModalStep}"]`);
+            if (currentStepEl) currentStepEl.classList.add('active');
 
-            navModalClose.addEventListener('click', closeNavModal);
-            document.querySelector('#hotel-summary').addEventListener('click', function(e) {
-                const navBtn = e.target.closest('.nav-btn');
-                if (navBtn) { openNavModal(`נווט אל ${navBtn.dataset.name}`, navBtn.dataset.address); }
+            DOM.modalBackBtn.classList.toggle('hidden', currentModalStep === 1);
+            DOM.modalNextBtn.classList.toggle('hidden', currentModalStep === steps.length);
+            DOM.modalFinishBtn.classList.toggle('hidden', currentModalStep !== steps.length);
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const type = editingItem.type || document.getElementById('item-type')?.value;
+            const data = {};
+            let hasError = false;
+            
+            modalSteps[type].forEach(step => {
+                const input = document.getElementById(step.id);
+                if (!input.value && (step.type === 'text' || step.type === 'number')) {
+                    DOM.modalError.textContent = `שדה חובה: ${step.label}`;
+                    hasError = true;
+                }
+                data[step.id] = step.type === 'number' ? parseFloat(input.value) : input.value;
+                if (step.id === 'kitchen' && data[step.id] === 'כן') data[step.id] = true;
+                if (step.id === 'kitchen' && data[step.id] === 'אין') data[step.id] = false;
             });
 
-            buildHotelCards();
-            buildCostTables();
+            if (hasError) return;
+
+            try {
+                const collectionRef = type === 'hotel' ? hotelsCollection : transportCollection;
+                if (editingItem.id) {
+                    await updateDoc(doc(db, collectionRef.path, editingItem.id), data);
+                } else {
+                    data.createdAt = serverTimestamp();
+                    await addDoc(collectionRef, data);
+                }
+                closeModal();
+            } catch (err) {
+                console.error("Error saving item:", err);
+                DOM.modalError.textContent = 'שגיאה בשמירת הפריט.';
+            }
+        }
+        
+        function handleDelete(id, name, type) {
+            const deleteModalTitle = DOM.deleteModal.querySelector('#delete-modal-title');
+            const confirmBtn = DOM.deleteModal.querySelector('#delete-modal-confirm');
+            
+            deleteModalTitle.textContent = `האם למחוק את "${name}"?`;
+            
+            const confirmHandler = async () => {
+                const collectionRef = type === 'hotel' ? hotelsCollection : transportCollection;
+                try {
+                    await deleteDoc(doc(db, collectionRef.path, id));
+                } catch (error) { console.error("Failed to delete item:", error); }
+                finally { closeDeleteModal(); }
+            };
+
+            const closeDeleteModal = () => {
+                DOM.deleteModal.classList.add('opacity-0');
+                DOM.deleteModal.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => DOM.deleteModal.classList.add('hidden'), 300);
+                confirmBtn.removeEventListener('click', confirmHandler);
+            };
+            
+            confirmBtn.addEventListener('click', confirmHandler, { once: true });
+            DOM.deleteModal.querySelector('#delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
+
+            DOM.deleteModal.classList.remove('hidden');
+            setTimeout(() => {
+                DOM.deleteModal.classList.remove('opacity-0');
+                DOM.deleteModal.querySelector('.modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        // Event Listeners
+        document.getElementById('open-add-modal-btn').addEventListener('click', () => openModal());
+        DOM.modalCloseBtn.addEventListener('click', closeModal);
+        DOM.modalForm.addEventListener('submit', handleFormSubmit);
+        
+        DOM.modalNextBtn.addEventListener('click', () => {
+            const isTypeSelection = !editingItem.type;
+            if (isTypeSelection) {
+                const selectedType = document.getElementById('item-type').value;
+                editingItem.type = selectedType; // Temporarily set type for step generation
+                generateModalSteps(selectedType);
+            }
+            currentModalStep++;
+            updateModalView();
         });
-    
-    if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log('SW registered'))
-        .catch(err => console.log('SW failed:', err));
-    });
-  }
-    
+
+        DOM.modalBackBtn.addEventListener('click', () => {
+            currentModalStep--;
+            if (currentModalStep === 0) { // Go back to type selection
+                editingItem.type = null;
+                currentModalStep = 1;
+                generateModalSteps('typeSelector');
+            }
+            updateModalView();
+        });
+
+        document.addEventListener('click', e => {
+            const editBtn = e.target.closest('.edit-btn');
+            if (editBtn) {
+                openModal(editBtn.dataset.type, editBtn.dataset.id);
+            }
+            const deleteBtn = e.target.closest('.delete-btn');
+            if (deleteBtn) {
+                handleDelete(deleteBtn.dataset.id, deleteBtn.dataset.name, deleteBtn.dataset.type);
+            }
+        });
+
+        // Auth & Initial Load
+        onAuthStateChanged(auth, (user) => {
+            const authContainer = document.getElementById('auth-container');
+            if (user) {
+                const displayName = user.displayName || user.email.split('@')[0];
+                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
+                document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
+
+                onSnapshot(query(hotelsCollection), (snapshot) => {
+                    allHotels = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderApp();
+                });
+                onSnapshot(query(transportCollection), (snapshot) => {
+                    allTransport = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderApp();
+                });
+            } else {
+                authContainer.innerHTML = `<a href="login.html" class="text-sm font-semibold text-blue-600 hover:underline">התחבר</a>`;
+                DOM.hotelContainer.innerHTML = `<p class="text-center col-span-full">יש להתחבר כדי לראות את המידע.</p>`;
+                DOM.transportContainer.innerHTML = `<tr><td colspan="5" class="text-center p-4">יש להתחבר כדי לראות את המידע.</td></tr>`;
+            }
+        });
     </script>
 </body>
 </html>
-
