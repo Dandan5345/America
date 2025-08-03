@@ -34,9 +34,18 @@
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
+        
+        /* Loading Overlay */
+        #loading-overlay { transition: opacity 0.5s ease-in-out; }
     </style>
 </head>
 <body>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-white/90 backdrop-blur-sm z-[200] flex flex-col items-center justify-center gap-4">
+        <i class="fas fa-plane text-5xl text-blue-600 animate-spin"></i>
+        <p class="text-xl font-bold text-slate-700">טוען את מרכז הבקרה...</p>
+    </div>
 
     <!-- Fixed Background -->
     <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.imgur.com/PXLTIi4.jpeg');"></div>
@@ -111,7 +120,7 @@
                             <a href="attractions.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
                                 <i class="fas fa-map-marked-alt text-3xl mb-2"></i><span class="font-bold">אטרקציות ומסעדות</span>
                             </a>
-                            <a href="summary.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
+                            <a href="logistics.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
                                 <i class="fas fa-plane-departure text-3xl mb-2"></i><span class="font-bold">סיכום מלונות ומעברים</span>
                             </a>
                         </div>
@@ -227,6 +236,7 @@
         };
 
         // --- DOM Elements ---
+        const loadingOverlay = document.getElementById('loading-overlay');
         const sidebar = document.getElementById('sidebar');
         const hamburgerBtn = document.getElementById('hamburger-btn');
         const closeSidebarBtn = document.getElementById('close-sidebar-btn');
@@ -379,7 +389,7 @@
             container.innerHTML = '';
             flights.forEach(flight => {
                 const card = document.createElement('a');
-                card.href = `summary.html?view=${flight.id}`;
+                card.href = `logistics.html?view=${flight.id}`;
                 card.className = "main-nav-button bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg flex items-center gap-4 text-right";
                 
                 const title = `טיסה: ${flight.from?.destination || ''} ← ${flight.to?.destination || ''}`;
@@ -404,7 +414,7 @@
             const summaryBody = document.getElementById('final-summary-table');
             if (!summaryBody) return;
             
-            const USD_TO_ILS_RATE = 3.40;
+            const USD_TO_ILS_RATE = 3.75;
 
             const totalHotelsUSD = hotels.reduce((sum, hotel) => sum + (hotel.price || 0), 0);
             const totalFlightsUSD = flights.reduce((sum, flight) => {
@@ -477,6 +487,18 @@
         buildDestinationCostSummaries();
 
         // --- Auth & Data Loading ---
+        let isInitialLoad = true;
+
+        function hideLoader() {
+            if (isInitialLoad && loadingOverlay) {
+                loadingOverlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
+                isInitialLoad = false;
+            }
+        }
+
         onAuthStateChanged(auth, user => {
             const authContainer = document.getElementById('auth-container');
             if (user) {
@@ -492,6 +514,10 @@
                     buildFlightCards(flights);
                     buildCostTables();
                     navigateHotelBtn.onclick = () => navigateToCurrentHotel(hotels);
+                    hideLoader();
+                }, (error) => {
+                    console.error("Snapshot error:", error);
+                    hideLoader();
                 });
 
                 onSnapshot(configDocRef, (doc) => {
@@ -505,7 +531,10 @@
 
             } else {
                 authContainer.innerHTML = `<a href="login.html" class="text-sm font-semibold text-blue-600 hover:underline">התחבר</a>`;
-                signInAnonymously(auth).catch(error => console.error("Anonymous sign-in failed:", error));
+                signInAnonymously(auth).catch(error => {
+                    console.error("Anonymous sign-in failed:", error);
+                    hideLoader();
+                });
             }
         });
     </script>
