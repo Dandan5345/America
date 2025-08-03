@@ -199,6 +199,7 @@
         // --- Global State & Constants ---
         let allItems = [];
         let editingItem = null; 
+        let itemToDelete = null;
         let modalState = {
             mainType: null, subType: null, currentStep: 1, data: {},
             maps: {}, mapMarkers: {}, datePicker: null,
@@ -828,29 +829,34 @@
         
         // --- Delete/Details Modals ---
         function handleDelete(id, name) {
+            itemToDelete = { id, name };
             DOM.deleteModalTitle.textContent = `האם למחוק את "${name}"?`;
             
-            const confirmHandler = async () => {
-                try { await deleteDoc(doc(db, 'logistics_v2', id)); } 
-                catch (error) { console.error("Failed to delete item:", error); } 
-                finally { closeDeleteModal(); }
-            };
-
-            const closeDeleteModal = () => {
-                DOM.deleteModal.classList.add('hidden');
-                DOM.deleteModal.querySelector('.modal-content').classList.add('scale-95');
-                setTimeout(() => DOM.deleteModal.classList.remove('hidden'), 300);
-                DOM.deleteConfirmBtn.removeEventListener('click', confirmHandler);
-            };
-            
-            DOM.deleteConfirmBtn.addEventListener('click', confirmHandler, { once: true });
-            DOM.deleteCancelBtn.addEventListener('click', closeDeleteModal, { once: true });
-
             DOM.deleteModal.classList.remove('hidden');
             setTimeout(() => {
                 DOM.deleteModal.classList.remove('opacity-0');
                 DOM.deleteModal.querySelector('.modal-content').classList.remove('scale-95');
             }, 10);
+        }
+
+        async function confirmDeletion() {
+            if (!itemToDelete) return;
+            try {
+                await deleteDoc(doc(db, 'logistics_v2', itemToDelete.id));
+            } catch (error) {
+                console.error("Failed to delete item:", error);
+            } finally {
+                closeDeleteModal();
+            }
+        }
+
+        function closeDeleteModal() {
+            DOM.deleteModal.classList.add('opacity-0');
+            DOM.deleteModal.querySelector('.modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                DOM.deleteModal.classList.add('hidden');
+                itemToDelete = null; // Reset state
+            }, 300);
         }
 
         function viewDetails(item) {
@@ -1080,6 +1086,10 @@
         hamburgerBtn.addEventListener('click', toggleSidebar);
         closeSidebarBtn.addEventListener('click', toggleSidebar);
         overlay.addEventListener('click', toggleSidebar);
+
+        // --- Delete Modal Listeners (runs immediately) ---
+        DOM.deleteConfirmBtn.addEventListener('click', confirmDeletion);
+        DOM.deleteCancelBtn.addEventListener('click', closeDeleteModal);
 
 
         // --- Auth & Initial Load ---
