@@ -45,7 +45,7 @@
 <body class="bg-slate-100">
 
     <!-- Fixed Background -->
-    <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1526778548025-14e7de764b1e?q=80&w=2070&auto=format&fit=crop');"></div>
+    <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.imgur.com/NSS7bvI.webp');"></div>
     <div class="fixed inset-0 z-0 bg-black/50"></div>
 
     <!-- Sidebar and Overlay -->
@@ -810,7 +810,7 @@
             setTimeout(() => DOM.detailsModal.classList.add('hidden'), 300);
         }
 
-        function initMainMenu() {
+        function initMainMenuContent() {
             const mainMenu = document.getElementById('main-menu');
             mainMenu.innerHTML = '';
             siteData.menu.forEach(dest => {
@@ -835,6 +835,7 @@
                 mainMenu.appendChild(div);
             });
         }
+
 
         // --- Event Listeners ---
         document.getElementById('open-add-modal-btn').addEventListener('click', () => openModal());
@@ -913,7 +914,7 @@
             }
         });
         
-        // --- Sidebar Activation (runs immediately) ---
+        // --- Sidebar Activation (runs immediately on page load) ---
         const sidebar = document.getElementById('sidebar');
         const hamburgerBtn = document.getElementById('hamburger-btn');
         const closeSidebarBtn = document.getElementById('close-sidebar-btn');
@@ -935,7 +936,7 @@
                 authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
                 document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
                 
-                initMainMenu(); // Build menu content
+                initMainMenuContent(); // Build menu content after user is authenticated
 
                 onSnapshot(query(logisticsCollection), (snapshot) => {
                     allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
