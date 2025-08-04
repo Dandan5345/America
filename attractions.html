@@ -29,10 +29,7 @@
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
         .step-indicator { transition: all 0.4s ease-in-out; }
         .item-card { cursor: pointer; }
-  
-  
-    
-      </style>
+    </style>
 </head>
 <body class="bg-slate-100">
 
@@ -277,7 +274,20 @@
                     document.getElementById('item-type').value = item.type || '';
                     if (isRestaurant) {
                         document.getElementById('item-kosher').value = item.isKosher || 'לא';
-                        document.getElementById('item-food-type').value = item.foodType || '';
+                        
+                        const foodType = item.foodType || '';
+                        const foodTypeSelect = document.getElementById('item-food-type');
+                        const foodTypeOtherInput = document.getElementById('item-food-type-other');
+                        if (siteData.foodTypes.includes(foodType)) {
+                            foodTypeSelect.value = foodType;
+                        } else if (foodType) { // It's a custom type
+                            foodTypeSelect.value = 'אחר';
+                            foodTypeOtherInput.value = foodType;
+                            foodTypeOtherInput.classList.remove('hidden');
+                        } else {
+                            foodTypeSelect.value = siteData.foodTypes[0];
+                        }
+
                         document.getElementById('item-location-restaurant').value = item.location || '';
                         document.getElementById('item-hours-restaurant').value = item.hours || '';
                         document.getElementById('item-link-restaurant').value = item.link || '';
@@ -346,7 +356,7 @@
             if (isRestaurant) {
                 switch(step) {
                     case 4: content = `<label class="${labelClass}"><i class="fa-solid fa-star-of-david text-slate-400"></i>האם המסעדה כשרה?</label><select id="item-kosher" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option></select>`; break;
-                    case 5: content = `<label class="${labelClass}"><i class="fa-solid fa-utensils text-slate-400"></i>סוג אוכל</label><select id="item-food-type" class="form-select w-full p-3">${siteData.foodTypes.map(f=>`<option value="${f}">${f}</option>`).join('')}</select>`; break;
+                    case 5: content = `<label class="${labelClass}"><i class="fa-solid fa-utensils text-slate-400"></i>סוג אוכל</label><select id="item-food-type" class="form-select w-full p-3">${siteData.foodTypes.map(f=>`<option value="${f}">${f}</option>`).join('')}<option value="אחר">✨ אחר</option></select><input type="text" id="item-food-type-other" class="form-input w-full p-3 mt-3 hidden" placeholder="הגדר סוג אוכל חדש">`; break;
                     case 6: content = createLocationHtml('item-location-restaurant'); break;
                     case 7: content = `<label class="${labelClass}"><i class="fa-regular fa-clock text-slate-400"></i>שעות וימי פתיחה (אופציונלי)</label><input type="text" id="item-hours-restaurant" class="form-input w-full p-3" placeholder="לדוגמה: א'-ה' 12:00-23:00">`; break;
                     case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-link text-slate-400"></i>קישור לאתר/תפריט (אופציונלי)</label><input type="url" id="item-link-restaurant" class="form-input w-full p-3" placeholder="https://example.com">`; break;
@@ -362,8 +372,16 @@
             }
             stepContainer.innerHTML = content;
             if (content.includes('map-preview')) initMapForStep();
-            const typeSelect = document.getElementById('item-type');
-            if (typeSelect) typeSelect.addEventListener('change', handleTypeChange);
+            
+            // Attach event listeners after content is created
+            if (step === 3) {
+                const typeSelect = document.getElementById('item-type');
+                if (typeSelect) typeSelect.addEventListener('change', handleTypeChange);
+            }
+            if (isRestaurant && step === 5) {
+                const foodTypeSelect = document.getElementById('item-food-type');
+                if (foodTypeSelect) foodTypeSelect.addEventListener('change', handleFoodTypeChange);
+            }
         }
         
         function handleTypeChange(e) {
@@ -376,6 +394,13 @@
                 if(stepContainer) stepContainer.innerHTML = '';
             }
             updateModalView();
+        }
+
+        function handleFoodTypeChange(e) {
+            const otherInput = document.getElementById('item-food-type-other');
+            if (otherInput) {
+                otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
+            }
         }
 
         function createLocationHtml(inputId) {
@@ -488,24 +513,24 @@
                         let itemsForType = groupedByType[type];
                         
                         if (type === 'מסעדה/אוכל') {
-                             const allFoodTypesInDest = [...new Set(itemsForType.map(i => i.foodType).filter(Boolean))];
-                             let filterHtml = `
-                                <div class="local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center gap-4 mb-4">
-                                    <span class="font-bold text-slate-600 text-sm">סינון:</span>
-                                    <div class="flex items-center gap-2">
-                                        <input type="checkbox" id="kosher-filter-${dest.replace(/\s/g, '')}" data-destination="${dest}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest].kosher ? 'checked' : ''}>
-                                        <label for="kosher-filter-${dest.replace(/\s/g, '')}" class="text-sm font-medium text-slate-600">כשר בלבד</label>
+                                const allFoodTypesInDest = [...new Set(itemsForType.map(i => i.foodType).filter(Boolean))];
+                                let filterHtml = `
+                                    <div class="local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center gap-4 mb-4">
+                                        <span class="font-bold text-slate-600 text-sm">סינון:</span>
+                                        <div class="flex items-center gap-2">
+                                            <input type="checkbox" id="kosher-filter-${dest.replace(/\s/g, '')}" data-destination="${dest}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest].kosher ? 'checked' : ''}>
+                                            <label for="kosher-filter-${dest.replace(/\s/g, '')}" class="text-sm font-medium text-slate-600">כשר בלבד</label>
+                                        </div>
+                                        <select data-destination="${dest}" class="local-filter-food-type form-select rounded-md text-sm">
+                                            <option value="">כל סוגי האוכל</option>
+                                            ${allFoodTypesInDest.map(ft => `<option value="${ft}" ${activeFilters[dest].foodType === ft ? 'selected' : ''}>${ft}</option>`).join('')}
+                                        </select>
                                     </div>
-                                    <select data-destination="${dest}" class="local-filter-food-type form-select rounded-md text-sm">
-                                        <option value="">כל סוגי האוכל</option>
-                                        ${allFoodTypesInDest.map(ft => `<option value="${ft}" ${activeFilters[dest].foodType === ft ? 'selected' : ''}>${ft}</option>`).join('')}
-                                    </select>
-                                </div>
-                             `;
-                             typeContentDiv.insertAdjacentHTML('afterbegin', filterHtml);
+                                `;
+                                typeContentDiv.insertAdjacentHTML('afterbegin', filterHtml);
 
-                             if (activeFilters[dest].kosher) itemsForType = itemsForType.filter(item => item.isKosher === 'כן');
-                             if (activeFilters[dest].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest].foodType);
+                                if (activeFilters[dest].kosher) itemsForType = itemsForType.filter(item => item.isKosher === 'כן');
+                                if (activeFilters[dest].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest].foodType);
                         }
                         
                         const cardGrid = document.createElement('div');
@@ -643,10 +668,17 @@
                 finalType = getVal('item-type-other').trim() || 'כללי';
             }
 
+            let foodType = isRestaurant ? getVal('item-food-type') : null;
+            if (isRestaurant && foodType === 'אחר') {
+                foodType = getVal('item-food-type-other').trim() || null;
+            }
+
             const data = {
-                name: name, destination: getVal('item-destination'), type: finalType,
+                name: name,
+                destination: getVal('item-destination'),
+                type: finalType,
                 isKosher: isRestaurant ? getVal('item-kosher') : null,
-                foodType: isRestaurant ? getVal('item-food-type') : null,
+                foodType: foodType,
                 location: isRestaurant ? getVal('item-location-restaurant') : getVal('item-location-other'),
                 hours: isRestaurant ? getVal('item-hours-restaurant') : getVal('item-hours-other'),
                 link: isRestaurant ? getVal('item-link-restaurant') : getVal('item-link-other'),
