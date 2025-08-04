@@ -133,22 +133,17 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
-            authDomain: "america1tour.firebaseapp.com",
-            projectId: "america1tour",
-            storageBucket: "america1tour.firebasestorage.app",
-            messagingSenderId: "70515728009",
-            appId: "1:70515728009:web:aded0696b4f72c910b7058",
-        };
+        // --- Firebase & App Initialization ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const attractionsCollection = collection(db, 'attractions');
+        const attractionsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'attractions');
 
         // --- App State ---
         let currentUser = null;
@@ -199,7 +194,7 @@
         const deleteModal = document.getElementById('delete-confirm-modal');
         const detailsModal = document.getElementById('details-modal');
 
-        // --- App Initialization ---
+        // --- Main App Logic ---
         function initApp() {
             const sidebar = document.getElementById('sidebar');
             const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -452,8 +447,6 @@
 
             siteData.destinations.forEach(dest => {
                 if (groupedByDest[dest]) {
-                    if (!activeFilters[dest]) activeFilters[dest] = { kosher: false, foodType: '' };
-
                     const destSection = document.createElement('details');
                     destSection.className = "bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden";
                     
@@ -675,14 +668,26 @@
             if (user) {
                 currentUser = user;
                 const authContainer = document.getElementById('auth-container');
-                const displayName = user.displayName || user.email.split('@')[0];
-                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
-                document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
+                const displayName = `משתמש ${user.uid.substring(0, 6)}`;
+                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span>`;
                 initApp();
             } else {
-                window.location.replace('login.html');
+                loadingMessage.textContent = "ממתין לאימות...";
             }
         });
+
+        (async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+                loadingMessage.textContent = "האימות נכשל. לא ניתן לטעון נתונים.";
+            }
+        })();
         
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
