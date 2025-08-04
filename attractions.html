@@ -97,7 +97,7 @@
             </div>
             <form id="item-form" class="flex-grow overflow-y-auto p-6 space-y-6">
                 <!-- Steps will be injected here -->
-                 <div id="step-1" class="modal-step"></div><div id="step-2" class="modal-step"></div><div id="step-3" class="modal-step"></div><div id="step-4" class="modal-step"></div><div id="step-5" class="modal-step"></div><div id="step-6" class="modal-step"></div><div id="step-7" class="modal-step"></div><div id="step-8" class="modal-step"></div><div id="step-9" class="modal-step"></div><div id="step-10" class="modal-step"></div>
+                 <div id="step-1" class="modal-step"></div><div id="step-2" class="modal-step"></div><div id="step-3" class="modal-step"></div><div id="step-4" class="modal-step"></div><div id="step-5" class="modal-step"></div><div id="step-6" class="modal-step"></div><div id="step-7" class="modal-step"></div><div id="step-8" class="modal-step"></div><div id="step-9" class="modal-step"></div><div id="step-10" class="modal-step"></div><div id="step-11" class="modal-step"></div>
             </form>
             <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
                 <button type="button" id="modal-back-btn" class="py-2 px-5 rounded-lg hover:bg-slate-200 transition hidden font-semibold">אחורה</button>
@@ -255,7 +255,7 @@
         async function openModalHandler(itemId = null) {
             editingItemId = itemId;
             form.reset();
-            for(let i = 1; i <= 10; i++) {
+            for(let i = 1; i <= 11; i++) {
                 const stepContainer = document.getElementById(`step-${i}`);
                 if(stepContainer) stepContainer.innerHTML = '';
             }
@@ -269,8 +269,7 @@
                 const item = allItems.find(i => i.id === editingItemId);
                 if (item) {
                     isRestaurant = item.type === 'מסעדה/אוכל';
-                    // Pre-generate all steps to populate them
-                    totalModalSteps = isRestaurant ? 10 : 8;
+                    totalModalSteps = isRestaurant ? 11 : 9;
                     for(let i=1; i<= totalModalSteps; i++) {
                         generateStepContent(i);
                     }
@@ -278,6 +277,7 @@
                     document.getElementById('item-name').value = item.name || '';
                     document.getElementById('item-destination').value = item.destination || '';
                     document.getElementById('item-type').value = item.type || '';
+                    document.getElementById('item-short-description').value = item.shortDescription || '';
                     document.getElementById('item-description').value = item.description || '';
 
                     if (isRestaurant) {
@@ -326,7 +326,7 @@
         function updateModalView() {
             const itemTypeEl = document.getElementById('item-type');
             isRestaurant = itemTypeEl ? itemTypeEl.value === 'מסעדה/אוכל' : isRestaurant;
-            totalModalSteps = isRestaurant ? 10 : 8;
+            totalModalSteps = isRestaurant ? 11 : 9;
 
             document.querySelectorAll('.modal-step').forEach(step => step.classList.remove('active'));
             const currentStepEl = document.getElementById(`step-${currentModalStep}`);
@@ -369,7 +369,8 @@
                     case 7: content = `<label class="${labelClass}"><i class="fa-regular fa-clock text-slate-400"></i>שעות וימי פתיחה (אופציונלי)</label><input type="text" id="item-hours-restaurant" class="form-input w-full p-3" placeholder="לדוגמה: א'-ה' 12:00-23:00">`; break;
                     case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-link text-slate-400"></i>קישור לאתר/תפריט (אופציונלי)</label><input type="url" id="item-link-restaurant" class="form-input w-full p-3" placeholder="https://example.com">`; break;
                     case 9: content = `<label class="${labelClass}"><i class="fa-solid fa-calendar-check text-slate-400"></i>צריך להזמין מקום?</label><select id="item-reservation-restaurant" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option><option value="מומלץ">מומלץ</option></select>`; break;
-                    case 10: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור קצר (אופציונלי)</label><textarea id="item-description" class="form-textarea w-full p-3" rows="4" placeholder="פרטים נוספים, המלצות, טיפים..."></textarea>`; break;
+                    case 10: content = `<label class="${labelClass}"><i class="fa-solid fa-quote-left text-slate-400"></i>פירוט קצר (אופציונלי)</label><textarea id="item-short-description" class="form-textarea w-full p-3" rows="2" placeholder="משפט או שניים שיופיעו בכרטיסייה הראשית..."></textarea>`; break;
+                    case 11: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור מלא (אופציונלי)</label><textarea id="item-description" class="form-textarea w-full p-3" rows="4" placeholder="פרטים נוספים, המלצות, טיפים..."></textarea>`; break;
                 }
             } else {
                 switch(step) {
@@ -377,13 +378,13 @@
                     case 5: content = `<label class="${labelClass}"><i class="fa-regular fa-clock text-slate-400"></i>שעות וימי פתיחה (אופציונלי)</label><input type="text" id="item-hours-other" class="form-input w-full p-3" placeholder="לדוגמה: כל יום 09:00-18:00">`; break;
                     case 6: content = `<label class="${labelClass}"><i class="fa-solid fa-link text-slate-400"></i>קישור לאתר (אופציונלי)</label><input type="url" id="item-link-other" class="form-input w-full p-3" placeholder="https://example.com">`; break;
                     case 7: content = `<label class="${labelClass}"><i class="fa-solid fa-calendar-check text-slate-400"></i>צריך להזמין מקום/כרטיסים מראש?</label><select id="item-reservation-other" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option><option value="מומלץ">מומלץ</option></select>`; break;
-                    case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור קצר (אופציונלי)</label><textarea id="item-description" class="form-textarea w-full p-3" rows="4" placeholder="פרטים נוספים, המלצות, טיפים..."></textarea>`; break;
+                    case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-quote-left text-slate-400"></i>פירוט קצר (אופציונלי)</label><textarea id="item-short-description" class="form-textarea w-full p-3" rows="2" placeholder="משפט או שניים שיופיעו בכרטיסייה הראשית..."></textarea>`; break;
+                    case 9: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור מלא (אופציונלי)</label><textarea id="item-description" class="form-textarea w-full p-3" rows="4" placeholder="פרטים נוספים, המלצות, טיפים..."></textarea>`; break;
                 }
             }
             stepContainer.innerHTML = content;
             if (content.includes('map-preview')) initAddEditMap();
             
-            // Add event listeners for dynamic fields
             const typeSelect = document.getElementById('item-type');
             if (typeSelect) typeSelect.addEventListener('change', handleTypeChange);
             const foodTypeSelect = document.getElementById('item-food-type');
@@ -395,8 +396,7 @@
             if (otherInput) {
                 otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
             }
-            // Clear subsequent steps to force regeneration
-            for(let i = currentModalStep + 1; i <= 10; i++) {
+            for(let i = currentModalStep + 1; i <= 11; i++) {
                 const stepContainer = document.getElementById(`step-${i}`);
                 if(stepContainer) stepContainer.innerHTML = '';
             }
@@ -449,7 +449,6 @@
                     if (markerInstance) markerInstance.setLatLng(coords);
                     else markerInstance = L.marker(coords).addTo(mapInstance);
                     
-                    // Return the new marker instance
                     return markerInstance;
                 } else {
                     showModalError('לא נמצאה כתובת. נסה שוב.');
@@ -553,19 +552,28 @@
                                 card.className = 'item-card bg-white p-4 rounded-xl shadow-lg flex flex-col justify-between transition-transform hover:scale-105 hover:shadow-xl';
                                 card.dataset.id = item.id;
                                 
-                                let detailsHtml = '';
-                                if(item.isKosher === 'כן') detailsHtml += `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">כשר</span>`;
-                                if(item.foodType) detailsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${item.foodType}</span>`;
-                                if(item.reservation && item.reservation !== 'לא') detailsHtml += `<span class="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
+                                let tagsHtml = '';
+                                if(item.isKosher === 'כן') tagsHtml += `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">כשר</span>`;
+                                if(item.foodType) tagsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${item.foodType}</span>`;
+                                if(item.reservation && item.reservation !== 'לא') tagsHtml += `<span class="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
+
+                                const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
 
                                 card.innerHTML = `
-                                    <div>
+                                    <div class="flex-grow">
                                         <h5 class="text-lg font-bold text-slate-800 truncate mb-2">${item.name}</h5>
-                                        <div class="flex flex-wrap gap-2 min-h-[26px]">${detailsHtml}</div>
+                                        <div class="flex flex-wrap gap-2 min-h-[26px] mb-3">${tagsHtml}</div>
+                                        ${item.shortDescription ? `<p class="text-sm text-slate-600 mb-4">${item.shortDescription}</p>` : ''}
                                     </div>
-                                    <div class="mt-4 pt-3 border-t flex items-center justify-end gap-2">
-                                        <button class="edit-btn action-btn bg-slate-200 text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-300 transition" title="עריכה"><i class="fas fa-pencil"></i></button>
-                                        <button class="delete-btn action-btn bg-slate-200 text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:text-red-500 hover:bg-red-100 transition" title="מחיקה"><i class="fas fa-trash"></i></button>
+                                    <div class="mt-auto pt-3 border-t flex items-center justify-between gap-2">
+                                        <div class="flex gap-2">
+                                            <a href="${navLink}" target="_blank" class="action-btn bg-blue-100 text-blue-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-200 transition" title="נווט עם Google Maps"><i class="fa-solid fa-diamond-turn-right"></i></a>
+                                            ${item.link ? `<a href="${item.link}" target="_blank" class="action-btn bg-green-100 text-green-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-green-200 transition" title="פתח אתר"><i class="fa-solid fa-link"></i></a>` : ''}
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button class="edit-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-300 transition" title="עריכה"><i class="fas fa-pencil"></i></button>
+                                            <button class="delete-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:text-red-500 hover:bg-red-100 transition" title="מחיקה"><i class="fas fa-trash"></i></button>
+                                        </div>
                                     </div>
                                 `;
                                 cardGrid.appendChild(card);
@@ -608,6 +616,7 @@
                 </div>
                 <div class="p-6 flex-grow overflow-y-auto space-y-5 bg-slate-50">
                     ${tagsHtml ? `<div class="flex flex-wrap gap-3 items-center">${tagsHtml}</div>` : ''}
+                    ${item.shortDescription ? `<div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded"><p class="text-slate-700 font-semibold">${item.shortDescription}</p></div>` : ''}
                     ${item.description ? `<div class="bg-white p-4 rounded-lg shadow-inner"><p class="text-slate-700 whitespace-pre-wrap">${item.description}</p></div>` : ''}
                     ${item.location ? `<div class="flex items-start gap-4"><i class="fa-solid fa-location-dot fa-fw text-slate-400 mt-1"></i><p class="text-slate-700 font-semibold">${item.location}</p></div>` : ''}
                     ${item.hours ? `<div class="flex items-start gap-4"><i class="fa-regular fa-clock fa-fw text-slate-400 mt-1"></i><p class="text-slate-700">${item.hours}</p></div>` : ''}
@@ -716,6 +725,7 @@
                 name: name,
                 destination: getVal('item-destination'),
                 type: finalType,
+                shortDescription: getVal('item-short-description'),
                 description: getVal('item-description'),
                 isKosher: isRestaurant ? getVal('item-kosher') : null,
                 foodType: finalFoodType,
