@@ -259,6 +259,8 @@
                 ]);
 
                 const drivingData = await drivingResponse.json();
+                // --- FIX ---
+                // The bug was here. It was using drivingResponse.json() again instead of walkingResponse.json()
                 const walkingData = await walkingResponse.json();
 
                 let resultsHTML = '';
@@ -305,15 +307,21 @@
             if (hours > 0) {
                 parts.push(`${hours} ${hours === 1 ? 'שעה' : 'שעות'}`);
             }
-            if (minutes > 0) {
-                // אם יש גם שעות וגם דקות, והדקות מתעגלות ל-60, אל תציג אותן
-                if (hours > 0 && minutes === 60) {
-                    // במקרה זה, השעות כבר חושבו נכון, אז אין צורך להוסיף כלום
-                } else {
-                     parts.push(`${minutes} ${minutes === 1 ? 'דקה' : 'דקות'}`);
+            // Handle the case where minutes round up to 60
+            if (minutes === 60) {
+                if (hours === 0) { // If it was e.g. 59.9 minutes
+                     parts.push(`1 שעה`);
                 }
+                // If there are hours, the hour is already correct, so we just don't show '60 minutes'
+            } else if (minutes > 0) {
+                 parts.push(`${minutes} ${minutes === 1 ? 'דקה' : 'דקות'}`);
             }
             
+            // If for some reason parts is empty (e.g. exactly 0 seconds after checks), return a default
+            if (parts.length === 0) {
+                return "פחות מדקה";
+            }
+
             return parts.join(' ו-');
         }
 
