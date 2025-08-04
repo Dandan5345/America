@@ -120,7 +120,7 @@
                             <a href="attractions.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
                                 <i class="fas fa-map-marked-alt text-3xl mb-2"></i><span class="font-bold">אטרקציות ומסעדות</span>
                             </a>
-                            <a href="logistics.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
+                            <a href="summary.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
                                 <i class="fas fa-plane-departure text-3xl mb-2"></i><span class="font-bold">סיכום מלונות ומעברים</span>
                             </a>
                         </div>
@@ -389,7 +389,7 @@
             container.innerHTML = '';
             flights.forEach(flight => {
                 const card = document.createElement('a');
-                card.href = `logistics.html?view=${flight.id}`;
+                card.href = `summary.html?view=${flight.id}`;
                 card.className = "main-nav-button bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg flex items-center gap-4 text-right";
                 
                 const title = `טיסה: ${flight.from?.destination || ''} ← ${flight.to?.destination || ''}`;
