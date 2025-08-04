@@ -21,18 +21,13 @@
         .modal-step { display: none; }
         .modal-step.active { display: block; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        #map-preview, #details-map { height: 200px; border-radius: 0.5rem; background-color: #e2e8f0; }
-        .leaflet-container { z-index: 10; }
+        #map-preview, #details-map { height: 200px; border-radius: 0.5rem; background-color: #e2e8f0; z-index: 10; }
         details > summary { list-style: none; cursor: pointer; }
         details > summary::-webkit-details-marker { display: none; }
         .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
         .step-indicator { transition: all 0.4s ease-in-out; }
         .item-card { cursor: pointer; }
-        .details-modal-bg {
-            background-size: cover;
-            background-position: center;
-        }
     </style>
 </head>
 <body class="bg-slate-100">
@@ -98,6 +93,7 @@
                 <div id="step-progress-bar" class="bg-blue-500 h-2.5 rounded-r-full transition-all duration-500" style="width: 0%;"></div>
             </div>
             <form id="item-form" class="flex-grow overflow-y-auto p-6 space-y-6">
+                <!-- Steps will be generated here -->
                 <div id="step-1" class="modal-step"></div><div id="step-2" class="modal-step"></div><div id="step-3" class="modal-step"></div><div id="step-4" class="modal-step"></div><div id="step-5" class="modal-step"></div><div id="step-6" class="modal-step"></div><div id="step-7" class="modal-step"></div><div id="step-8" class="modal-step"></div><div id="step-9" class="modal-step"></div><div id="step-10" class="modal-step"></div>
             </form>
             <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
@@ -110,9 +106,9 @@
         </div>
     </div>
 
-    <!-- Details Modal -->
+    <!-- Details Modal (NEW) -->
     <div id="details-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4">
-        <div id="details-modal-content" class="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col relative overflow-hidden">
+        <div id="details-modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative">
             <!-- Content will be injected by JS -->
         </div>
     </div>
@@ -133,30 +129,35 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase & App Initialization ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "YOUR_API_KEY", authDomain: "YOUR_AUTH_DOMAIN", projectId: "YOUR_PROJECT_ID" };
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
+            authDomain: "america1tour.firebaseapp.com",
+            projectId: "america1tour",
+            storageBucket: "america1tour.firebasestorage.app",
+            messagingSenderId: "70515728009",
+            appId: "1:70515728009:web:aded0696b4f72c910b7058",
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const attractionsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'attractions');
+        const attractionsCollection = collection(db, 'attractions');
 
         // --- App State ---
         let currentUser = null;
         let currentModalStep = 1;
         let totalModalSteps = 1;
         let isRestaurant = false;
-        let map = null;
-        let marker = null;
+        let formMap = null;
+        let formMarker = null;
         let detailsMap = null;
-        let detailsMarker = null;
         let allItems = [];
         let activeFilters = {}; 
         let editingItemId = null;
+        let tempCoords = null; // To temporarily store coordinates during form entry
 
         const siteData = {
             menu: [
@@ -194,7 +195,7 @@
         const deleteModal = document.getElementById('delete-confirm-modal');
         const detailsModal = document.getElementById('details-modal');
 
-        // --- Main App Logic ---
+        // --- App Initialization ---
         function initApp() {
             const sidebar = document.getElementById('sidebar');
             const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -250,6 +251,7 @@
         async function openModalHandler(itemId = null) {
             editingItemId = itemId;
             form.reset();
+            tempCoords = null;
             for(let i = 1; i <= 10; i++) {
                 const stepContainer = document.getElementById(`step-${i}`);
                 if(stepContainer) stepContainer.innerHTML = '';
@@ -264,12 +266,16 @@
                 const item = allItems.find(i => i.id === editingItemId);
                 if (item) {
                     isRestaurant = item.type === 'מסעדה/אוכל';
-                    const maxSteps = isRestaurant ? 10 : 8;
-                    for(let i=1; i<= maxSteps; i++) generateStepContent(i);
-                    
+                    // Pre-generate all steps to populate them
+                    for(let i=1; i<= (isRestaurant ? 10 : 8); i++) {
+                        generateStepContent(i);
+                    }
+                    // Now populate the fields
                     document.getElementById('item-name').value = item.name || '';
                     document.getElementById('item-destination').value = item.destination || '';
                     document.getElementById('item-type').value = item.type || '';
+                    document.getElementById('item-description').value = item.description || '';
+                    if (item.lat && item.lon) tempCoords = { lat: item.lat, lon: item.lon };
                     
                     if (isRestaurant) {
                         document.getElementById('item-kosher').value = item.isKosher || 'לא';
@@ -287,13 +293,11 @@
                         document.getElementById('item-hours-restaurant').value = item.hours || '';
                         document.getElementById('item-link-restaurant').value = item.link || '';
                         document.getElementById('item-reservation-restaurant').value = item.reservation || 'לא';
-                        document.getElementById('item-description-restaurant').value = item.description || '';
                     } else {
                         document.getElementById('item-location-other').value = item.location || '';
                         document.getElementById('item-hours-other').value = item.hours || '';
                         document.getElementById('item-link-other').value = item.link || '';
                         document.getElementById('item-reservation-other').value = item.reservation || 'לא';
-                        document.getElementById('item-description-other').value = item.description || '';
                     }
                 }
             } else {
@@ -311,7 +315,7 @@
             editingItemId = null;
             modal.classList.add('hidden');
             modal.classList.remove('flex');
-            if (map) { map.remove(); map = null; marker = null; }
+            if (formMap) { formMap.remove(); formMap = null; formMarker = null; }
             showModalError('');
         }
         
@@ -329,7 +333,9 @@
                 }
             }
             
-            if (document.getElementById('map-preview')) initMapForStep();
+            if (document.getElementById('map-preview')) {
+                initFormMap();
+            }
 
             backBtn.classList.toggle('hidden', currentModalStep === 1);
             nextBtn.classList.toggle('hidden', currentModalStep === totalModalSteps);
@@ -343,10 +349,13 @@
             if (!stepContainer) return;
             let content = '';
             const labelClass = "flex items-center gap-3 text-lg font-bold text-slate-700 mb-3";
-            
-            if (step === 1) content = `<label class="${labelClass}"><i class="fa-solid fa-signature text-slate-400"></i>שם המקום</label><input type="text" id="item-name" required class="form-input w-full p-3" placeholder="לדוגמה: Top of the Rock">`;
-            if (step === 2) content = `<label class="${labelClass}"><i class="fa-solid fa-map-pin text-slate-400"></i>לאיזה יעד?</label><select id="item-destination" required class="form-select w-full p-3">${siteData.destinations.map(o=>`<option value="${o}">${siteData.destinationEmojis[o] || '📍'} ${o}</option>`).join('')}</select>`;
-            if (step === 3) content = `<label class="${labelClass}"><i class="fa-solid fa-shapes text-slate-400"></i>סוג המקום</label><select id="item-type" required class="form-select w-full p-3">${[...siteData.placeTypes].map(o=>`<option value="${o}">${siteData.placeTypeEmojis[o] || '📌'} ${o}</option>`).join('')}<option value="אחר">✨ אחר</option></select><input type="text" id="item-type-other" class="form-input w-full p-3 mt-3 hidden" placeholder="הגדר סוג חדש">`;
+            const finalDescriptionStep = isRestaurant ? 10 : 8;
+
+            if (step === finalDescriptionStep) {
+                content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור / פירוט (אופציונלי)</label><textarea id="item-description" class="form-textarea w-full p-3 h-32" placeholder="למה המקום הזה מומלץ? מה חשוב לדעת?"></textarea>`;
+            } else if (step === 1) content = `<label class="${labelClass}"><i class="fa-solid fa-signature text-slate-400"></i>שם המקום</label><input type="text" id="item-name" required class="form-input w-full p-3" placeholder="לדוגמה: Top of the Rock">`;
+            else if (step === 2) content = `<label class="${labelClass}"><i class="fa-solid fa-map-pin text-slate-400"></i>לאיזה יעד?</label><select id="item-destination" required class="form-select w-full p-3">${siteData.destinations.map(o=>`<option value="${o}">${siteData.destinationEmojis[o] || '📍'} ${o}</option>`).join('')}</select>`;
+            else if (step === 3) content = `<label class="${labelClass}"><i class="fa-solid fa-shapes text-slate-400"></i>סוג המקום</label><select id="item-type" required class="form-select w-full p-3">${[...siteData.placeTypes].map(o=>`<option value="${o}">${siteData.placeTypeEmojis[o] || '📌'} ${o}</option>`).join('')}<option value="אחר">✨ אחר</option></select><input type="text" id="item-type-other" class="form-input w-full p-3 mt-3 hidden" placeholder="הגדר סוג חדש">`;
 
             if (isRestaurant) {
                 switch(step) {
@@ -356,7 +365,6 @@
                     case 7: content = `<label class="${labelClass}"><i class="fa-regular fa-clock text-slate-400"></i>שעות וימי פתיחה (אופציונלי)</label><input type="text" id="item-hours-restaurant" class="form-input w-full p-3" placeholder="לדוגמה: א'-ה' 12:00-23:00">`; break;
                     case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-link text-slate-400"></i>קישור לאתר/תפריט (אופציונלי)</label><input type="url" id="item-link-restaurant" class="form-input w-full p-3" placeholder="https://example.com">`; break;
                     case 9: content = `<label class="${labelClass}"><i class="fa-solid fa-calendar-check text-slate-400"></i>צריך להזמין מקום?</label><select id="item-reservation-restaurant" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option><option value="מומלץ">מומלץ</option></select>`; break;
-                    case 10: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור/המלצות (אופציונלי)</label><textarea id="item-description-restaurant" class="form-textarea w-full p-3 h-32" placeholder="למשל: מומלץ להזמין את הפיצה המיוחדת שלהם..."></textarea>`; break;
                 }
             } else {
                 switch(step) {
@@ -364,11 +372,10 @@
                     case 5: content = `<label class="${labelClass}"><i class="fa-regular fa-clock text-slate-400"></i>שעות וימי פתיחה (אופציונלי)</label><input type="text" id="item-hours-other" class="form-input w-full p-3" placeholder="לדוגמה: כל יום 09:00-18:00">`; break;
                     case 6: content = `<label class="${labelClass}"><i class="fa-solid fa-link text-slate-400"></i>קישור לאתר (אופציונלי)</label><input type="url" id="item-link-other" class="form-input w-full p-3" placeholder="https://example.com">`; break;
                     case 7: content = `<label class="${labelClass}"><i class="fa-solid fa-calendar-check text-slate-400"></i>צריך להזמין מקום/כרטיסים מראש?</label><select id="item-reservation-other" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option><option value="מומלץ">מומלץ</option></select>`; break;
-                    case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור/המלצות (אופציונלי)</label><textarea id="item-description-other" class="form-textarea w-full p-3 h-32" placeholder="למשל: תצפית מדהימה, הכי שווה להגיע לקראת השקיעה..."></textarea>`; break;
                 }
             }
             stepContainer.innerHTML = content;
-            if (content.includes('map-preview')) initMapForStep();
+            if (content.includes('map-preview')) initFormMap();
             
             if (step === 3) document.getElementById('item-type')?.addEventListener('change', handleTypeChange);
             if (isRestaurant && step === 5) document.getElementById('item-food-type')?.addEventListener('change', handleFoodTypeChange);
@@ -376,7 +383,9 @@
         
         function handleTypeChange(e) {
             document.getElementById('item-type-other')?.classList.toggle('hidden', e.target.value !== 'אחר');
-            for(let i = currentModalStep + 1; i <= 10; i++) document.getElementById(`step-${i}`)?.innerHTML = '';
+            for(let i = currentModalStep + 1; i <= 10; i++) {
+                document.getElementById(`step-${i}`)?.innerHTML = '';
+            }
             updateModalView();
         }
 
@@ -385,33 +394,50 @@
         }
 
         function createLocationHtml(inputId) {
-            return `<label for="${inputId}" class="flex items-center gap-3 text-lg font-bold text-slate-700 mb-3"><i class="fa-solid fa-location-dot text-slate-400"></i>מיקום/כתובת</label><div class="flex gap-2"><input type="text" id="${inputId}" class="form-input w-full p-3" placeholder="הכנס כתובת לחיפוש..."><button type="button" class="find-location-btn bg-slate-200 px-4 rounded-lg hover:bg-slate-300"><i class="fa-solid fa-magnifying-glass"></i></button></div><div id="map-preview" class="mt-3"></div><p class="text-xs text-slate-500 mt-1">ודא שהסימון על המפה נכון לפני שאתה ממשיך.</p>`;
+            return `
+                <label for="${inputId}" class="flex items-center gap-3 text-lg font-bold text-slate-700 mb-3"><i class="fa-solid fa-location-dot text-slate-400"></i>מיקום/כתובת</label>
+                <div class="flex gap-2">
+                    <input type="text" id="${inputId}" class="form-input w-full p-3" placeholder="הכנס כתובת לחיפוש...">
+                    <button type="button" class="find-location-btn bg-slate-200 px-4 rounded-lg hover:bg-slate-300"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>
+                <div id="map-preview" class="mt-3"></div>
+                <p class="text-xs text-slate-500 mt-1">ודא שהסימון על המפה נכון לפני שאתה ממשיך.</p>
+            `;
         }
 
-        function initMapForStep() {
+        function initFormMap() {
             setTimeout(() => {
                 const mapDiv = document.getElementById('map-preview');
                 if (mapDiv && !mapDiv._leaflet_id) {
-                    map = L.map(mapDiv).setView([40.7128, -74.0060], 10);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                    formMap = L.map(mapDiv).setView([40.7128, -74.0060], 10);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(formMap);
+                    
+                    // If editing an item with existing coordinates
+                    if (tempCoords) {
+                        const coords = [tempCoords.lat, tempCoords.lon];
+                        formMap.setView(coords, 15);
+                        formMarker = L.marker(coords).addTo(formMap);
+                    }
                 }
-                if (map) map.invalidateSize();
+                if (formMap) formMap.invalidateSize();
             }, 200);
         }
 
         async function findLocationOnMap(e) {
             const input = e.target.closest('div').querySelector('input');
             const address = input.value;
-            if (!address || !map) return;
+            if (!address || !formMap) return;
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
                 const data = await response.json();
                 if (data && data.length > 0) {
                     const { lat, lon } = data[0];
                     const coords = [lat, lon];
-                    map.setView(coords, 15);
-                    if (marker) marker.setLatLng(coords);
-                    else marker = L.marker(coords).addTo(map);
+                    tempCoords = { lat: parseFloat(lat), lon: parseFloat(lon) }; // Store coordinates
+                    formMap.setView(coords, 15);
+                    if (formMarker) formMarker.setLatLng(coords);
+                    else formMarker = L.marker(coords).addTo(formMap);
+                    showModalError('');
                 } else {
                     showModalError('לא נמצאה כתובת. נסה שוב.');
                 }
@@ -447,6 +473,8 @@
 
             siteData.destinations.forEach(dest => {
                 if (groupedByDest[dest]) {
+                    if (!activeFilters[dest]) activeFilters[dest] = { kosher: false, foodType: '' };
+
                     const destSection = document.createElement('details');
                     destSection.className = "bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden";
                     
@@ -456,39 +484,90 @@
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'p-4 space-y-6 bg-slate-50/80';
 
-                    const cardGrid = document.createElement('div');
-                    cardGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+                    const groupedByType = groupedByDest[dest].reduce((acc, item) => {
+                        const type = item.type || 'כללי';
+                        if (!acc[type]) acc[type] = [];
+                        acc[type].push(item);
+                        return acc;
+                    }, {});
 
-                    groupedByDest[dest].forEach(item => {
-                        const card = document.createElement('div');
-                        card.className = 'item-card bg-white p-4 rounded-xl shadow-md flex flex-col transition-transform hover:scale-105 hover:shadow-xl';
-                        card.dataset.id = item.id;
+                    Object.keys(groupedByType).sort().forEach(type => {
+                        const typeSection = document.createElement('details');
+                        typeSection.className = "bg-white/90 p-4 rounded-xl shadow-md";
                         
-                        let detailsHtml = '';
-                        if(item.isKosher === 'כן') detailsHtml += `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">כשר</span>`;
-                        if(item.foodType) detailsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${item.foodType}</span>`;
+                        const typeIcon = siteData.placeTypeEmojis[type] || '📌';
+                        let summaryHtml = `<summary class="text-xl font-semibold text-slate-700 flex justify-between items-center"><span>${typeIcon} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
                         
-                        const typeIcon = siteData.placeTypeEmojis[item.type] || '📌';
+                        const typeContentDiv = document.createElement('div');
+                        typeContentDiv.className = "mt-4 pt-4 border-t space-y-4";
+                        
+                        let itemsForType = groupedByType[type];
+                        
+                        if (type === 'מסעדה/אוכל') {
+                                const allFoodTypesInDest = [...new Set(itemsForType.map(i => i.foodType).filter(Boolean))];
+                                let filterHtml = `
+                                    <div class="local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center gap-4 mb-4">
+                                        <span class="font-bold text-slate-600 text-sm">סינון:</span>
+                                        <div class="flex items-center gap-2">
+                                            <input type="checkbox" id="kosher-filter-${dest.replace(/\s/g, '')}" data-destination="${dest}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest].kosher ? 'checked' : ''}>
+                                            <label for="kosher-filter-${dest.replace(/\s/g, '')}" class="text-sm font-medium text-slate-600">כשר בלבד</label>
+                                        </div>
+                                        <select data-destination="${dest}" class="local-filter-food-type form-select rounded-md text-sm">
+                                            <option value="">כל סוגי האוכל</option>
+                                            ${allFoodTypesInDest.map(ft => `<option value="${ft}" ${activeFilters[dest].foodType === ft ? 'selected' : ''}>${ft}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                `;
+                                typeContentDiv.insertAdjacentHTML('afterbegin', filterHtml);
 
-                        card.innerHTML = `
-                            <div class="flex-grow">
-                                <p class="text-sm text-slate-500 mb-1">${typeIcon} ${item.type}</p>
-                                <h5 class="text-lg font-bold text-slate-800 mb-2">${item.name}</h5>
-                                <div class="flex flex-wrap gap-2 min-h-[26px]">${detailsHtml}</div>
-                            </div>
-                        `;
-                        cardGrid.appendChild(card);
+                                if (activeFilters[dest].kosher) itemsForType = itemsForType.filter(item => item.isKosher === 'כן');
+                                if (activeFilters[dest].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest].foodType);
+                        }
+                        
+                        const cardGrid = document.createElement('div');
+                        cardGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+
+                        if (itemsForType.length > 0) {
+                            itemsForType.forEach(item => {
+                                const card = document.createElement('div');
+                                card.className = 'item-card bg-white p-4 rounded-xl shadow-md flex flex-col transition-transform hover:scale-105 hover:shadow-lg';
+                                card.dataset.id = item.id;
+                                
+                                let tagsHtml = '';
+                                if(item.isKosher === 'כן') tagsHtml += `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">כשר</span>`;
+                                if(item.foodType) tagsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${item.foodType}</span>`;
+
+                                card.innerHTML = `
+                                    <div class="flex-grow">
+                                        <h5 class="text-md font-bold text-slate-800 truncate">${item.name}</h5>
+                                        <p class="text-sm text-slate-500">${siteData.placeTypeEmojis[item.type] || '📌'} ${item.type}</p>
+                                        <div class="flex flex-wrap gap-2 mt-2 min-h-[26px]">${tagsHtml}</div>
+                                    </div>
+                                    <div class="mt-3 pt-3 border-t flex items-center justify-end gap-2">
+                                        <button class="edit-btn action-btn bg-slate-200 text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-300 transition" title="עריכה"><i class="fas fa-pencil"></i></button>
+                                        <button class="delete-btn action-btn bg-slate-200 text-slate-600 w-8 h-8 flex items-center justify-center rounded-full hover:text-red-500 hover:bg-red-100 transition" title="מחיקה"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                `;
+                                cardGrid.appendChild(card);
+                            });
+                        } else {
+                            cardGrid.innerHTML = `<p class="text-slate-500 col-span-full text-center">אין מקומות התואמים לסינון.</p>`;
+                        }
+                        
+                        typeContentDiv.appendChild(cardGrid);
+                        typeSection.innerHTML = summaryHtml;
+                        typeSection.appendChild(typeContentDiv);
+                        contentDiv.appendChild(typeSection);
                     });
-                    
-                    contentDiv.appendChild(cardGrid);
+
                     destSection.appendChild(contentDiv);
                     itemsContainer.appendChild(destSection);
                 }
             });
         }
         
-        // --- Details Modal Logic ---
-        async function openDetailsModal(itemId) {
+        // --- Details Modal Logic (NEW) ---
+        function openDetailsModal(itemId) {
             const item = allItems.find(i => i.id === itemId);
             if (!item) return;
 
@@ -499,104 +578,70 @@
             if(item.foodType) tagsHtml += `<span class="text-sm font-bold text-sky-700 bg-sky-100 px-3 py-1 rounded-full">${item.foodType}</span>`;
             if(item.reservation && item.reservation !== 'לא') tagsHtml += `<span class="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
 
-            const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
-            const typeIcon = siteData.placeTypeEmojis[item.type] || '📌';
-            const destImage = { "ניו יורק": "https://i.imgur.com/xC0eTsS.jpeg", "מפלי הניאגרה וקנדה": "https://i.imgur.com/wVIZcCo.jpeg", "וושינגטון די סי": "https://i.imgur.com/v8C51b8.jpeg", "אורלנדו": "https://i.imgur.com/y1a2s4x.jpeg", "מיאמי": "https://i.imgur.com/sXlFATs.jpeg", "פונטה קאנה": "https://i.imgur.com/fJgWlJj.jpeg", "אריזונה": "https://i.imgur.com/xXjVfma.jpeg", "לוס אנג'לס": "https://i.imgur.com/kM0i3aB.jpeg", "סן פרנסיסקו": "https://i.imgur.com/2GfE3fG.jpeg" }[item.destination] || 'https://i.imgur.com/xC0eTsS.jpeg';
+            const navLink = (item.lat && item.lon) 
+                ? `https://www.google.com/maps?q=${item.lat},${item.lon}`
+                : item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
 
             modalContent.innerHTML = `
-                <div class="h-48 details-modal-bg relative" style="background-image: url('${destImage}')">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                    <button id="details-modal-close" class="absolute top-3 left-3 text-white/70 hover:text-white z-10"><i class="fas fa-times fa-lg"></i></button>
-                    <div class="absolute bottom-0 p-4 w-full">
-                         <p class="text-white/90 text-sm font-semibold">${typeIcon} ${item.type}</p>
-                         <h3 class="text-3xl font-extrabold text-white text-shadow">${item.name}</h3>
-                    </div>
+                <button id="details-modal-close" class="absolute top-4 left-4 text-slate-400 hover:text-red-500 z-20"><i class="fas fa-times fa-lg"></i></button>
+                <div class="p-6 border-b bg-slate-50 rounded-t-2xl">
+                    <h3 class="text-3xl font-bold text-slate-800">${item.name}</h3>
+                    <p class="text-slate-500 mt-1">${siteData.placeTypeEmojis[item.type] || '📌'} ${item.type}</p>
                 </div>
-                <div class="p-5 flex-grow overflow-y-auto space-y-5 bg-slate-50">
-                    <div class="flex flex-wrap gap-2 items-center">${tagsHtml}</div>
-                    ${item.description ? `<div class="text-slate-700 text-base leading-relaxed bg-white p-4 rounded-lg shadow-inner">${item.description.replace(/\n/g, '<br>')}</div>` : ''}
+                <div class="p-6 flex-grow overflow-y-auto space-y-5 bg-white">
+                    <div class="flex flex-wrap gap-3 items-center">${tagsHtml}</div>
                     
-                    <div class="space-y-3 pt-4 border-t">
-                        ${item.location ? `<div class="flex items-start gap-4"><i class="fa-solid fa-location-dot fa-fw text-slate-400 mt-1"></i><div><p class="font-semibold text-slate-700">מיקום</p><p class="text-slate-600">${item.location}</p></div></div>` : ''}
-                        ${item.hours ? `<div class="flex items-start gap-4"><i class="fa-regular fa-clock fa-fw text-slate-400 mt-1"></i><div><p class="font-semibold text-slate-700">שעות פתיחה</p><p class="text-slate-600">${item.hours}</p></div></div>` : ''}
-                    </div>
-                    ${item.location ? '<div id="details-map" class="h-56 w-full rounded-xl shadow-md"></div>' : ''}
+                    ${item.description ? `
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-1">תיאור</h4>
+                            <p class="text-slate-600 whitespace-pre-wrap">${item.description}</p>
+                        </div>` : ''}
+
+                    ${item.location ? `
+                        <div class="flex items-start gap-4"><i class="fa-solid fa-location-dot fa-fw text-slate-400 mt-1"></i><p class="text-slate-700">${item.location}</p></div>` : ''}
+                    
+                    ${item.hours ? `
+                        <div class="flex items-start gap-4"><i class="fa-regular fa-clock fa-fw text-slate-400 mt-1"></i><p class="text-slate-700">${item.hours}</p></div>` : ''}
+
+                    ${(item.lat && item.lon) ? `<div id="details-map"></div>` : ''}
                 </div>
-                <div class="p-3 bg-slate-200 border-t flex flex-wrap justify-center gap-3">
-                    <a href="${navLink}" target="_blank" class="flex-1 text-center bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-diamond-turn-right mr-2"></i>נווט</a>
-                    ${item.link ? `<a href="${item.link}" target="_blank" class="flex-1 text-center bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition"><i class="fa-solid fa-link mr-2"></i>אתר</a>` : ''}
-                    <button data-id="${item.id}" class="edit-btn-modal flex-1 text-center bg-slate-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-700 transition"><i class="fas fa-pencil mr-2"></i>ערוך</button>
-                    <button data-id="${item.id}" class="delete-btn-modal flex-1 text-center bg-red-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-600 transition"><i class="fas fa-trash mr-2"></i>מחק</button>
+                <div class="p-4 bg-slate-100 border-t flex flex-wrap justify-center gap-3 rounded-b-2xl">
+                    <a href="${navLink}" target="_blank" class="flex-1 text-center bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-diamond-turn-right mr-2"></i>נווט</a>
+                    ${item.link ? `<a href="${item.link}" target="_blank" class="flex-1 text-center bg-green-500 text-white font-bold py-3 px-5 rounded-lg hover:bg-green-600 transition"><i class="fa-solid fa-link mr-2"></i>אתר</a>` : ''}
+                    <button data-id="${item.id}" class="edit-btn-modal flex-1 text-center bg-slate-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-slate-700 transition"><i class="fas fa-pencil mr-2"></i>ערוך</button>
                 </div>
             `;
 
             detailsModal.classList.remove('hidden');
             detailsModal.classList.add('flex');
             
-            if (item.location) {
-                setTimeout(async () => {
+            // Initialize map after modal is visible
+            if (item.lat && item.lon) {
+                setTimeout(() => {
                     const mapDiv = document.getElementById('details-map');
-                    if (mapDiv && !mapDiv._leaflet_id) {
-                        detailsMap = L.map(mapDiv).setView([40.7128, -74.0060], 10);
+                    if (mapDiv) {
+                        detailsMap = L.map(mapDiv).setView([item.lat, item.lon], 15);
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(detailsMap);
-                        try {
-                            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(item.location)}`);
-                            const data = await response.json();
-                            if (data && data.length > 0) {
-                                const { lat, lon } = data[0];
-                                const coords = [lat, lon];
-                                detailsMap.setView(coords, 15);
-                                if (detailsMarker) detailsMarker.setLatLng(coords);
-                                else detailsMarker = L.marker(coords).addTo(detailsMap);
-                            }
-                        } catch (err) { console.error("Details map location error:", err); }
+                        L.marker([item.lat, item.lon]).addTo(detailsMap);
+                        detailsMap.invalidateSize();
                     }
-                    if(detailsMap) detailsMap.invalidateSize();
                 }, 100);
             }
-            
+
             document.getElementById('details-modal-close').addEventListener('click', closeDetailsModal);
             document.querySelector('.edit-btn-modal').addEventListener('click', (e) => {
                 closeDetailsModal();
                 openModalHandler(e.currentTarget.dataset.id);
-            });
-            document.querySelector('.delete-btn-modal').addEventListener('click', (e) => {
-                closeDetailsModal();
-                confirmAndDelete(e.currentTarget.dataset.id);
             });
         }
 
         function closeDetailsModal() {
             detailsModal.classList.add('hidden');
             detailsModal.classList.remove('flex');
-            if (detailsMap) { detailsMap.remove(); detailsMap = null; detailsMarker = null; }
-        }
-
-        function confirmAndDelete(id) {
-            const item = allItems.find(i => i.id === id);
-            if (!item) return;
-
-            const modalTitle = document.getElementById('delete-modal-title');
-            const confirmBtn = document.getElementById('delete-modal-confirm');
-            modalTitle.textContent = `האם למחוק את "${item.name}"?`;
-            
-            const confirmHandler = async () => {
-                try { await deleteDoc(doc(db, 'attractions', id)); } 
-                catch (error) { console.error("Failed to delete item:", error); } 
-                finally { closeDeleteModal(); }
-            };
-
-            const closeDeleteModal = () => {
-                deleteModal.classList.add('hidden');
-                deleteModal.classList.remove('flex');
-                confirmBtn.removeEventListener('click', confirmHandler);
-            };
-            
-            confirmBtn.addEventListener('click', confirmHandler, { once: true });
-            document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
-
-            deleteModal.classList.remove('hidden');
-            deleteModal.classList.add('flex');
+            if (detailsMap) {
+                detailsMap.remove();
+                detailsMap = null;
+            }
         }
 
         // --- Event Listeners ---
@@ -605,6 +650,7 @@
         modal.addEventListener('click', e => { if (e.target.closest('.find-location-btn')) findLocationOnMap(e); });
         closeModalBtn.addEventListener('click', closeModalHandler);
         detailsModal.addEventListener('click', (e) => { if (e.target.id === 'details-modal') closeDetailsModal(); });
+
 
         form.addEventListener('keydown', e => {
             if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
@@ -618,7 +664,7 @@
             e.preventDefault();
             if (currentModalStep !== totalModalSteps) return;
 
-            const getVal = id => document.getElementById(id) ? document.getElementById(id).value : null;
+            const getVal = id => document.getElementById(id)?.value || null;
             
             const name = getVal('item-name');
             if (!name || name.trim() === '') {
@@ -633,61 +679,99 @@
             if (isRestaurant && foodType === 'אחר') foodType = getVal('item-food-type-other').trim() || null;
 
             const data = {
-                name, destination: getVal('item-destination'), type: finalType,
+                name: name,
+                destination: getVal('item-destination'),
+                type: finalType,
+                description: getVal('item-description'),
                 isKosher: isRestaurant ? getVal('item-kosher') : null,
-                foodType,
+                foodType: foodType,
                 location: isRestaurant ? getVal('item-location-restaurant') : getVal('item-location-other'),
                 hours: isRestaurant ? getVal('item-hours-restaurant') : getVal('item-hours-other'),
                 link: isRestaurant ? getVal('item-link-restaurant') : getVal('item-link-other'),
                 reservation: isRestaurant ? getVal('item-reservation-restaurant') : getVal('item-reservation-other'),
-                description: isRestaurant ? getVal('item-description-restaurant') : getVal('item-description-other'),
                 author: currentUser.uid,
+                lat: tempCoords ? tempCoords.lat : null,
+                lon: tempCoords ? tempCoords.lon : null,
             };
 
             try {
                 if (editingItemId) {
-                    await updateDoc(doc(db, 'attractions', editingItemId), data);
+                    const itemRef = doc(db, 'attractions', editingItemId);
+                    await updateDoc(itemRef, data);
                 } else {
                     data.createdAt = serverTimestamp();
                     await addDoc(attractionsCollection, data); 
                 }
                 closeModalHandler(); 
-            } catch (err) { 
+            } 
+            catch (err) { 
                 console.error("Error saving document:", err);
                 showModalError("שגיאה בשמירת הפריט."); 
             }
         });
 
         itemsContainer.addEventListener('click', (e) => {
+            const actionBtn = e.target.closest('.action-btn');
             const card = e.target.closest('.item-card');
-            if (card) openDetailsModal(card.dataset.id);
+
+            if (actionBtn) {
+                e.stopPropagation(); // Prevent card click from firing
+                const id = card.dataset.id;
+                const item = allItems.find(i => i.id === id);
+                
+                if (actionBtn.matches('.delete-btn')) {
+                    document.getElementById('delete-modal-title').textContent = `האם למחוק את "${item.name}"?`;
+                    const confirmBtn = document.getElementById('delete-modal-confirm');
+                    
+                    const confirmHandler = async () => {
+                        try { await deleteDoc(doc(db, 'attractions', id)); } 
+                        catch (error) { console.error("Failed to delete item:", error); } 
+                        finally { closeDeleteModal(); }
+                    };
+
+                    const closeDeleteModal = () => {
+                        deleteModal.classList.add('hidden');
+                        deleteModal.classList.remove('flex');
+                        confirmBtn.removeEventListener('click', confirmHandler);
+                    };
+                    
+                    confirmBtn.addEventListener('click', confirmHandler, { once: true });
+                    document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
+
+                    deleteModal.classList.remove('hidden');
+                    deleteModal.classList.add('flex');
+                } else if (actionBtn.matches('.edit-btn')) {
+                    openModalHandler(id);
+                }
+                return; 
+            }
+            
+            if (card) {
+                openDetailsModal(card.dataset.id);
+            }
         });
         
+        itemsContainer.addEventListener('change', e => {
+            const dest = e.target.dataset.destination;
+            if (!dest) return;
+            if (e.target.matches('.local-filter-kosher')) activeFilters[dest].kosher = e.target.checked;
+            if (e.target.matches('.local-filter-food-type')) activeFilters[dest].foodType = e.target.value;
+            renderAllItems();
+        });
+
         // --- Auth & Initial Load ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
                 const authContainer = document.getElementById('auth-container');
-                const displayName = `משתמש ${user.uid.substring(0, 6)}`;
-                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span>`;
+                const displayName = user.displayName || user.email.split('@')[0];
+                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
+                document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
                 initApp();
             } else {
-                loadingMessage.textContent = "ממתין לאימות...";
+                window.location.replace('login.html');
             }
         });
-
-        (async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Authentication failed:", error);
-                loadingMessage.textContent = "האימות נכשל. לא ניתן לטעון נתונים.";
-            }
-        })();
         
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
