@@ -29,8 +29,15 @@
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
         .step-indicator { transition: all 0.4s ease-in-out; }
         .item-card { cursor: pointer; }
-        /* Ensure leaflet controls are visible on top of other elements */
         .leaflet-control-container { z-index: 80 !important; }
+        
+        /* NEW: Toggle Switch for Sorting */
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2563eb; }
+        input:checked + .slider:before { transform: translateX(22px); }
     </style>
 </head>
 <body class="bg-slate-100">
@@ -70,14 +77,13 @@
         <main class="p-4 sm:p-6 lg:p-8">
             <div class="max-w-7xl mx-auto">
                 <div class="text-center mb-12">
-                    <h2 class="text-5xl font-extrabold text-white drop-shadow-lg">תחנות במסע</h2>
+                    <h2 class="text-5xl font-extrabold text-white drop-shadow-lg">תחנות במסע ✨</h2>
                     <p class="mt-4 text-xl text-slate-200 max-w-2xl mx-auto">הבנק המרכזי שלנו להמלצות, תגליות ומקומות שאסור לפספס.</p>
                     <button id="open-modal-btn" class="mt-8 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
                         <i class="fas fa-plus mr-2"></i>הוספת מקום
                     </button>
-                    <!-- NEW: Get Location Button -->
                     <button id="get-location-btn" class="mt-4 bg-white/20 backdrop-blur-sm text-white font-semibold py-2 px-6 rounded-full shadow-md hover:bg-white/40 transition-all transform hover:scale-105">
-                        <i class="fas fa-location-arrow mr-2"></i> חשב מרחקים מהמיקום שלי
+                        <i class="fas fa-location-arrow mr-2"></i> הפעל שירותי מיקום
                     </button>
                 </div>
 
@@ -100,7 +106,6 @@
                 <div id="step-progress-bar" class="bg-blue-500 h-2.5 rounded-r-full transition-all duration-500" style="width: 0%;"></div>
             </div>
             <form id="item-form" class="flex-grow overflow-y-auto p-6 space-y-6">
-                <!-- Steps will be injected here -->
                  <div id="step-1" class="modal-step"></div><div id="step-2" class="modal-step"></div><div id="step-3" class="modal-step"></div><div id="step-4" class="modal-step"></div><div id="step-5" class="modal-step"></div><div id="step-6" class="modal-step"></div><div id="step-7" class="modal-step"></div><div id="step-8" class="modal-step"></div><div id="step-9" class="modal-step"></div><div id="step-10" class="modal-step"></div><div id="step-11" class="modal-step"></div>
             </form>
             <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
@@ -139,7 +144,6 @@
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: Replace with your actual Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
             authDomain: "america1tour.firebaseapp.com",
@@ -166,8 +170,9 @@
         let allItems = [];
         let activeFilters = {}; 
         let editingItemId = null;
-        let userLocation = null; // NEW: To store user's lat/lon
-        let locationCoordsCache = {}; // NEW: To cache geocoded addresses
+        let userLocation = null;
+        let locationCoordsCache = {};
+        let distancesCalculated = false;
 
         const siteData = {
             menu: [
@@ -184,8 +189,8 @@
             ],
             destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו"],
             placeTypes: ["מסעדה/אוכל", "סופר", "מוזיאון", "קניון/מרכז קניות", "אטרקציה", "חוף", "סיור"],
-            foodTypes: ["איטלקי", "חלבי", "בשרי", "צמחוני", "אסייתי", "שווארמה", "פיצה", "המבורגר", "בית קפה", "אחר"],
-            destinationEmojis: { "ניו יורק": "🗽", "מפלי הניאגרה וקנדה": "🇨🇦", "וושינגטטון די סי": "🏛️", "אורלנדו": "🎢", "מיאמי": "🌴", "פונטה קאנה": "🇩🇴", "אריזונה": "🏜️", "לוס אנג'לס": "🎬", "סן פרנסיסקו": "🌉" },
+            foodTypes: { "איטלקי": "🍝", "חלבי": "🧀", "בשרי": "🥩", "צמחוני": "🥗", "אסייתי": "🍜", "שווארמה": "🥙", "פיצה": "🍕", "המבורגר": "🍔", "בית קפה": "☕", "אחר": "🍴" },
+            destinationEmojis: { "ניו יורק": "🗽", "מפלי הניאגרה וקנדה": "🇨🇦", "וושינגטון די סי": "🏛️", "אורלנדו": "🎢", "מיאמי": "🌴", "פונטה קאנה": "🇩🇴", "אריזונה": "🏜️", "לוס אנג'לס": "🎬", "סן פרנסיסקו": "🌉" },
             placeTypeEmojis: { "מסעדה/אוכל": "🍔", "סופר": "🛒", "מוזיאון": "🏛️", "קניון/מרכז קניות": "🛍️", "אטרקציה": "🎢", "חוף": "🏖️", "סיור": "🚶‍♂️" }
         };
 
@@ -204,17 +209,14 @@
         const modalError = document.getElementById('modal-error-message');
         const deleteModal = document.getElementById('delete-confirm-modal');
         const detailsModal = document.getElementById('details-modal');
-        const getLocationBtn = document.getElementById('get-location-btn'); // NEW
+        const getLocationBtn = document.getElementById('get-location-btn');
 
         // --- Location & Distance Calculation Helpers ---
         function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
             const R = 6371; // Radius of the earth in km
             const dLat = deg2rad(lat2 - lat1);
             const dLon = deg2rad(lon2 - lon1);
-            const a =
-                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             return R * c; // Distance in km
         }
@@ -222,11 +224,9 @@
         function deg2rad(deg) { return deg * (Math.PI / 180); }
 
         function estimateTravelTime(distanceKm) {
-            const avgSpeedKmph = 40; // Assume average mixed driving speed of 40 km/h
+            const avgSpeedKmph = 40;
             const timeHours = distanceKm / avgSpeedKmph;
-            if (distanceKm < 1) {
-                return `~${Math.round(timeHours * 60)} דקות נסיעה`;
-            }
+            if (distanceKm < 1) return `~${Math.round(timeHours * 60)} דקות`;
             const hours = Math.floor(timeHours);
             const minutes = Math.round((timeHours - hours) * 60);
             let timeString = '';
@@ -236,25 +236,37 @@
         }
 
         async function getCoordsForAddress(address) {
-            if (locationCoordsCache[address]) {
-                return locationCoordsCache[address];
-            }
+            if (locationCoordsCache[address]) return locationCoordsCache[address];
             try {
                 const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
                 const data = await response.json();
                 if (data && data.length > 0) {
                     const coords = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-                    locationCoordsCache[address] = coords; // Cache the result
+                    locationCoordsCache[address] = coords;
                     return coords;
                 }
                 return null;
             } catch (err) {
-                console.error("Geocoding error for address:", address, err);
+                console.error("Geocoding error:", err);
                 return null;
             }
         }
+        
+        async function calculateAllDistances() {
+            if (!userLocation) return;
+            const promises = allItems.map(async (item) => {
+                if (item.location) {
+                    const destCoords = await getCoordsForAddress(item.location);
+                    if (destCoords) {
+                        item.distanceFromUser = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, destCoords.lat, destCoords.lon);
+                    }
+                }
+            });
+            await Promise.all(promises);
+            distancesCalculated = true;
+        }
 
-        function handleGetLocation() {
+        async function handleGetLocation() {
             if (!navigator.geolocation) {
                 alert("דפדפן זה אינו תומך בשירותי מיקום.");
                 return;
@@ -263,43 +275,37 @@
             getLocationBtn.disabled = true;
 
             navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    userLocation = {
-                        lat: position.coords.latitude,
-                        lon: position.coords.longitude
-                    };
-                    getLocationBtn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> המיקום שלך עודכן`;
-                    setTimeout(() => { getLocationBtn.disabled = false; }, 2000);
-                    renderAllItems(); // Re-render all items to show the new info
+                async (position) => {
+                    userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
+                    await calculateAllDistances();
+                    getLocationBtn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> מיקום עודכן`;
+                    getLocationBtn.disabled = false;
+                    renderAllItems();
                 },
                 (error) => {
                     console.error("Geolocation error:", error);
-                    getLocationBtn.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> אישור מיקום נכשל`;
+                    getLocationBtn.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> הפעלת מיקום נכשלה`;
                     getLocationBtn.disabled = false;
                     alert("לא ניתן היה לקבל את מיקומך. אנא ודא שאישרת את הבקשה בדפדפן.");
                 }
             );
         }
 
-        async function calculateAndDisplayDistance(cardElement, address) {
+        async function calculateAndDisplayDistance(cardElement, item) {
             const placeholder = cardElement.querySelector('.location-info-placeholder');
-            if (!placeholder || !userLocation) return;
+            if (!placeholder || !userLocation || !distancesCalculated) return;
 
-            placeholder.style.display = 'flex'; // Use flex to align items
+            placeholder.style.display = 'flex';
             const distanceSpan = placeholder.querySelector('.distance-text');
-            distanceSpan.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
-
-            const destCoords = await getCoordsForAddress(address);
-            if (destCoords) {
-                const distance = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, destCoords.lat, destCoords.lon);
-                const time = estimateTravelTime(distance);
-                distanceSpan.innerHTML = `
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-route fa-fw"></i> ${distance.toFixed(1)} ק"מ</span>
+            
+            if (typeof item.distanceFromUser !== 'undefined') {
+                 distanceSpan.innerHTML = `
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-route fa-fw text-blue-500"></i> ${item.distanceFromUser.toFixed(1)} ק"מ</span>
                     <span class="text-slate-400 mx-1">|</span>
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-car fa-fw"></i> ${time}</span>
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-car fa-fw text-green-500"></i> ${estimateTravelTime(item.distanceFromUser)}</span>
                 `;
             } else {
-                placeholder.style.display = 'none'; // Hide if can't calculate
+                 placeholder.style.display = 'none';
             }
         }
 
@@ -344,12 +350,15 @@
             closeSidebarBtn.addEventListener('click', toggleSidebar);
             overlay.addEventListener('click', toggleSidebar);
             openModalBtn.addEventListener('click', () => openModalHandler());
-            getLocationBtn.addEventListener('click', handleGetLocation); // NEW
+            getLocationBtn.addEventListener('click', handleGetLocation);
 
             const q = query(attractionsCollection);
-            onSnapshot(q, (snapshot) => {
+            onSnapshot(q, async (snapshot) => {
                 allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allItems.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+                if (userLocation) {
+                    await calculateAllDistances();
+                }
                 renderAllItems();
             }, (error) => { 
                 console.error("Firestore snapshot error:", error);
@@ -391,7 +400,7 @@
                         
                         const foodTypeSelect = document.getElementById('item-food-type');
                         const foodTypeOtherInput = document.getElementById('item-food-type-other');
-                        if (siteData.foodTypes.includes(item.foodType)) {
+                        if (Object.keys(siteData.foodTypes).includes(item.foodType)) {
                             foodTypeSelect.value = item.foodType;
                         } else {
                             foodTypeSelect.value = 'אחר';
@@ -426,7 +435,7 @@
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             if (addEditMap) { addEditMap.remove(); addEditMap = null; addEditMarker = null; }
-            showModalError(''); // Clear any previous errors
+            showModalError('');
         }
         
         function updateModalView() {
@@ -443,9 +452,7 @@
                 }
             }
             
-            if (document.getElementById('map-preview')) {
-                initAddEditMap();
-            }
+            if (document.getElementById('map-preview')) initAddEditMap();
 
             backBtn.classList.toggle('hidden', currentModalStep === 1);
             nextBtn.classList.toggle('hidden', currentModalStep === totalModalSteps);
@@ -470,7 +477,7 @@
             } else if (isRestaurant) {
                 switch(step) {
                     case 4: content = `<label class="${labelClass}"><i class="fa-solid fa-star-of-david text-slate-400"></i>האם המסעדה כשרה?</label><select id="item-kosher" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option></select>`; break;
-                    case 5: content = `<label class="${labelClass}"><i class="fa-solid fa-utensils text-slate-400"></i>סוג אוכל</label><select id="item-food-type" class="form-select w-full p-3">${siteData.foodTypes.map(f=>`<option value="${f}">${f}</option>`).join('')}</select><input type="text" id="item-food-type-other" class="form-input w-full p-3 mt-3 hidden" placeholder="הגדר סוג אוכל">`; break;
+                    case 5: content = `<label class="${labelClass}"><i class="fa-solid fa-utensils text-slate-400"></i>סוג אוכל</label><select id="item-food-type" class="form-select w-full p-3">${Object.entries(siteData.foodTypes).map(([name, emoji]) => `<option value="${name}">${emoji} ${name}</option>`).join('')}</select><input type="text" id="item-food-type-other" class="form-input w-full p-3 mt-3 hidden" placeholder="הגדר סוג אוכל">`; break;
                     case 6: content = createLocationHtml('item-location-restaurant'); break;
                     case 7: content = `<label class="${labelClass}"><i class="fa-regular fa-clock text-slate-400"></i>שעות וימי פתיחה (אופציונלי)</label><input type="text" id="item-hours-restaurant" class="form-input w-full p-3" placeholder="לדוגמה: א'-ה' 12:00-23:00">`; break;
                     case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-link text-slate-400"></i>קישור לאתר/תפריט (אופציונלי)</label><input type="url" id="item-link-restaurant" class="form-input w-full p-3" placeholder="https://example.com">`; break;
@@ -499,9 +506,7 @@
         
         function handleTypeChange(e) {
             const otherInput = document.getElementById('item-type-other');
-            if (otherInput) {
-                otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
-            }
+            if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
             for(let i = currentModalStep + 1; i <= 11; i++) {
                 const stepContainer = document.getElementById(`step-${i}`);
                 if(stepContainer) stepContainer.innerHTML = '';
@@ -511,9 +516,7 @@
 
         function handleFoodTypeChange(e) {
             const otherInput = document.getElementById('item-food-type-other');
-            if (otherInput) {
-                otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
-            }
+            if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
         }
 
         function createLocationHtml(inputId) {
@@ -535,9 +538,7 @@
                     addEditMap = L.map(mapDiv).setView([40.7128, -74.0060], 10);
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(addEditMap);
                 }
-                if (addEditMap) {
-                    addEditMap.invalidateSize();
-                }
+                if (addEditMap) addEditMap.invalidateSize();
             }, 200);
         }
 
@@ -551,7 +552,6 @@
                     mapInstance.setView([coords.lat, coords.lon], 15);
                     if (markerInstance) markerInstance.setLatLng([coords.lat, coords.lon]);
                     else markerInstance = L.marker([coords.lat, coords.lon]).addTo(mapInstance);
-                    
                     return markerInstance;
                 } else {
                     showModalError('לא נמצאה כתובת. נסה שוב.');
@@ -565,11 +565,7 @@
         
         function showModalError(message) {
             modalError.textContent = message;
-            if (message) {
-                setTimeout(() => {
-                    modalError.textContent = '';
-                }, 4000);
-            }
+            if (message) setTimeout(() => { modalError.textContent = ''; }, 4000);
         }
 
         // --- Firestore & Rendering Logic ---
@@ -593,19 +589,37 @@
 
             siteData.destinations.forEach(dest => {
                 if (groupedByDest[dest]) {
-                    if (!activeFilters[dest]) activeFilters[dest] = { kosher: false, foodType: '' };
+                    if (!activeFilters[dest]) activeFilters[dest] = { kosher: false, foodType: '', sortByDistance: false };
 
                     const destSection = document.createElement('details');
                     destSection.className = "bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden";
-                    destSection.open = true;
+                    destSection.open = false; // Changed to be closed by default
 
                     const destEmoji = siteData.destinationEmojis[dest] || '📍';
                     destSection.innerHTML = `<summary class="text-3xl font-bold text-slate-800 flex justify-between items-center p-5 hover:bg-white/30 transition"><span class="flex items-center gap-4">${destEmoji} ${dest}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
                     
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'p-4 space-y-6 bg-slate-50/80';
+                    
+                    // Add sort by distance toggle
+                    const toolsDiv = document.createElement('div');
+                    toolsDiv.className = 'flex items-center justify-end gap-4 p-2 bg-slate-200/50 rounded-lg mb-4';
+                    toolsDiv.innerHTML = `
+                        <label for="sort-toggle-${dest.replace(/\s/g, '')}" class="text-sm font-semibold text-slate-700">מיין לפי מרחק</label>
+                        <label class="switch">
+                            <input type="checkbox" id="sort-toggle-${dest.replace(/\s/g, '')}" class="sort-distance-toggle" data-destination="${dest}" ${activeFilters[dest].sortByDistance ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    `;
+                    contentDiv.appendChild(toolsDiv);
 
-                    const groupedByType = groupedByDest[dest].reduce((acc, item) => {
+                    let itemsForDestination = [...groupedByDest[dest]];
+                    
+                    if (activeFilters[dest].sortByDistance && userLocation && distancesCalculated) {
+                        itemsForDestination.sort((a, b) => (a.distanceFromUser ?? Infinity) - (b.distanceFromUser ?? Infinity));
+                    }
+
+                    const groupedByType = itemsForDestination.reduce((acc, item) => {
                         const type = item.type || 'כללי';
                         if (!acc[type]) acc[type] = [];
                         acc[type].push(item);
@@ -636,7 +650,7 @@
                                     </div>
                                     <select data-destination="${dest}" class="local-filter-food-type form-select rounded-md text-sm py-1">
                                         <option value="">כל סוגי האוכל</option>
-                                        ${allFoodTypesInDest.sort().map(ft => `<option value="${ft}" ${activeFilters[dest].foodType === ft ? 'selected' : ''}>${ft}</option>`).join('')}
+                                        ${allFoodTypesInDest.sort().map(ft => `<option value="${ft}" ${activeFilters[dest].foodType === ft ? 'selected' : ''}>${siteData.foodTypes[ft] || '🍴'} ${ft}</option>`).join('')}
                                     </select>
                                 </div>
                              `;
@@ -657,7 +671,7 @@
                                 
                                 let tagsHtml = '';
                                 if(item.isKosher === 'כן') tagsHtml += `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">כשר</span>`;
-                                if(item.foodType) tagsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${item.foodType}</span>`;
+                                if(item.foodType) tagsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${siteData.foodTypes[item.foodType] || ''} ${item.foodType}</span>`;
                                 if(item.reservation && item.reservation !== 'לא') tagsHtml += `<span class="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
 
                                 const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
@@ -667,9 +681,8 @@
                                         <h5 class="text-lg font-bold text-slate-800 truncate mb-2">${item.name}</h5>
                                         <div class="flex flex-wrap gap-2 min-h-[26px] mb-3">${tagsHtml}</div>
                                         ${item.shortDescription ? `<p class="text-sm text-slate-600 mb-4">${item.shortDescription}</p>` : ''}
-                                        <!-- NEW: Location info placeholder -->
-                                        <div class="location-info-placeholder text-sm text-slate-500 mt-2 border-t pt-2 gap-2" style="display: none;">
-                                            <span class="distance-text flex-grow flex items-center gap-2"></span>
+                                        <div class="location-info-placeholder text-xs text-slate-600 mt-2 border-t pt-2 gap-2" style="display: none;">
+                                            <span class="distance-text flex-grow flex items-center justify-center gap-2"></span>
                                         </div>
                                     </div>
                                     <div class="mt-auto pt-3 border-t flex items-center justify-between gap-2">
@@ -684,9 +697,8 @@
                                     </div>
                                 `;
                                 cardGrid.appendChild(card);
-                                // NEW: If user location is known, calculate and show distance
                                 if (userLocation && item.location) {
-                                    calculateAndDisplayDistance(card, item.location);
+                                    calculateAndDisplayDistance(card, item);
                                 }
                             });
                         } else {
@@ -714,7 +726,7 @@
             
             let tagsHtml = '';
             if(item.isKosher === 'כן') tagsHtml += `<span class="text-sm font-bold text-green-700 bg-green-100 px-3 py-1 rounded-full">כשר</span>`;
-            if(item.foodType) tagsHtml += `<span class="text-sm font-bold text-sky-700 bg-sky-100 px-3 py-1 rounded-full">${item.foodType}</span>`;
+            if(item.foodType) tagsHtml += `<span class="text-sm font-bold text-sky-700 bg-sky-100 px-3 py-1 rounded-full">${siteData.foodTypes[item.foodType] || ''} ${item.foodType}</span>`;
             if(item.reservation && item.reservation !== 'לא') tagsHtml += `<span class="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
 
             const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
@@ -732,14 +744,13 @@
                     ${item.location ? `<div class="flex items-start gap-4"><i class="fa-solid fa-location-dot fa-fw text-slate-400 mt-1"></i><p class="text-slate-700 font-semibold">${item.location}</p></div>` : ''}
                     ${item.hours ? `<div class="flex items-start gap-4"><i class="fa-regular fa-clock fa-fw text-slate-400 mt-1"></i><p class="text-slate-700">${item.hours}</p></div>` : ''}
                     ${item.location ? `<div id="details-map" class="w-full h-48 rounded-lg shadow-md"></div>` : ''}
-                    <!-- NEW: Location info placeholder for modal -->
                     <div id="details-location-info" class="pt-4 border-t space-y-2" style="display: none;">
                         <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
                             <i class="fa-solid fa-route fa-fw text-blue-500"></i>
                             <span id="details-distance-text" class="text-slate-700"></span>
                         </div>
                         <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
-                            <i class="fa-solid fa-car fa-fw text-blue-500"></i>
+                            <i class="fa-solid fa-car fa-fw text-green-500"></i>
                             <span id="details-time-text" class="text-slate-700"></span>
                         </div>
                     </div>
@@ -762,27 +773,13 @@
 
             if (item.location) {
                 initDetailsMap(item.location);
-                // NEW: Calculate distance for modal if user location is available
-                if (userLocation) {
+                if (userLocation && typeof item.distanceFromUser !== 'undefined') {
                     const locationInfoDiv = document.getElementById('details-location-info');
                     locationInfoDiv.style.display = 'block';
                     const distanceEl = document.getElementById('details-distance-text');
                     const timeEl = document.getElementById('details-time-text');
-                    distanceEl.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> מחשב מרחק...`;
-                    timeEl.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> מחשב זמן נסיעה...`;
-
-                    (async () => {
-                        const destCoords = await getCoordsForAddress(item.location);
-                        if (destCoords) {
-                            const distance = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, destCoords.lat, destCoords.lon);
-                            const time = estimateTravelTime(distance);
-                            distanceEl.textContent = `מרחק של כ-${distance.toFixed(1)} ק"מ מהמיקום שלך.`;
-                            timeEl.textContent = `זמן נסיעה מוערך של ${time}.`;
-                        } else {
-                            distanceEl.textContent = 'לא ניתן היה לחשב את המרחק.';
-                            timeEl.style.display = 'none';
-                        }
-                    })();
+                    distanceEl.textContent = `מרחק של כ-${item.distanceFromUser.toFixed(1)} ק"מ מהמיקום שלך.`;
+                    timeEl.textContent = `זמן נסיעה מוערך של ${estimateTravelTime(item.distanceFromUser)}.`;
                 }
             }
         }
@@ -807,13 +804,9 @@
                             if (detailsMarker) detailsMarker.setLatLng([coords.lat, coords.lon]);
                             else detailsMarker = L.marker([coords.lat, coords.lon]).addTo(detailsMap);
                         }
-                    } catch (err) {
-                        console.error("Details map location search error:", err);
-                    }
+                    } catch (err) { console.error("Details map error:", err); }
                 }
-                if (detailsMap) {
-                    detailsMap.invalidateSize();
-                }
+                if (detailsMap) detailsMap.invalidateSize();
             }, 200);
         }
 
@@ -832,11 +825,8 @@
         form.addEventListener('keydown', e => {
             if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
-                if (!nextBtn.classList.contains('hidden')) {
-                    nextBtn.click();
-                } else if (!finishBtn.classList.contains('hidden')) {
-                    finishBtn.click();
-                }
+                if (!nextBtn.classList.contains('hidden')) nextBtn.click();
+                else if (!finishBtn.classList.contains('hidden')) finishBtn.click();
             }
         });
         
@@ -853,14 +843,10 @@
             }
 
             let finalType = getVal('item-type');
-            if (finalType === 'אחר') {
-                finalType = getVal('item-type-other').trim() || 'כללי';
-            }
+            if (finalType === 'אחר') finalType = getVal('item-type-other').trim() || 'כללי';
 
             let finalFoodType = isRestaurant ? getVal('item-food-type') : null;
-            if (isRestaurant && finalFoodType === 'אחר') {
-                finalFoodType = getVal('item-food-type-other').trim() || null;
-            }
+            if (isRestaurant && finalFoodType === 'אחר') finalFoodType = getVal('item-food-type-other').trim() || null;
 
             const data = {
                 name: name,
@@ -900,7 +886,7 @@
             const actionBtn = e.target.closest('.action-btn');
 
             if (actionBtn) {
-                e.stopPropagation(); // Prevent modal from opening if a button is clicked
+                e.stopPropagation();
                 const id = card.dataset.id;
                 const item = allItems.find(i => i.id === id);
                 
@@ -934,11 +920,20 @@
             }
         });
         
-        itemsContainer.addEventListener('change', e => {
+        itemsContainer.addEventListener('change', async e => {
             const dest = e.target.dataset.destination;
             if (!dest) return;
+            
             if (e.target.matches('.local-filter-kosher')) activeFilters[dest].kosher = e.target.checked;
             if (e.target.matches('.local-filter-food-type')) activeFilters[dest].foodType = e.target.value;
+            
+            if (e.target.matches('.sort-distance-toggle')) {
+                activeFilters[dest].sortByDistance = e.target.checked;
+                if(e.target.checked && !userLocation) {
+                    await handleGetLocation(); // This will trigger a re-render
+                    return; // Exit because handleGetLocation handles the re-render
+                }
+            }
             renderAllItems();
         });
 
