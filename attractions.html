@@ -180,8 +180,6 @@
         const db = getFirestore(app);
         const attractionsCollection = collection(db, 'attractions');
         const settingsDocRef = doc(db, 'app_settings', 'custom_types');
-        // [NEW] Firestore collection for shared cache
-        const cacheCollection = collection(db, 'shared_distance_cache');
 
         // --- App State ---
         let currentUser = null;
@@ -249,22 +247,11 @@
         const detailsModal = document.getElementById('details-modal');
         const getLocationBtn = document.getElementById('get-location-btn');
 
-        // --- [NEW] Cache & Distance Calculation Helpers ---
-
-        /**
-         * Generates a geographic cell ID from a location object.
-         * Rounds lat/lng to 3 decimal places to create cells of ~110x110 meters.
-         * @param {object} location - An object with lat and lng properties.
-         * @returns {string} A string representing the cell ID.
-         */
-        function generateCellId(location) {
-            const lat = location.lat.toFixed(3);
-            const lng = location.lng.toFixed(3);
-            return `cell_${lat}_${lng}`;
-        }
+        // --- [REVISED] Location & Distance Calculation ---
 
         /**
          * Calculates the distance between two geographical points in meters using the Haversine formula.
+         * This is for "as the crow flies" distance and is free to use.
          * @param {object} loc1 - Location object 1 {lat, lng}
          * @param {object} loc2 - Location object 2 {lat, lng}
          * @returns {number} Distance in meters
@@ -285,154 +272,41 @@
         }
         
         /**
-         * Helper function to split an array into smaller chunks.
-         * This is to avoid hitting Google Maps API limits.
-         * @param {Array} arr The array to chunk.
-         * @param {number} size The size of each chunk.
-         * @returns {Array<Array>} An array of chunks.
+         * [NEW] Handles the client-side sorting by air distance.
+         * This function is free and does not call Google's API.
          */
-        function chunkArray(arr, size) {
-            const chunkedArr = [];
-            for (let i = 0; i < arr.length; i += size) {
-                chunkedArr.push(arr.slice(i, i + size));
-            }
-            return chunkedArr;
-        }
-
-        // --- Location & Distance Calculation ---
-        
-        /**
-         * [REVISED] Fetches distances for a specific list of items from Google's API.
-         * This is called on a cache miss.
-         * @param {Array} itemsToCalculate - The specific items requiring distance calculation.
-         * @returns {Object|null} The results object from the Distance Matrix API or null on failure.
-         */
-        async function fetchDistancesFromGoogle(itemsToCalculate) {
-            if (!userLocation || !distanceService || !itemsToCalculate || itemsToCalculate.length === 0) {
-                return null;
-            }
-            
-            const itemsWithCoords = itemsToCalculate.filter(item => item.coords && item.coords.lat && item.coords.lng);
-            if (itemsWithCoords.length === 0) {
-                return null;
-            }
-
-            const itemChunks = chunkArray(itemsWithCoords, 25);
-            const allDrivingResults = [];
-            const allWalkingResults = [];
-
-            for (const chunk of itemChunks) {
-                const destinations = chunk.map(item => new google.maps.LatLng(item.coords.lat, item.coords.lng));
-                
-                try {
-                    const [drivingResponse, walkingResponse] = await Promise.all([
-                        distanceService.getDistanceMatrix({
-                            origins: [userLocation],
-                            destinations: destinations,
-                            travelMode: 'DRIVING',
-                            unitSystem: google.maps.UnitSystem.METRIC,
-                        }),
-                        distanceService.getDistanceMatrix({
-                            origins: [userLocation],
-                            destinations: destinations,
-                            travelMode: 'WALKING',
-                            unitSystem: google.maps.UnitSystem.METRIC,
-                        })
-                    ]);
-
-                    if (drivingResponse.rows[0]) allDrivingResults.push(...drivingResponse.rows[0].elements);
-                    if (walkingResponse.rows[0]) allWalkingResults.push(...walkingResponse.rows[0].elements);
-
-                } catch (error) {
-                    console.error('Distance Matrix chunk failed:', error);
-                    // Push nulls to maintain array length correspondence
-                    allDrivingResults.push(...Array(chunk.length).fill(null));
-                    allWalkingResults.push(...Array(chunk.length).fill(null));
-                }
-            }
-            
-            // Re-structure results to be keyed by item ID for easier lookup
-            const resultsByItemId = {};
-            itemsWithCoords.forEach((item, index) => {
-                resultsByItemId[item.id] = {
-                    driving: allDrivingResults[index] && allDrivingResults[index].status === 'OK' ? allDrivingResults[index] : null,
-                    walking: allWalkingResults[index] && allWalkingResults[index].status === 'OK' ? allWalkingResults[index] : null,
-                };
-            });
-            
-            return resultsByItemId;
-        }
-
-        /**
-         * [REVISED] Main handler for a sort request. Implements the shared cache logic.
-         * @param {string} destination - The destination being sorted.
-         * @param {string} type - The place type being sorted.
-         */
-        async function handleSortRequest(destination, type) {
+        async function handleSortByAirDistance(destination, type, itemsForType) {
             if (!userLocation) {
-                console.log("User location not available. Prompting...");
+                console.log("User location not available for sorting. Prompting...");
                 try {
                     await handleGetLocation(); // This will set userLocation
                 } catch {
                     console.error("Could not get user location for sorting.");
                     // Uncheck the toggle as we failed
-                    const toggle = document.getElementById(`sort-toggle-${destination.replace(/\s/g, '')}-${type.replace(/[\s/]/g, '')}`);
+                    const toggleId = `sort-toggle-${destination.replace(/\s/g, '')}-${type.replace(/[\s/]/g, '')}`;
+                    const toggle = document.getElementById(toggleId);
                     if (toggle) toggle.checked = false;
+                    activeFilters[destination][type].sortByDistance = false;
                     return;
                 }
             }
 
-            const itemsToSort = allItems.filter(item => item.destination === destination && item.type === type);
-            if (itemsToSort.length === 0) return;
-
-            const cellId = generateCellId(userLocation);
-            const cacheRef = doc(db, 'shared_distance_cache', cellId);
-            const cacheSnap = await getDoc(cacheRef);
-
-            let distanceResults = null;
-
-            if (cacheSnap.exists()) {
-                const cacheData = cacheSnap.data();
-                const distance = calculateDistanceInMeters(userLocation, cacheData.centerLocation);
-
-                if (distance < 250) { // Cache Hit radius is 250m
-                    console.log(`Cache Hit for cell ${cellId}! Using shared cache from Firestore.`);
-                    distanceResults = cacheData.results;
+            // Calculate air distance for each item in the specific group
+            itemsForType.forEach(item => {
+                if (item.coords && userLocation) {
+                    const distanceInMeters = calculateDistanceInMeters(userLocation, item.coords);
+                    item.airDistanceKm = distanceInMeters / 1000;
+                } else {
+                    item.airDistanceKm = Infinity; // Put items without coords at the end
                 }
-            }
+            });
 
-            if (!distanceResults) { // Cache Miss
-                console.log(`Cache Miss for cell ${cellId}. Calling Google Maps API.`);
-                distanceResults = await fetchDistancesFromGoogle(itemsToSort);
-
-                if (distanceResults) {
-                    console.log("Updating shared cache for cell:", cellId);
-                    const newCacheData = {
-                        centerLocation: userLocation,
-                        results: distanceResults,
-                        timestamp: serverTimestamp()
-                    };
-                    await setDoc(cacheRef, newCacheData);
-                }
-            }
-            
-            if (distanceResults) {
-                // Apply the results to the global items array
-                allItems.forEach(item => {
-                    if (distanceResults[item.id]) {
-                        item.driving = distanceResults[item.id].driving;
-                        item.walking = distanceResults[item.id].walking;
-                    }
-                });
-            }
-
-            // Finally, re-render the entire view with the new data
+            // Re-render all items, the rendering function will handle the actual sorting
             renderAllItems();
         }
 
-
         /**
-         * [REVISED] Gets user's location and updates the button. Does NOT trigger calculations.
+         * Gets user's location and updates the button. Does NOT trigger calculations.
          */
         async function handleGetLocation() {
             return new Promise((resolve, reject) => {
@@ -462,38 +336,39 @@
                 );
             });
         }
+        
+        /**
+         * [NEW] Fetches route information for a single place for multiple travel modes.
+         * This is called on-demand from the details modal.
+         */
+        async function getRouteInformation(origin, destinationCoords) {
+            if (!distanceService) return null;
 
-        function displayDistanceInfo(cardElement, item) {
-            const placeholder = cardElement.querySelector('.location-info-placeholder');
-            if (!placeholder) return;
+            const destination = new google.maps.LatLng(destinationCoords.lat, destinationCoords.lng);
+
+            const travelModes = ['DRIVING', 'WALKING', 'TRANSIT'];
+            const promises = travelModes.map(mode => 
+                distanceService.getDistanceMatrix({
+                    origins: [origin],
+                    destinations: [destination],
+                    travelMode: mode,
+                    unitSystem: google.maps.UnitSystem.METRIC,
+                })
+            );
+
+            const results = await Promise.allSettled(promises);
             
-            // Only show distance if sorting is active for this section
-            const dest = item.destination;
-            const type = item.type;
-            if (!activeFilters[dest] || !activeFilters[dest][type] || !activeFilters[dest][type].sortByDistance) {
-                 placeholder.style.display = 'none';
-                 return;
-            }
+            const formattedResults = {};
+            results.forEach((result, index) => {
+                const mode = travelModes[index];
+                if (result.status === 'fulfilled' && result.value.rows[0].elements[0].status === 'OK') {
+                    formattedResults[mode] = result.value.rows[0].elements[0];
+                } else {
+                    formattedResults[mode] = null;
+                }
+            });
 
-            const distanceSpan = placeholder.querySelector('.distance-text');
-            if (!distanceSpan) return;
-            
-            let html = '';
-            if (item.driving?.duration?.text && item.driving?.distance?.text) {
-                html += `<span class="flex items-center gap-2"><i class="fa-solid fa-car fa-fw text-green-500"></i> ${item.driving.duration.text} (${item.driving.distance.text})</span>`;
-            }
-            if (item.walking?.duration?.text && item.walking?.distance?.text) {
-                if (html) html += `<span class="text-slate-400 mx-1">|</span>`;
-                html += `<span class="flex items-center gap-2"><i class="fa-solid fa-person-walking fa-fw text-blue-500"></i> ${item.walking.duration.text} (${item.walking.distance.text})</span>`;
-            }
-
-            if (html) {
-                distanceSpan.innerHTML = html;
-                placeholder.style.display = 'flex';
-            } else {
-                distanceSpan.innerHTML = 'חישוב מרחק לא זמין'; 
-                placeholder.style.display = 'flex';
-            }
+            return formattedResults;
         }
 
         // --- App Initialization ---
@@ -559,7 +434,17 @@
 
             const q = query(attractionsCollection);
             onSnapshot(q, async (snapshot) => {
-                allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const newItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Preserve existing air distance calculations on re-renders
+                newItems.forEach(newItem => {
+                    const oldItem = allItems.find(item => item.id === newItem.id);
+                    if (oldItem && oldItem.airDistanceKm) {
+                        newItem.airDistanceKm = oldItem.airDistanceKm;
+                    }
+                });
+                allItems = newItems;
+
                 allItems.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
                 
                 renderAllItems();
@@ -814,7 +699,7 @@
             if (message) setTimeout(() => { modalError.textContent = ''; }, 4000);
         }
 
-        // --- [REVISED] Firestore & Rendering Logic ---
+        // --- [REVISED] Rendering Logic ---
         function renderAllItems() {
             if (!itemsContainer) return;
             if (allItems.length === 0 && !isInitialLoad) {
@@ -825,7 +710,7 @@
             
             const preservedOpenStates = {};
             document.querySelectorAll('#items-container details').forEach(detail => {
-                const key = detail.dataset.key; // e.g., "ניו יורק" or "ניו יורק-מסעדה/אוכל"
+                const key = detail.dataset.key;
                 if (key) preservedOpenStates[key] = detail.open;
             });
 
@@ -845,7 +730,6 @@
 
                     const destSection = document.createElement('details');
                     destSection.className = "bg-white/70 backdrop-blur-md rounded-2xl shadow-lg overflow-hidden relative";
-                    // [MODIFIED] Default to closed
                     destSection.open = preservedOpenStates[dest] || false; 
                     destSection.dataset.key = dest;
 
@@ -869,7 +753,6 @@
 
                         const typeSection = document.createElement('details');
                         typeSection.className = "bg-white/80 p-4 rounded-xl shadow-md";
-                        // [MODIFIED] Default to closed
                         typeSection.open = preservedOpenStates[`${dest}-${type}`] || false;
                         typeSection.dataset.key = `${dest}-${type}`;
                         
@@ -881,11 +764,9 @@
                         
                         let itemsForType = groupedByType[type];
                         
-                        // [NEW] Local filter and sort bar for each type
                         const toolsIdSuffix = `${dest.replace(/\s/g, '')}-${type.replace(/[\s/]/g, '')}`;
                         let filterHtml = `<div class="local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center justify-between gap-4 mb-4">`;
                         
-                        // Food-specific filters
                         if (type === 'מסעדה/אוכל') {
                             const allFoodTypesInDest = [...new Set(itemsForDestination.filter(i => i.type === 'מסעדה/אוכל').map(i => i.foodType).filter(Boolean))];
                             filterHtml += `
@@ -905,10 +786,9 @@
                             filterHtml += `<div></div>`; // Placeholder for alignment
                         }
 
-                        // Sort by distance toggle
                         filterHtml += `
                             <div class="flex items-center gap-2">
-                                <label for="sort-toggle-${toolsIdSuffix}" class="text-sm font-semibold text-slate-700">מיין לפי מרחק</label>
+                                <label for="sort-toggle-${toolsIdSuffix}" class="text-sm font-semibold text-slate-700">מיין לפי מרחק אווירי</label>
                                 <label class="switch">
                                     <input type="checkbox" id="sort-toggle-${toolsIdSuffix}" class="sort-distance-toggle" data-destination="${dest}" data-type="${type}" ${activeFilters[dest][type].sortByDistance ? 'checked' : ''}>
                                     <span class="slider"></span>
@@ -924,9 +804,9 @@
                             if (activeFilters[dest][type].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest][type].foodType);
                         }
 
-                        // Apply sorting
+                        // [REVISED] Apply sorting by air distance
                         if (activeFilters[dest][type].sortByDistance) {
-                            itemsForType.sort((a, b) => (a.driving?.duration.value ?? Infinity) - (b.driving?.duration.value ?? Infinity));
+                            itemsForType.sort((a, b) => (a.airDistanceKm ?? Infinity) - (b.airDistanceKm ?? Infinity));
                         }
                         
                         const cardGrid = document.createElement('div');
@@ -953,6 +833,17 @@
                                         </div>
                                     `;
                                 }
+                                
+                                // [REVISED] Air distance display
+                                let distanceHtml = '';
+                                if (activeFilters[dest][type].sortByDistance && item.airDistanceKm !== undefined && item.airDistanceKm !== Infinity) {
+                                    distanceHtml = `
+                                        <div class="air-distance-info flex items-center justify-center text-xs text-slate-600 mt-2 border-t pt-2 gap-2">
+                                            <i class="fa-solid fa-plane-up fa-fw text-blue-500"></i>
+                                            <span>מרחק אווירי: <b>${item.airDistanceKm.toFixed(1)} ק"מ</b></span>
+                                        </div>
+                                    `;
+                                }
 
                                 const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
 
@@ -964,9 +855,7 @@
                                         </div>
                                         <div class="flex flex-wrap gap-2 min-h-[26px] mb-3">${tagsHtml}</div>
                                         ${item.shortDescription ? `<p class="text-sm text-slate-600 mb-4">${item.shortDescription}</p>` : ''}
-                                        <div class="location-info-placeholder flex items-center justify-center text-xs text-slate-600 mt-2 border-t pt-2 gap-2" style="display: none;">
-                                            <span class="distance-text flex-grow flex items-center justify-center gap-2"></span>
-                                        </div>
+                                        ${distanceHtml}
                                     </div>
                                     <div class="mt-auto pt-3 border-t flex items-center justify-between gap-2">
                                         <div class="flex gap-2">
@@ -980,7 +869,6 @@
                                     </div>
                                 `;
                                 cardGrid.appendChild(card);
-                                displayDistanceInfo(card, item);
                             });
                         } else {
                             cardGrid.innerHTML = `<p class="text-slate-500 col-span-full text-center">אין מקומות התואמים לסינון.</p>`;
@@ -1002,7 +890,7 @@
             });
         }
         
-        // --- Details Modal Logic ---
+        // --- [REVISED] Details Modal Logic ---
         async function openDetailsModal(itemId) {
             const item = allItems.find(i => i.id === itemId);
             if (!item) return;
@@ -1036,6 +924,22 @@
                 `;
             }
 
+            // [NEW] Route calculation section
+            let routeCalculationHtml = '';
+            if (item.coords) {
+                routeCalculationHtml = `
+                    <div id="route-calculation-section" class="pt-4 border-t space-y-3">
+                        <button id="calculate-route-btn" class="w-full bg-indigo-500 text-white font-bold py-3 px-5 rounded-lg hover:bg-indigo-600 transition flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-route"></i>
+                            <span>חשב מסלול ממיקום נוכחי</span>
+                        </button>
+                        <div id="route-results-container" class="space-y-2 hidden">
+                            <!-- Results will be injected here -->
+                        </div>
+                    </div>
+                `;
+            }
+
             modalContent.innerHTML = `
                 <button id="details-modal-close" class="absolute top-3 left-3 w-8 h-8 bg-slate-100 rounded-full text-slate-500 hover:text-red-500 hover:bg-red-100 z-10 transition-colors"><i class="fas fa-times"></i></button>
                 <div class="p-6 border-b">
@@ -1051,16 +955,7 @@
                     ${item.location ? `<div class="flex items-start gap-4"><i class="fa-solid fa-location-dot fa-fw text-slate-400 mt-1"></i><p class="text-slate-700 font-semibold">${item.location}</p></div>` : ''}
                     ${item.hours ? `<div class="flex items-start gap-4"><i class="fa-regular fa-clock fa-fw text-slate-400 mt-1"></i><p class="text-slate-700 whitespace-pre-wrap">${item.hours}</p></div>` : ''}
                     ${item.location ? `<div id="details-map" class="w-full h-48 rounded-lg shadow-md"></div>` : ''}
-                    <div id="details-location-info" class="pt-4 border-t space-y-2" style="display: none;">
-                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
-                            <i class="fa-solid fa-car fa-fw text-green-500"></i>
-                            <span id="details-driving-text" class="text-slate-700"></span>
-                        </div>
-                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
-                             <i class="fa-solid fa-person-walking fa-fw text-blue-500"></i>
-                            <span id="details-walking-text" class="text-slate-700"></span>
-                        </div>
-                    </div>
+                    ${routeCalculationHtml}
                 </div>
                 <div class="p-4 bg-slate-100 border-t flex flex-wrap justify-center gap-3">
                     <a href="${navLink}" target="_blank" class="flex-1 text-center bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-diamond-turn-right mr-2"></i>נווט</a>
@@ -1080,19 +975,45 @@
 
             if (item.coords) {
                 initDetailsMap(item.coords);
-                // Show distance info if it's already calculated and available on the item
-                if (userLocation && (item.driving || item.walking)) {
-                    const locationInfoDiv = document.getElementById('details-location-info');
-                    const drivingTextEl = document.getElementById('details-driving-text');
-                    const walkingTextEl = document.getElementById('details-walking-text');
-                    
-                    const drivingText = (item.driving?.duration?.text) ? `זמן נסיעה של כ-${item.driving.duration.text} (${item.driving.distance.text})` : 'חישוב מרחק נסיעה לא זמין';
-                    const walkingText = (item.walking?.duration?.text) ? `זמן הליכה של כ-${item.walking.duration.text} (${item.walking.distance.text})` : 'חישוב מרחק הליכה לא זמין';
-                    
-                    drivingTextEl.textContent = drivingText;
-                    walkingTextEl.textContent = walkingText;
-                    
-                    locationInfoDiv.style.display = 'block';
+                // [NEW] Add event listener for the new route calculation button
+                const calcBtn = document.getElementById('calculate-route-btn');
+                if (calcBtn) {
+                    calcBtn.addEventListener('click', async () => {
+                        const resultsContainer = document.getElementById('route-results-container');
+                        resultsContainer.classList.remove('hidden');
+                        resultsContainer.innerHTML = `<div class="flex items-center justify-center p-4"><i class="fas fa-spinner fa-spin fa-2x text-indigo-500"></i><p class="ml-4 font-semibold">מחשב מסלולים...</p></div>`;
+                        
+                        try {
+                            if (!userLocation) await handleGetLocation();
+                            
+                            const routeInfo = await getRouteInformation(userLocation, item.coords);
+                            let resultsHtml = '';
+                            
+                            const modeMap = {
+                                DRIVING: { icon: 'fa-car', color: 'text-green-500', label: 'נסיעה' },
+                                WALKING: { icon: 'fa-person-walking', color: 'text-blue-500', label: 'הליכה' },
+                                TRANSIT: { icon: 'fa-bus-simple', color: 'text-orange-500', label: 'תחב"צ' }
+                            };
+
+                            for (const mode in modeMap) {
+                                const info = routeInfo[mode];
+                                const ui = modeMap[mode];
+                                resultsHtml += `<div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
+                                    <i class="fa-solid ${ui.icon} fa-fw ${ui.color} w-5 text-center"></i>`;
+                                if (info) {
+                                    resultsHtml += `<span class="text-slate-700 font-semibold">${ui.label}: ${info.duration.text}</span><span class="text-slate-500 text-sm">(${info.distance.text})</span>`;
+                                } else {
+                                    resultsHtml += `<span class="text-slate-500">${ui.label}: מסלול לא זמין</span>`;
+                                }
+                                resultsHtml += `</div>`;
+                            }
+                            resultsContainer.innerHTML = resultsHtml;
+
+                        } catch (error) {
+                            console.error("Failed to get location or route:", error);
+                            resultsContainer.innerHTML = `<p class="text-red-500 text-center p-4">לא ניתן היה לחשב מסלול. בדוק הרשאות מיקום ונסה שוב.</p>`;
+                        }
+                    });
                 }
             }
         }
@@ -1168,7 +1089,6 @@
                 }
             }
             
-            // Preserve existing coordinates if a new place isn't selected
             const existingItem = editingItemId ? allItems.find(i => i.id === editingItemId) : null;
             let coords = existingItem?.coords || null;
             let photos = existingItem?.photos || [];
@@ -1268,42 +1188,24 @@
             const type = target.dataset.type;
             if (!dest || !type) return;
             
-            const typeSection = target.closest('details[data-key]');
-            const loader = typeSection.querySelector('.section-loader'); // This might not exist, handle gracefully
-
-            let shouldReRender = false;
-            let shouldSort = false;
-
             if (target.matches('.local-filter-kosher')) {
                 activeFilters[dest][type].kosher = target.checked;
-                shouldReRender = true;
+                renderAllItems();
             }
             if (target.matches('.local-filter-food-type')) {
                 activeFilters[dest][type].foodType = target.value;
-                shouldReRender = true;
+                renderAllItems();
             }
             
             if (target.matches('.sort-distance-toggle')) {
                 activeFilters[dest][type].sortByDistance = target.checked;
                 if (target.checked) {
-                    shouldSort = true;
+                    const itemsForType = allItems.filter(item => item.destination === dest && item.type === type);
+                    await handleSortByAirDistance(dest, type, itemsForType);
                 } else {
-                    // If unchecking, just re-render without sorting
-                    shouldReRender = true;
-                }
-            }
-
-            if (shouldSort) {
-                if(loader) loader.classList.remove('hidden');
-                await handleSortRequest(dest, type); // This function now handles getting location and re-rendering
-                if(loader) loader.classList.add('hidden');
-            } else if (shouldReRender) {
-                if(loader) loader.classList.remove('hidden');
-                // Use a timeout to allow the UI to show the loader before re-rendering
-                setTimeout(() => {
+                    // Just re-render without the sorting
                     renderAllItems();
-                    if(loader) loader.classList.add('hidden');
-                }, 50);
+                }
             }
         });
 
