@@ -27,6 +27,7 @@
         details > summary::-webkit-details-marker { display: none; }
         .chevron-icon { transition: transform 0.3s ease-out; }
         details[open] > summary .chevron-icon { transform: rotate(180deg); }
+        .step-indicator { transition: all 0.4s ease-in-out; }
         .item-card { cursor: pointer; }
         
         .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
@@ -43,22 +44,11 @@
         .plane-spinner { animation: spin 2s linear infinite; }
         
         .section-loader {
-            position: absolute; inset: 0; background-color: rgba(241, 245, 249, 0.8); z-index: 20; display: flex; align-items: center; justify-content: center; border-radius: 1rem;
+            position: absolute; inset: 0; background-color: rgba(241, 245, 249, 0.8); /* bg-slate-100/80 */ z-index: 20; display: flex; align-items: center; justify-content: center; border-radius: 1rem; /* rounded-xl */
         }
-        .pac-container {
-            z-index: 9999 !important; border-radius: 0.5rem; font-family: 'Assistant', sans-serif;
-        }
-        /* Custom radio button container */
-        .custom-radio-group label {
-            display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s;
-        }
-        .custom-radio-group input:checked + label {
-            background-color: #bfdbfe; border-color: #3b82f6;
-        }
-        .delete-category-btn {
-            background: none; border: none; color: #94a3b8; cursor: pointer; transition: color 0.2s;
-        }
-        .delete-category-btn:hover { color: #ef4444; }
+        /* Style for Google Maps Autocomplete dropdown */
+        .pac-container { z-index: 9999 !important; border-radius: 0.5rem; font-family: 'Assistant', sans-serif; }
+        .rating-stars { color: #f59e0b; /* amber-500 */ }
     </style>
 </head>
 <body class="bg-slate-100">
@@ -88,6 +78,7 @@
 
     <!-- Scrollable Content Wrapper -->
     <div id="main-content" class="relative z-10 opacity-0 transition-opacity duration-500">
+        <!-- Header -->
         <header class="bg-white/70 backdrop-blur-md sticky top-0 z-30 shadow-sm">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
@@ -118,6 +109,7 @@
                     </div>
                 </div>
 
+                <!-- Display Area -->
                 <div id="items-container" class="space-y-8">
                     <p id="loading-message" class="text-center text-white bg-black/20 p-4 rounded-lg">טוען המלצות...</p>
                 </div>
@@ -136,7 +128,8 @@
                 <div id="step-progress-bar" class="bg-blue-500 h-2.5 rounded-r-full transition-all duration-500" style="width: 0%;"></div>
             </div>
             <form id="item-form" class="flex-grow overflow-y-auto p-6 space-y-6">
-                 <div id="step-1" class="modal-step"></div><div id="step-2" class="modal-step"></div><div id="step-3" class="modal-step"></div><div id="step-4" class="modal-step"></div><div id="step-5" class="modal-step"></div><div id="step-6" class="modal-step"></div><div id="step-7" class="modal-step"></div><div id="step-8" class="modal-step"></div>
+                 <!-- Steps will be generated here -->
+                 <div id="step-1" class="modal-step"></div><div id="step-2" class="modal-step"></div><div id="step-3" class="modal-step"></div><div id="step-4" class="modal-step"></div><div id="step-5" class="modal-step"></div><div id="step-6" class="modal-step"></div><div id="step-7" class="modal-step"></div><div id="step-8" class="modal-step"></div><div id="step-9" class="modal-step"></div>
             </form>
             <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
                 <button type="button" id="modal-back-btn" class="py-2 px-5 rounded-lg hover:bg-slate-200 transition hidden font-semibold">אחורה</button>
@@ -150,7 +143,9 @@
 
     <!-- Details Modal -->
     <div id="details-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4">
-        <div id="details-modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative"></div>
+        <div id="details-modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative">
+            <!-- Content will be injected by JS -->
+        </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -169,7 +164,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc, getDoc, setDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
@@ -184,7 +179,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const attractionsCollection = collection(db, 'attractions');
-        const customCategoriesCollection = collection(db, 'customCategories');
+        const settingsDocRef = doc(db, 'app_settings', 'custom_types');
 
         // --- App State ---
         let currentUser = null;
@@ -198,18 +193,19 @@
         let distancesCalculated = false;
         let isInitialLoad = true;
         let googlePlaceDetails = null;
-        let customCategories = { foodType: [], placeType: [] };
 
         // Google Maps related state
         let addEditMap, addEditMarker, detailsMap, detailsMarker, autocomplete, geocoder, distanceService;
 
+        // --- Global init for Maps API ---
         window.initMaps = () => {
             geocoder = new google.maps.Geocoder();
             distanceService = new google.maps.DistanceMatrixService();
             console.log("Google Maps Services Initialized.");
         };
 
-        const siteData = {
+        // --- Site Data (base + custom) ---
+        let siteData = {
             menu: [
                 { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
                 { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [ { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' } ]},
@@ -223,79 +219,113 @@
                 { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
             ],
             destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו"],
-            placeTypes: ["מסעדה/אוכל", "סופר", "מוזיאון", "קניון/מרכז קניות", "אטרקציה", "חוף", "סיור"],
-            foodTypes: { "איטלקי": "🍝", "חלבי": "🧀", "בשרי": "🥩", "צמחוני": "🥗", "אסייתי": "🍜", "שווארמה": "🥙", "פיצה": "🍕", "המבורגר": "🍔", "בית קפה": "☕" },
+            basePlaceTypes: ["מסעדה/אוכל", "סופר", "מוזיאון", "קניון/מרכז קניות", "אטרקציה", "חוף", "סיור"],
+            customPlaceTypes: [],
+            get placeTypes() { return [...this.basePlaceTypes, ...this.customPlaceTypes]; },
+            baseFoodTypes: { "איטלקי": "🍝", "חלבי": "🧀", "בשרי": "🥩", "צמחוני": "🥗", "אסייתי": "🍜", "שווארמה": "🥙", "פיצה": "🍕", "המבורגר": "🍔", "בית קפה": "☕" },
+            customFoodTypes: {}, // Will be { "שם": "🍴" }
+            get foodTypes() { return {...this.baseFoodTypes, ...this.customFoodTypes, "אחר": "🍴" }; },
             destinationEmojis: { "ניו יורק": "🗽", "מפלי הניאגרה וקנדה": "🇨🇦", "וושינגטון די סי": "🏛️", "אורלנדו": "🎢", "מיאמי": "🌴", "פונטה קאנה": "🇩🇴", "אריזונה": "🏜️", "לוס אנג'לס": "🎬", "סן פרנסיסקו": "🌉" },
             placeTypeEmojis: { "מסעדה/אוכל": "🍔", "סופר": "🛒", "מוזיאון": "🏛️", "קניון/מרכז קניות": "🛍️", "אטרקציה": "🎢", "חוף": "🏖️", "סיור": "🚶‍♂️" }
         };
 
-        const dom = {
-            initialLoader: document.getElementById('initial-loader'),
-            mainContent: document.getElementById('main-content'),
-            modal: document.getElementById('item-modal'),
-            form: document.getElementById('item-form'),
-            itemsContainer: document.getElementById('items-container'),
-            loadingMessage: document.getElementById('loading-message'),
-            openModalBtn: document.getElementById('open-modal-btn'),
-            closeModalBtn: document.getElementById('modal-close-btn'),
-            nextBtn: document.getElementById('modal-next-btn'),
-            backBtn: document.getElementById('modal-back-btn'),
-            finishBtn: document.getElementById('modal-finish-btn'),
-            stepsIndicator: document.getElementById('modal-steps-indicator'),
-            progressBar: document.getElementById('step-progress-bar'),
-            modalError: document.getElementById('modal-error-message'),
-            deleteModal: document.getElementById('delete-confirm-modal'),
-            detailsModal: document.getElementById('details-modal'),
-            getLocationBtn: document.getElementById('get-location-btn'),
-        };
+        // --- DOM Elements ---
+        const initialLoader = document.getElementById('initial-loader');
+        const mainContent = document.getElementById('main-content');
+        const modal = document.getElementById('item-modal');
+        const form = document.getElementById('item-form');
+        const itemsContainer = document.getElementById('items-container');
+        const loadingMessage = document.getElementById('loading-message');
+        const openModalBtn = document.getElementById('open-modal-btn');
+        const closeModalBtn = document.getElementById('modal-close-btn');
+        const nextBtn = document.getElementById('modal-next-btn');
+        const backBtn = document.getElementById('modal-back-btn');
+        const finishBtn = document.getElementById('modal-finish-btn');
+        const stepsIndicator = document.getElementById('modal-steps-indicator');
+        const progressBar = document.getElementById('step-progress-bar');
+        const modalError = document.getElementById('modal-error-message');
+        const deleteModal = document.getElementById('delete-confirm-modal');
+        const detailsModal = document.getElementById('details-modal');
+        const getLocationBtn = document.getElementById('get-location-btn');
 
-        // --- Location & Distance ---
+        // --- Location & Distance Calculation ---
         async function calculateAllDistances() {
-            if (!userLocation || !distanceService) return;
-            const destinations = allItems.filter(item => item.coords).map(item => new google.maps.LatLng(item.coords.lat, item.coords.lng));
-            if (destinations.length === 0) { distancesCalculated = true; return; }
-
-            try {
-                const [driveResponse, walkResponse] = await Promise.all([
-                    distanceService.getDistanceMatrix({ origins: [userLocation], destinations, travelMode: 'DRIVING', unitSystem: google.maps.UnitSystem.METRIC }),
-                    distanceService.getDistanceMatrix({ origins: [userLocation], destinations, travelMode: 'WALKING', unitSystem: google.maps.UnitSystem.METRIC })
-                ]);
-                if (driveResponse.rows[0] && walkResponse.rows[0]) {
-                    const driveResults = driveResponse.rows[0].elements;
-                    const walkResults = walkResponse.rows[0].elements;
-                    let destIndex = 0;
-                    allItems.forEach(item => {
-                        if (item.coords) {
-                            if (driveResults[destIndex]?.status === 'OK') item.driving = driveResults[destIndex];
-                            if (walkResults[destIndex]?.status === 'OK') item.walking = walkResults[destIndex];
-                            destIndex++;
-                        }
-                    });
-                }
+            if (!userLocation || !distanceService || !allItems || allItems.length === 0) {
                 distancesCalculated = true;
-            } catch (error) { console.error('Distance Matrix failed:', error); }
+                return;
+            }
+            console.log("Starting distance calculation...");
+
+            const itemsWithCoords = allItems.filter(item => item.coords && item.coords.lat && item.coords.lng);
+            if (itemsWithCoords.length === 0) {
+                distancesCalculated = true;
+                console.log("No items with coordinates to calculate.");
+                return;
+            }
+
+            const destinations = itemsWithCoords.map(item => new google.maps.LatLng(item.coords.lat, item.coords.lng));
+            
+            try {
+                const [drivingResponse, walkingResponse] = await Promise.all([
+                    distanceService.getDistanceMatrix({
+                        origins: [userLocation],
+                        destinations: destinations,
+                        travelMode: 'DRIVING',
+                        unitSystem: google.maps.UnitSystem.METRIC,
+                    }),
+                    distanceService.getDistanceMatrix({
+                        origins: [userLocation],
+                        destinations: destinations,
+                        travelMode: 'WALKING',
+                        unitSystem: google.maps.UnitSystem.METRIC,
+                    })
+                ]);
+
+                const drivingResults = drivingResponse.rows[0]?.elements || [];
+                const walkingResults = walkingResponse.rows[0]?.elements || [];
+
+                itemsWithCoords.forEach((item, index) => {
+                    if (drivingResults[index]?.status === 'OK') {
+                        item.driving = drivingResults[index];
+                    }
+                    if (walkingResults[index]?.status === 'OK') {
+                        item.walking = walkingResults[index];
+                    }
+                });
+                distancesCalculated = true;
+                console.log("Distance calculation finished.");
+            } catch (error) {
+                console.error('Distance Matrix failed:', error);
+                distancesCalculated = false;
+            }
         }
 
         async function handleGetLocation() {
             return new Promise((resolve, reject) => {
-                if (!navigator.geolocation) { alert("דפדפן זה אינו תומך בשירותי מיקום."); return reject(); }
-                dom.getLocationBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> מאתר מיקום...`;
-                dom.getLocationBtn.disabled = true;
+                if (!navigator.geolocation) {
+                    showModalError("דפדפן זה אינו תומך בשירותי מיקום.");
+                    return reject();
+                }
+                getLocationBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> מאתר מיקום...`;
+                getLocationBtn.disabled = true;
+
                 navigator.geolocation.getCurrentPosition(
                     async (position) => {
                         userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                        console.log("User location found:", userLocation);
                         await calculateAllDistances();
-                        dom.getLocationBtn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> מיקום עודכן`;
-                        dom.getLocationBtn.disabled = false;
+                        getLocationBtn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> מיקום עודכן`;
+                        getLocationBtn.disabled = false;
                         resolve();
                     },
                     (error) => {
                         console.error("Geolocation error:", error);
-                        dom.getLocationBtn.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> הפעלת מיקום נכשלה`;
-                        dom.getLocationBtn.disabled = false;
-                        alert("לא ניתן היה לקבל את מיקומך. אנא ודא שאישרת את הבקשה בדפדפן.");
+                        getLocationBtn.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> הפעלת מיקום נכשלה`;
+                        getLocationBtn.disabled = false;
+                        showModalError("לא ניתן היה לקבל את מיקומך.");
                         reject();
-                    }
+                    },
+                    { enableHighAccuracy: true }
                 );
             });
         }
@@ -303,18 +333,48 @@
         function displayDistanceInfo(cardElement, item) {
             const placeholder = cardElement.querySelector('.location-info-placeholder');
             if (!placeholder || !userLocation || !distancesCalculated) return;
-            placeholder.style.display = 'flex';
+
             const distanceSpan = placeholder.querySelector('.distance-text');
+            if (!distanceSpan) return;
+            
             let html = '';
-            if (item.driving) html += `<span class="flex items-center gap-2"><i class="fa-solid fa-car fa-fw text-green-500"></i> ${item.driving.duration.text}</span>`;
-            if (item.walking) {
+            if (item.driving && item.driving.duration) {
+                html += `<span class="flex items-center gap-2"><i class="fa-solid fa-car fa-fw text-green-500"></i> ${item.driving.duration.text}</span>`;
+            }
+            if (item.walking && item.walking.duration) {
                 if (html) html += `<span class="text-slate-400 mx-1">|</span>`;
                 html += `<span class="flex items-center gap-2"><i class="fa-solid fa-person-walking fa-fw text-blue-500"></i> ${item.walking.duration.text}</span>`;
             }
-            if (html) { distanceSpan.innerHTML = html; } else { placeholder.style.display = 'none'; }
+
+            if (html) {
+                distanceSpan.innerHTML = html;
+                placeholder.style.display = 'flex';
+            } else {
+                placeholder.style.display = 'none';
+            }
         }
 
         // --- App Initialization ---
+        async function loadCustomSettings() {
+            try {
+                const docSnap = await getDoc(settingsDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    siteData.customPlaceTypes = data.placeTypes || [];
+                    if (data.foodTypes) {
+                        data.foodTypes.forEach(type => {
+                            siteData.customFoodTypes[type] = '🍴'; // Assign default emoji
+                        });
+                    }
+                } else {
+                    // If doc doesn't exist, create it with empty arrays
+                    await setDoc(settingsDocRef, { placeTypes: [], foodTypes: [] });
+                }
+            } catch (error) {
+                console.error("Error loading custom settings:", error);
+            }
+        }
+
         function initApp() {
             const sidebar = document.getElementById('sidebar');
             const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -322,7 +382,11 @@
             const overlay = document.getElementById('overlay');
             const mainMenu = document.getElementById('main-menu');
 
-            const toggleSidebar = () => { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); };
+            const toggleSidebar = () => {
+                sidebar.classList.toggle('translate-x-full');
+                overlay.classList.toggle('hidden');
+            };
+
             const buildMenu = () => {
                 mainMenu.innerHTML = '';
                 siteData.menu.forEach(dest => {
@@ -349,45 +413,44 @@
             hamburgerBtn.addEventListener('click', toggleSidebar);
             closeSidebarBtn.addEventListener('click', toggleSidebar);
             overlay.addEventListener('click', toggleSidebar);
-            dom.openModalBtn.addEventListener('click', () => openModalHandler());
-            dom.getLocationBtn.addEventListener('click', async () => { await handleGetLocation(); renderAllItems(); });
+            openModalBtn.addEventListener('click', () => openModalHandler());
+            getLocationBtn.addEventListener('click', async () => {
+                await handleGetLocation();
+                renderAllItems();
+            });
 
-            onSnapshot(query(attractionsCollection), async (snapshot) => {
+            const q = query(attractionsCollection);
+            onSnapshot(q, async (snapshot) => {
                 allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allItems.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
-                if (userLocation) await calculateAllDistances();
+                
+                if (userLocation) {
+                    await calculateAllDistances();
+                }
                 renderAllItems();
+                
                 if (isInitialLoad) {
                     isInitialLoad = false;
-                    dom.initialLoader.style.opacity = '0';
-                    dom.mainContent.style.opacity = '1';
-                    setTimeout(() => { dom.initialLoader.style.display = 'none'; }, 500);
+                    initialLoader.style.opacity = '0';
+                    mainContent.style.opacity = '1';
+                    setTimeout(() => { initialLoader.style.display = 'none'; }, 500);
                 }
-            }, (error) => { console.error("Firestore snapshot error:", error); dom.loadingMessage.textContent = "שגיאה בטעינת המידע."; });
-
-            onSnapshot(query(customCategoriesCollection), (snapshot) => {
-                customCategories = { foodType: [], placeType: [] };
-                snapshot.docs.forEach(doc => {
-                    const data = doc.data();
-                    if (customCategories[data.type]) {
-                        customCategories[data.type].push({ id: doc.id, ...data });
-                    }
-                });
-                // Sort custom categories alphabetically
-                customCategories.foodType.sort((a, b) => a.name.localeCompare(b.name, 'he'));
-                customCategories.placeType.sort((a, b) => a.name.localeCompare(b.name, 'he'));
+            }, (error) => { 
+                console.error("Firestore snapshot error:", error);
+                loadingMessage.textContent = "שגיאה בטעינת המידע."; 
             });
         }
 
         // --- Add/Edit Modal & Form Logic ---
         function openModalHandler(itemId = null) {
             editingItemId = itemId;
-            googlePlaceDetails = null;
-            dom.form.reset();
-            for(let i = 1; i <= 8; i++) {
+            googlePlaceDetails = null; // Reset
+            form.reset();
+            for(let i = 1; i <= 9; i++) {
                 const stepContainer = document.getElementById(`step-${i}`);
                 if(stepContainer) stepContainer.innerHTML = '';
             }
+
             const modalTitle = document.getElementById('modal-title');
             const finishButton = document.getElementById('modal-finish-btn');
 
@@ -397,123 +460,137 @@
                 const item = allItems.find(i => i.id === editingItemId);
                 if (item) {
                     isRestaurant = item.type === 'מסעדה/אוכל';
-                    // Populate on generation
+                    // Populate fields for later steps
+                    setTimeout(() => {
+                        document.getElementById('item-name').value = item.name || '';
+                        document.getElementById('item-destination').value = item.destination || '';
+                        document.getElementById('item-type').value = item.type || '';
+                        document.getElementById('item-short-description').value = item.shortDescription || '';
+                        document.getElementById('item-description').value = item.description || '';
+                        document.getElementById('item-location').value = item.location || '';
+                        document.getElementById('item-hours').value = item.hours || '';
+                        document.getElementById('item-link').value = item.link || '';
+                        document.getElementById('item-reservation').value = item.reservation || 'לא';
+
+                        if (isRestaurant) {
+                            document.getElementById('item-kosher').value = item.isKosher || 'לא';
+                            const foodTypeSelect = document.getElementById('item-food-type');
+                            const foodTypeOtherInput = document.getElementById('item-food-type-other');
+                            if (siteData.foodTypes[item.foodType]) {
+                                foodTypeSelect.value = item.foodType;
+                            } else {
+                                foodTypeSelect.value = 'אחר';
+                                foodTypeOtherInput.value = item.foodType || '';
+                                foodTypeOtherInput.classList.remove('hidden');
+                            }
+                        }
+                    }, 100);
                 }
             } else {
                 modalTitle.textContent = 'הוספת מקום חדש';
                 finishButton.textContent = 'הוסף לדף';
             }
+            
             currentModalStep = 1;
             updateModalView();
-            dom.modal.classList.remove('hidden');
-            dom.modal.classList.add('flex');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
         function closeModalHandler() {
             editingItemId = null;
-            dom.modal.classList.add('hidden');
-            dom.modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
             showModalError('');
         }
         
         function updateModalView() {
-            const typeRadio = dom.form.querySelector('input[name="item-type"]:checked');
-            const currentType = typeRadio ? typeRadio.value : (allItems.find(i => i.id === editingItemId)?.type || '');
+            const itemTypeEl = document.getElementById('item-type');
+            const currentType = itemTypeEl ? itemTypeEl.value : (allItems.find(i => i.id === editingItemId)?.type || '');
             isRestaurant = currentType === 'מסעדה/אוכל';
             
-            const baseSteps = [1, 2, 3, 4, 7, 8]; // Name, Dest, Type, Location, ShortDesc, FullDesc
-            const restaurantSteps = [5, 6]; // Kosher, FoodType
+            const baseSteps = [1, 2, 3, 4, 5, 6, 7]; // Name, Dest, Type, Location, Reservation, ShortDesc, FullDesc
+            const restaurantSteps = [8, 9]; // Kosher, FoodType
             
-            let activeSteps = isRestaurant ? [...baseSteps, ...restaurantSteps].sort((a,b)=>a-b) : baseSteps;
+            let activeSteps = [...baseSteps];
+            if (isRestaurant) {
+                activeSteps.push(...restaurantSteps);
+                activeSteps.sort((a, b) => a - b);
+            }
+            
             totalModalSteps = activeSteps.length;
 
             document.querySelectorAll('.modal-step').forEach(step => step.classList.remove('active'));
+            
             const actualStepNumber = activeSteps[currentModalStep - 1];
             const currentStepEl = document.getElementById(`step-${actualStepNumber}`);
             
             if (currentStepEl) {
+                if (!currentStepEl.innerHTML.trim()) {
+                    generateStepContent(actualStepNumber);
+                }
                 currentStepEl.classList.add('active');
-                if (!currentStepEl.innerHTML.trim()) generateStepContent(actualStepNumber);
             }
             
-            dom.backBtn.classList.toggle('hidden', currentModalStep === 1);
-            dom.nextBtn.classList.toggle('hidden', currentModalStep === totalModalSteps);
-            dom.finishBtn.classList.toggle('hidden', currentModalStep !== totalModalSteps);
-            dom.stepsIndicator.textContent = `שלב ${currentModalStep} מתוך ${totalModalSteps}`;
-            dom.progressBar.style.width = `${(currentModalStep / totalModalSteps) * 100}%`;
+            if (document.getElementById('map-preview')) initAddEditMap();
+
+            backBtn.classList.toggle('hidden', currentModalStep === 1);
+            nextBtn.classList.toggle('hidden', currentModalStep === totalModalSteps);
+            finishBtn.classList.toggle('hidden', currentModalStep !== totalModalSteps);
+            stepsIndicator.textContent = `שלב ${currentModalStep} מתוך ${totalModalSteps}`;
+            progressBar.style.width = `${(currentModalStep / totalModalSteps) * 100}%`;
         }
         
         function generateStepContent(step) {
             const stepContainer = document.getElementById(`step-${step}`);
             if (!stepContainer) return;
-            const item = editingItemId ? allItems.find(i => i.id === editingItemId) : null;
             let content = '';
             const labelClass = "flex items-center gap-3 text-lg font-bold text-slate-700 mb-3";
             
             switch(step) {
-                case 1: content = `<label class="${labelClass}"><i class="fa-solid fa-signature text-slate-400"></i>שם המקום</label><input type="text" id="item-name" required class="form-input w-full p-3" placeholder="לדוגמה: Top of the Rock" value="${item?.name || ''}">`; break;
-                case 2: content = `<label class="${labelClass}"><i class="fa-solid fa-map-pin text-slate-400"></i>לאיזה יעד?</label><select id="item-destination" required class="form-select w-full p-3">${siteData.destinations.map(o=>`<option value="${o}" ${item?.destination === o ? 'selected' : ''}>${siteData.destinationEmojis[o] || '📍'} ${o}</option>`).join('')}</select>`; break;
-                case 3: content = generateTypeSelectionHtml('placeType', item?.type); break;
-                case 4: content = createLocationHtml(item); break;
-                case 5: content = `<label class="${labelClass}"><i class="fa-solid fa-star-of-david text-slate-400"></i>האם המסעדה כשרה?</label><select id="item-kosher" class="form-select w-full p-3"><option value="לא" ${item?.isKosher === 'לא' ? 'selected' : ''}>לא</option><option value="כן" ${item?.isKosher === 'כן' ? 'selected' : ''}>כן</option></select>`; break;
-                case 6: content = generateTypeSelectionHtml('foodType', item?.foodType); break;
-                case 7: content = `<label class="${labelClass}"><i class="fa-solid fa-quote-left text-slate-400"></i>פירוט קצר</label><textarea id="item-short-description" class="form-textarea w-full p-3" rows="2" placeholder="משפט או שניים שיופיעו בכרטיסייה הראשית...">${item?.shortDescription || ''}</textarea>`; break;
-                case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור מלא</label><textarea id="item-description" class="form-textarea w-full p-3" rows="4" placeholder="פרטים נוספים, המלצות, טיפים...">${item?.description || ''}</textarea>`; break;
+                case 1: content = `<label class="${labelClass}"><i class="fa-solid fa-signature text-slate-400"></i>שם המקום</label><input type="text" id="item-name" required class="form-input w-full p-3" placeholder="לדוגמה: Top of the Rock">`; break;
+                case 2: content = `<label class="${labelClass}"><i class="fa-solid fa-map-pin text-slate-400"></i>לאיזה יעד?</label><select id="item-destination" required class="form-select w-full p-3">${siteData.destinations.map(o=>`<option value="${o}">${siteData.destinationEmojis[o] || '📍'} ${o}</option>`).join('')}</select>`; break;
+                case 3: content = `<label class="${labelClass}"><i class="fa-solid fa-shapes text-slate-400"></i>סוג המקום</label><select id="item-type" required class="form-select w-full p-3">${[...siteData.placeTypes, "אחר"].map(o=>`<option value="${o}">${siteData.placeTypeEmojis[o] || '📌'} ${o}</option>`).join('')}</select><input type="text" id="item-type-other" class="form-input w-full p-3 mt-3 hidden" placeholder="הגדר סוג חדש">`; break;
+                case 4: content = createLocationHtml(); break;
+                case 5: content = `<label class="${labelClass}"><i class="fa-solid fa-calendar-check text-slate-400"></i>צריך להזמין מקום?</label><select id="item-reservation" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option><option value="מומלץ">מומלץ</option></select>`; break;
+                case 6: content = `<label class="${labelClass}"><i class="fa-solid fa-quote-left text-slate-400"></i>פירוט קצר (אופציונלי)</label><textarea id="item-short-description" class="form-textarea w-full p-3" rows="2" placeholder="משפט או שניים שיופיעו בכרטיסייה הראשית..."></textarea>`; break;
+                case 7: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור מלא (אופציונלי)</label><textarea id="item-description" class="form-textarea w-full p-3" rows="4" placeholder="פרטים נוספים, המלצות, טיפים..."></textarea>`; break;
+                case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-star-of-david text-slate-400"></i>האם המסעדה כשרה?</label><select id="item-kosher" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option></select>`; break;
+                case 9: content = `<label class="${labelClass}"><i class="fa-solid fa-utensils text-slate-400"></i>סוג אוכל</label><select id="item-food-type" class="form-select w-full p-3">${Object.entries(siteData.foodTypes).map(([name, emoji]) => `<option value="${name}">${emoji} ${name}</option>`).join('')}</select><input type="text" id="item-food-type-other" class="form-input w-full p-3 mt-3 hidden" placeholder="הגדר סוג אוכל">`; break;
             }
+            
             stepContainer.innerHTML = content;
             if (step === 4) initGooglePlacesAutocomplete();
-        }
-
-        function generateTypeSelectionHtml(category, selectedValue) {
-            const baseTypes = category === 'placeType' ? siteData.placeTypes : Object.keys(siteData.foodTypes);
-            const customTypes = customCategories[category];
-            const allTypes = [...baseTypes, ...customTypes.map(c => c.name)];
-            const title = category === 'placeType' ? 'סוג המקום' : 'סוג האוכל';
-            const icon = category === 'placeType' ? 'fa-shapes' : 'fa-utensils';
-            
-            let html = `<label class="flex items-center gap-3 text-lg font-bold text-slate-700 mb-3"><i class="fa-solid ${icon} text-slate-400"></i>${title}</label>
-                        <div class="space-y-2 custom-radio-group" id="${category}-group">`;
-            
-            allTypes.forEach(type => {
-                const isCustom = !baseTypes.includes(type);
-                const customItem = isCustom ? customTypes.find(c => c.name === type) : null;
-                const id = `radio-${category}-${type.replace(/\s/g, '')}`;
-                const isChecked = type === selectedValue;
-                html += `<div>
-                            <input type="radio" name="item-${category}" value="${type}" id="${id}" class="hidden" ${isChecked ? 'checked' : ''}>
-                            <label for="${id}">
-                                <span>${type}</span>
-                                ${isCustom ? `<button type="button" class="delete-category-btn" data-id="${customItem.id}" title="מחק קטגוריה"><i class="fas fa-times"></i></button>` : ''}
-                            </label>
-                         </div>`;
-            });
-
-            const otherIsChecked = selectedValue && !allTypes.includes(selectedValue);
-            html += `<div>
-                        <input type="radio" name="item-${category}" value="אחר" id="radio-${category}-other" class="hidden" ${otherIsChecked ? 'checked' : ''}>
-                        <label for="radio-${category}-other">אחר</label>
-                     </div>
-                     <input type="text" id="item-${category}-other" class="form-input w-full p-3 mt-2 ${otherIsChecked ? '' : 'hidden'}" placeholder="הגדר סוג חדש" value="${otherIsChecked ? selectedValue : ''}">
-                     </div>`;
-            return html;
+            if (step === 3) document.getElementById('item-type').addEventListener('change', handleTypeChange);
+            if (step === 9) document.getElementById('item-food-type').addEventListener('change', handleFoodTypeChange);
         }
         
-        function createLocationHtml(item) {
+        function handleTypeChange(e) {
+            const otherInput = document.getElementById('item-type-other');
+            if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
+            
+            document.querySelectorAll('.modal-step').forEach((el, index) => {
+                if (index + 1 > currentModalStep) el.innerHTML = '';
+            });
+            updateModalView();
+        }
+
+        function handleFoodTypeChange(e) {
+            const otherInput = document.getElementById('item-food-type-other');
+            if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
+        }
+
+        function createLocationHtml() {
             return `
-                <div id="location-search-view">
-                    <label for="item-location-search" class="flex items-center gap-3 text-lg font-bold text-slate-700 mb-3"><i class="fa-solid fa-magnifying-glass-location text-slate-400"></i>חיפוש מקום</label>
-                    <input type="text" id="item-location-search" class="form-input w-full p-3" placeholder="הקלד שם מקום או כתובת..." value="${item?.name || ''}">
-                    <div id="map-preview" class="mt-3"></div>
-                </div>
-                <div id="location-confirm-view" class="hidden">
-                    <!-- Confirmation content will be injected here -->
-                </div>
+                <label for="item-location-search" class="flex items-center gap-3 text-lg font-bold text-slate-700 mb-3"><i class="fa-solid fa-magnifying-glass-location text-slate-400"></i>חיפוש מקום</label>
+                <input type="text" id="item-location-search" class="form-input w-full p-3" placeholder="הקלד שם מקום או כתובת...">
+                <div id="map-preview" class="mt-3"></div>
+                <div id="google-place-filled-msg" class="text-sm text-green-600 bg-green-50 p-3 rounded-md mt-3 hidden"><i class="fa-solid fa-check-circle mr-2"></i>פרטי המקום מולאו אוטומטית. ניתן לערוך ולהמשיך.</div>
                 <div class="mt-4 space-y-3 text-sm">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label class="font-semibold text-slate-600">כתובת</label><input type="text" id="item-location" class="form-input w-full p-2 mt-1 bg-slate-100" readonly value="${item?.location || ''}"></div>
-                        <div><label class="font-semibold text-slate-600">שעות פתיחה</label><input type="text" id="item-hours" class="form-input w-full p-2 mt-1" value="${item?.hours || ''}"></div>
-                        <div><label class="font-semibold text-slate-600">אתר אינטרנט</label><input type="url" id="item-link" class="form-input w-full p-2 mt-1" value="${item?.link || ''}"></div>
-                        <div><label class="font-semibold text-slate-600">הערות להזמנת מקום</label><input type="text" id="item-reservation" class="form-input w-full p-2 mt-1" placeholder="לדוגמה: מומלץ בסופש" value="${item?.reservation || ''}"></div>
+                        <div><label class="font-semibold text-slate-600">כתובת</label><input type="text" id="item-location" class="form-input w-full p-2 mt-1 bg-slate-100" readonly></div>
+                        <div><label class="font-semibold text-slate-600">שעות פתיחה</label><input type="text" id="item-hours" class="form-input w-full p-2 mt-1"></div>
+                        <div><label class="font-semibold text-slate-600">אתר אינטרנט</label><input type="url" id="item-link" class="form-input w-full p-2 mt-1"></div>
                     </div>
                 </div>
             `;
@@ -521,8 +598,10 @@
 
         function initAddEditMap(location = {lat: 40.7128, lng: -74.0060}) {
             const mapDiv = document.getElementById('map-preview');
-            if (mapDiv && !addEditMap) {
-                addEditMap = new google.maps.Map(mapDiv, { center: location, zoom: 10, disableDefaultUI: true });
+            if (mapDiv && (!addEditMap || mapDiv.childElementCount === 0)) {
+                addEditMap = new google.maps.Map(mapDiv, {
+                    center: location, zoom: 10, disableDefaultUI: true,
+                });
                 addEditMarker = new google.maps.Marker({ map: addEditMap, position: location });
             } else if (addEditMap) {
                 addEditMap.setCenter(location);
@@ -533,13 +612,24 @@
         function initGooglePlacesAutocomplete() {
             const searchInput = document.getElementById('item-location-search');
             if (!searchInput || !window.google) return;
-            initAddEditMap(editingItemId && allItems.find(i=>i.id===editingItemId)?.coords ? allItems.find(i=>i.id===editingItemId).coords : undefined);
+            
+            initAddEditMap();
 
-            autocomplete = new google.maps.places.Autocomplete(searchInput, { fields: ["name", "geometry", "place_id", "formatted_address"] });
+            autocomplete = new google.maps.places.Autocomplete(searchInput, {
+                fields: ["name", "geometry", "place_id", "formatted_address"]
+            });
+
             autocomplete.addListener('place_changed', async () => {
                 const place = autocomplete.getPlace();
-                if (!place.geometry || !place.geometry.location) { showModalError('לא נמצא מקום, נסה לחפש כתובת מדויקת.'); return; }
-                
+                if (!place.geometry || !place.geometry.location) {
+                    showModalError('לא נמצא מקום, נסה לחפש כתובת מדויקת.');
+                    return;
+                }
+
+                addEditMap.setCenter(place.geometry.location);
+                addEditMap.setZoom(16);
+                addEditMarker.setPosition(place.geometry.location);
+
                 const placesService = new google.maps.places.PlacesService(addEditMap);
                 placesService.getDetails({
                     placeId: place.place_id,
@@ -553,76 +643,43 @@
                             hours: details.opening_hours ? details.opening_hours.weekday_text.join('\n') : '',
                             link: details.website || details.url || '',
                             photos: details.photos ? details.photos.slice(0, 3).map(p => p.getUrl({maxWidth: 800})) : [],
+                            placeId: place.place_id,
                             rating: details.rating,
-                            user_ratings_total: details.user_ratings_total,
-                            placeId: place.place_id
+                            userRatingsTotal: details.user_ratings_total
                         };
-                        showConfirmationView(googlePlaceDetails);
+                        
+                        document.getElementById('item-name').value = googlePlaceDetails.name;
+                        document.getElementById('item-location').value = googlePlaceDetails.location;
+                        document.getElementById('item-hours').value = googlePlaceDetails.hours;
+                        document.getElementById('item-link').value = googlePlaceDetails.link;
+                        
+                        document.getElementById('google-place-filled-msg').classList.remove('hidden');
                     }
                 });
             });
         }
-
-        function showConfirmationView(details) {
-            document.getElementById('location-search-view').classList.add('hidden');
-            const confirmView = document.getElementById('location-confirm-view');
-            
-            let ratingHtml = details.rating ? `<div class="flex items-center gap-1 text-amber-500"><i class="fas fa-star"></i> <span>${details.rating.toFixed(1)}</span><span class="text-slate-500 text-sm">(${details.user_ratings_total} דירוגים)</span></div>` : '<span class="text-slate-500">אין דירוג</span>';
-            let photosHtml = details.photos.length > 0 ? `<div class="grid grid-cols-3 gap-2 mt-2">${details.photos.map(p => `<img src="${p}" class="h-20 w-full object-cover rounded-md">`).join('')}</div>` : '';
-
-            confirmView.innerHTML = `
-                <div class="p-4 bg-slate-50 rounded-lg border border-blue-300">
-                    <h4 class="text-lg font-bold text-slate-800">${details.name}</h4>
-                    <p class="text-sm text-slate-600">${details.location}</p>
-                    <div class="my-3">${ratingHtml}</div>
-                    ${photosHtml}
-                    <div class="mt-4 flex gap-3">
-                        <button type="button" id="confirm-place-btn" class="flex-1 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">המשך עם פרטים אלה</button>
-                        <button type="button" id="search-again-btn" class="flex-1 bg-slate-200 font-semibold py-2 px-4 rounded-lg">חפש מחדש</button>
-                    </div>
-                </div>
-            `;
-            confirmView.classList.remove('hidden');
-        }
-
-        function handleConfirmPlace() {
-            if (!googlePlaceDetails) return;
-            document.getElementById('item-name').value = googlePlaceDetails.name;
-            document.getElementById('item-location').value = googlePlaceDetails.location;
-            document.getElementById('item-hours').value = googlePlaceDetails.hours;
-            document.getElementById('item-link').value = googlePlaceDetails.link;
-            document.getElementById('location-confirm-view').classList.add('hidden');
-            document.getElementById('location-search-view').classList.remove('hidden');
-            initAddEditMap(googlePlaceDetails.coords);
-            dom.nextBtn.click();
-        }
-
-        function handleSearchAgain() {
-            googlePlaceDetails = null;
-            document.getElementById('location-confirm-view').classList.add('hidden');
-            document.getElementById('location-search-view').classList.remove('hidden');
-            document.getElementById('item-location-search').value = '';
-            document.getElementById('item-location-search').focus();
-        }
         
         function showModalError(message) {
-            dom.modalError.textContent = message;
-            if (message) setTimeout(() => { dom.modalError.textContent = ''; }, 4000);
+            modalError.textContent = message;
+            if (message) setTimeout(() => { modalError.textContent = ''; }, 4000);
         }
 
         // --- Firestore & Rendering Logic ---
         function renderAllItems() {
-            if (!dom.itemsContainer) return;
+            if (!itemsContainer) return;
             if (allItems.length === 0 && !isInitialLoad) {
-                dom.itemsContainer.innerHTML = `<div class="text-center p-16 bg-white/70 backdrop-blur-md rounded-2xl shadow-sm"><i class="fas fa-map-signs fa-4x text-slate-400 mb-6"></i><h3 class="text-2xl font-bold text-slate-700">עדיין אין המלצות...</h3><p class="text-slate-500 mt-2">זה הזמן להתחיל! לחץ על "הוספת מקום" כדי ליצור את הראשון.</p></div>`;
-                dom.loadingMessage.style.display = 'none';
+                itemsContainer.innerHTML = `<div class="text-center p-16 bg-white/70 backdrop-blur-md rounded-2xl shadow-sm"><i class="fas fa-map-signs fa-4x text-slate-400 mb-6"></i><h3 class="text-2xl font-bold text-slate-700">עדיין אין המלצות...</h3><p class="text-slate-500 mt-2">זה הזמן להתחיל! לחץ על "הוספת מקום" כדי ליצור את הראשון.</p></div>`;
+                loadingMessage.style.display = 'none';
                 return;
             }
             
             const preservedOpenStates = {};
-            document.querySelectorAll('#items-container details').forEach(detail => { preservedOpenStates[detail.dataset.dest] = detail.open; });
-            dom.itemsContainer.innerHTML = '';
-            dom.loadingMessage.style.display = 'none';
+            document.querySelectorAll('#items-container details').forEach(detail => {
+                preservedOpenStates[detail.dataset.dest] = detail.open;
+            });
+
+            itemsContainer.innerHTML = '';
+            loadingMessage.style.display = 'none';
 
             const groupedByDest = allItems.reduce((acc, item) => {
                 const dest = item.destination || 'כללי';
@@ -634,21 +691,31 @@
             siteData.destinations.forEach(dest => {
                 if (groupedByDest[dest]) {
                     if (!activeFilters[dest]) activeFilters[dest] = { kosher: false, foodType: '', sortByDistance: false };
+
                     const destSection = document.createElement('details');
                     destSection.className = "bg-white/70 backdrop-blur-md rounded-2xl shadow-lg overflow-hidden relative";
-                    destSection.open = preservedOpenStates[dest] || false;
+                    destSection.open = preservedOpenStates[dest] === undefined ? true : preservedOpenStates[dest];
                     destSection.dataset.dest = dest;
+
                     const destEmoji = siteData.destinationEmojis[dest] || '📍';
                     destSection.innerHTML = `<summary class="text-2xl md:text-3xl font-bold text-slate-800 flex justify-between items-center p-5 hover:bg-white/30 transition"><span class="flex items-center gap-4">${destEmoji} ${dest}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
                     
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'p-4 space-y-6 bg-slate-50/70';
+                    
                     const toolsDiv = document.createElement('div');
                     toolsDiv.className = 'flex items-center justify-end gap-4 p-2 bg-slate-200/50 rounded-lg mb-4';
-                    toolsDiv.innerHTML = `<label for="sort-toggle-${dest.replace(/\s/g, '')}" class="text-sm font-semibold text-slate-700">מיין לפי מרחק</label><label class="switch"><input type="checkbox" id="sort-toggle-${dest.replace(/\s/g, '')}" class="sort-distance-toggle" data-destination="${dest}" ${activeFilters[dest].sortByDistance ? 'checked' : ''}><span class="slider"></span></label>`;
+                    toolsDiv.innerHTML = `
+                        <label for="sort-toggle-${dest.replace(/\s/g, '')}" class="text-sm font-semibold text-slate-700">מיין לפי מרחק</label>
+                        <label class="switch">
+                            <input type="checkbox" id="sort-toggle-${dest.replace(/\s/g, '')}" class="sort-distance-toggle" data-destination="${dest}" ${activeFilters[dest].sortByDistance ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    `;
                     contentDiv.appendChild(toolsDiv);
 
                     let itemsForDestination = [...groupedByDest[dest]];
+                    
                     if (activeFilters[dest].sortByDistance && userLocation && distancesCalculated) {
                         itemsForDestination.sort((a, b) => (a.driving?.duration.value ?? Infinity) - (b.driving?.duration.value ?? Infinity));
                     }
@@ -664,16 +731,32 @@
                         const typeSection = document.createElement('details');
                         typeSection.className = "bg-white/80 p-4 rounded-xl shadow-md";
                         typeSection.open = true;
+                        
                         const typeIcon = siteData.placeTypeEmojis[type] || '📌';
                         let summaryHtml = `<summary class="text-lg md:text-xl font-semibold text-slate-700 flex justify-between items-center"><span>${typeIcon} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
+                        
                         const typeContentDiv = document.createElement('div');
                         typeContentDiv.className = "mt-4 pt-4 border-t space-y-4";
+                        
                         let itemsForType = groupedByType[type];
                         
                         if (type === 'מסעדה/אוכל') {
-                             const allFoodTypesInDest = [...new Set(itemsForDestination.filter(i=>i.type==='מסעדה/אוכל').map(i => i.foodType).filter(Boolean))];
-                             let filterHtml = `<div class="local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center gap-4 mb-4"><span class="font-bold text-slate-600 text-sm">סינון:</span><div class="flex items-center gap-2"><input type="checkbox" id="kosher-filter-${dest.replace(/\s/g, '')}" data-destination="${dest}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest].kosher ? 'checked' : ''}><label for="kosher-filter-${dest.replace(/\s/g, '')}" class="text-sm font-medium text-slate-600">כשר בלבד</label></div><select data-destination="${dest}" class="local-filter-food-type form-select rounded-md text-sm py-1"><option value="">כל סוגי האוכל</option>${allFoodTypesInDest.sort().map(ft => `<option value="${ft}" ${activeFilters[dest].foodType === ft ? 'selected' : ''}>${siteData.foodTypes[ft] || '🍴'} ${ft}</option>`).join('')}</select></div>`;
+                             const allFoodTypesInDest = [...new Set(itemsForDestination.filter(i => i.type === 'מסעדה/אוכל').map(i => i.foodType).filter(Boolean))];
+                             let filterHtml = `
+                                <div class="local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center gap-4 mb-4">
+                                    <span class="font-bold text-slate-600 text-sm">סינון:</span>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="kosher-filter-${dest.replace(/\s/g, '')}" data-destination="${dest}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest].kosher ? 'checked' : ''}>
+                                        <label for="kosher-filter-${dest.replace(/\s/g, '')}" class="text-sm font-medium text-slate-600">כשר בלבד</label>
+                                    </div>
+                                    <select data-destination="${dest}" class="local-filter-food-type form-select rounded-md text-sm py-1">
+                                        <option value="">כל סוגי האוכל</option>
+                                        ${allFoodTypesInDest.sort().map(ft => `<option value="${ft}" ${activeFilters[dest].foodType === ft ? 'selected' : ''}>${siteData.foodTypes[ft] || '🍴'} ${ft}</option>`).join('')}
+                                    </select>
+                                </div>
+                             `;
                              typeContentDiv.insertAdjacentHTML('afterbegin', filterHtml);
+
                              if (activeFilters[dest].kosher) itemsForType = itemsForType.filter(item => item.isKosher === 'כן');
                              if (activeFilters[dest].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest].foodType);
                         }
@@ -689,41 +772,64 @@
                                 
                                 let tagsHtml = '';
                                 if(item.isKosher === 'כן') tagsHtml += `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">כשר</span>`;
-                                if(item.foodType) tagsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${(siteData.foodTypes[item.foodType] || '🍴')} ${item.foodType}</span>`;
-                                if(item.rating) tagsHtml += `<span class="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded-full flex items-center gap-1"><i class="fas fa-star"></i> ${item.rating.toFixed(1)}</span>`;
+                                if(item.foodType) tagsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${siteData.foodTypes[item.foodType] || ''} ${item.foodType}</span>`;
+                                if(item.reservation && item.reservation !== 'לא') tagsHtml += `<span class="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
+
+                                let ratingHtml = '';
+                                if (item.rating) {
+                                    ratingHtml = `
+                                        <div class="flex items-center gap-1 text-amber-500">
+                                            <i class="fas fa-star"></i>
+                                            <span class="font-bold text-sm">${item.rating.toFixed(1)}</span>
+                                            ${item.userRatingsTotal ? `<span class="text-xs text-slate-500">(${item.userRatingsTotal})</span>` : ''}
+                                        </div>
+                                    `;
+                                }
 
                                 const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
 
                                 card.innerHTML = `
                                     <div class="flex-grow">
-                                        <div class="flex justify-between items-start">
-                                            <h5 class="text-base md:text-lg font-bold text-slate-800 truncate mb-2 flex-1">${item.name}</h5>
-                                            ${item.photos && item.photos.length > 0 ? `<img src="${item.photos[0]}" class="w-12 h-12 object-cover rounded-lg ml-3" alt="${item.name}" loading="lazy">` : ''}
+                                        <div class="flex justify-between items-start mb-2">
+                                            <h5 class="text-base md:text-lg font-bold text-slate-800 flex-1">${item.name}</h5>
+                                            ${ratingHtml}
                                         </div>
                                         <div class="flex flex-wrap gap-2 min-h-[26px] mb-3">${tagsHtml}</div>
                                         ${item.shortDescription ? `<p class="text-sm text-slate-600 mb-4">${item.shortDescription}</p>` : ''}
-                                        <div class="location-info-placeholder text-xs text-slate-600 mt-2 border-t pt-2 gap-2" style="display: none;"><span class="distance-text flex-grow flex items-center justify-center gap-2"></span></div>
+                                        <div class="location-info-placeholder flex items-center justify-center text-xs text-slate-600 mt-2 border-t pt-2 gap-2" style="display: none;">
+                                            <span class="distance-text flex-grow flex items-center justify-center gap-2"></span>
+                                        </div>
                                     </div>
                                     <div class="mt-auto pt-3 border-t flex items-center justify-between gap-2">
-                                        <div class="flex gap-2"><a href="${navLink}" target="_blank" class="action-btn bg-blue-100 text-blue-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-200 transition" title="נווט עם Google Maps"><i class="fa-solid fa-diamond-turn-right"></i></a>${item.link ? `<a href="${item.link}" target="_blank" class="action-btn bg-green-100 text-green-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-green-200 transition" title="פתח אתר"><i class="fa-solid fa-link"></i></a>` : ''}</div>
-                                        <div class="flex gap-2"><button class="edit-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-300 transition" title="עריכה"><i class="fas fa-pencil"></i></button><button class="delete-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:text-red-500 hover:bg-red-100 transition" title="מחיקה"><i class="fas fa-trash"></i></button></div>
-                                    </div>`;
+                                        <div class="flex gap-2">
+                                            <a href="${navLink}" target="_blank" class="action-btn bg-blue-100 text-blue-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-200 transition" title="נווט עם Google Maps"><i class="fa-solid fa-diamond-turn-right"></i></a>
+                                            ${item.link ? `<a href="${item.link}" target="_blank" class="action-btn bg-green-100 text-green-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-green-200 transition" title="פתח אתר"><i class="fa-solid fa-link"></i></a>` : ''}
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <button class="edit-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-300 transition" title="עריכה"><i class="fas fa-pencil"></i></button>
+                                            <button class="delete-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:text-red-500 hover:bg-red-100 transition" title="מחיקה"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                `;
                                 cardGrid.appendChild(card);
                                 displayDistanceInfo(card, item);
                             });
-                        } else { cardGrid.innerHTML = `<p class="text-slate-500 col-span-full text-center">אין מקומות התואמים לסינון.</p>`; }
+                        } else {
+                            cardGrid.innerHTML = `<p class="text-slate-500 col-span-full text-center">אין מקומות התואמים לסינון.</p>`;
+                        }
                         
                         typeContentDiv.appendChild(cardGrid);
                         typeSection.innerHTML = summaryHtml;
                         typeSection.appendChild(typeContentDiv);
                         contentDiv.appendChild(typeSection);
                     });
+
                     destSection.appendChild(contentDiv);
                     const sectionLoader = document.createElement('div');
                     sectionLoader.className = 'section-loader hidden';
                     sectionLoader.innerHTML = `<i class="fas fa-sync-alt fa-2x fa-spin text-blue-500"></i>`;
                     destSection.appendChild(sectionLoader);
-                    dom.itemsContainer.appendChild(destSection);
+                    itemsContainer.appendChild(destSection);
                 }
             });
         }
@@ -732,19 +838,43 @@
         async function openDetailsModal(itemId) {
             const item = allItems.find(i => i.id === itemId);
             if (!item) return;
+
             const modalContent = document.getElementById('details-modal-content');
             
             let tagsHtml = '';
             if(item.isKosher === 'כן') tagsHtml += `<span class="text-sm font-bold text-green-700 bg-green-100 px-3 py-1 rounded-full">כשר</span>`;
-            if(item.foodType) tagsHtml += `<span class="text-sm font-bold text-sky-700 bg-sky-100 px-3 py-1 rounded-full">${(siteData.foodTypes[item.foodType] || '🍴')} ${item.foodType}</span>`;
-            if(item.rating) tagsHtml += `<span class="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full flex items-center gap-1"><i class="fas fa-star"></i> ${item.rating.toFixed(1)} (${item.user_ratings_total} דירוגים)</span>`;
+            if(item.foodType) tagsHtml += `<span class="text-sm font-bold text-sky-700 bg-sky-100 px-3 py-1 rounded-full">${siteData.foodTypes[item.foodType] || ''} ${item.foodType}</span>`;
+            if(item.reservation && item.reservation !== 'לא') tagsHtml += `<span class="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
+
+            let ratingHtml = '';
+            if (item.rating) {
+                ratingHtml = `
+                    <div class="flex items-center gap-2 text-amber-500 mt-2">
+                        <i class="fas fa-star fa-lg"></i>
+                        <span class="font-bold text-lg">${item.rating.toFixed(1)}</span>
+                        ${item.userRatingsTotal ? `<span class="text-slate-500 text-sm">(${item.userRatingsTotal} דירוגים)</span>` : ''}
+                    </div>
+                `;
+            }
 
             const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
-            let photosHtml = item.photos && item.photos.length > 0 ? `<div class="grid grid-cols-3 gap-2">${item.photos.map(photo => `<a href="${photo}" target="_blank"><img src="${photo}" class="w-full h-24 object-cover rounded-lg shadow-md hover:opacity-80 transition-opacity" loading="lazy"></a>`).join('')}</div>` : '';
+            
+            let photosHtml = '';
+            if (item.photos && item.photos.length > 0) {
+                photosHtml = `
+                    <div class="grid grid-cols-3 gap-2">
+                        ${item.photos.map(photo => `<a href="${photo}" target="_blank"><img src="${photo}" class="w-full h-24 object-cover rounded-lg shadow-md hover:opacity-80 transition-opacity"></a>`).join('')}
+                    </div>
+                `;
+            }
 
             modalContent.innerHTML = `
                 <button id="details-modal-close" class="absolute top-3 left-3 w-8 h-8 bg-slate-100 rounded-full text-slate-500 hover:text-red-500 hover:bg-red-100 z-10 transition-colors"><i class="fas fa-times"></i></button>
-                <div class="p-6 border-b"><h3 class="text-3xl font-bold text-slate-800">${item.name}</h3><p class="text-slate-500 mt-1">${siteData.placeTypeEmojis[item.type] || '📌'} ${item.type}</p></div>
+                <div class="p-6 border-b">
+                    <h3 class="text-3xl font-bold text-slate-800">${item.name}</h3>
+                    <p class="text-slate-500 mt-1">${siteData.placeTypeEmojis[item.type] || '📌'} ${item.type}</p>
+                    ${ratingHtml}
+                </div>
                 <div class="p-6 flex-grow overflow-y-auto space-y-5 bg-slate-50">
                     ${tagsHtml ? `<div class="flex flex-wrap gap-3 items-center">${tagsHtml}</div>` : ''}
                     ${photosHtml}
@@ -752,124 +882,120 @@
                     ${item.description ? `<div class="bg-white p-4 rounded-lg shadow-inner"><p class="text-slate-700 whitespace-pre-wrap">${item.description}</p></div>` : ''}
                     ${item.location ? `<div class="flex items-start gap-4"><i class="fa-solid fa-location-dot fa-fw text-slate-400 mt-1"></i><p class="text-slate-700 font-semibold">${item.location}</p></div>` : ''}
                     ${item.hours ? `<div class="flex items-start gap-4"><i class="fa-regular fa-clock fa-fw text-slate-400 mt-1"></i><p class="text-slate-700 whitespace-pre-wrap">${item.hours}</p></div>` : ''}
-                    ${item.reservation ? `<div class="flex items-start gap-4"><i class="fa-solid fa-calendar-check fa-fw text-slate-400 mt-1"></i><p class="text-slate-700">${item.reservation}</p></div>` : ''}
                     ${item.location ? `<div id="details-map" class="w-full h-48 rounded-lg shadow-md"></div>` : ''}
                     <div id="details-location-info" class="pt-4 border-t space-y-2" style="display: none;">
-                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner"><i class="fa-solid fa-car fa-fw text-green-500"></i><span id="details-driving-text" class="text-slate-700"></span></div>
-                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner"><i class="fa-solid fa-person-walking fa-fw text-blue-500"></i><span id="details-walking-text" class="text-slate-700"></span></div>
+                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
+                            <i class="fa-solid fa-car fa-fw text-green-500"></i>
+                            <span id="details-driving-text" class="text-slate-700">טוען...</span>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
+                             <i class="fa-solid fa-person-walking fa-fw text-blue-500"></i>
+                            <span id="details-walking-text" class="text-slate-700">טוען...</span>
+                        </div>
                     </div>
                 </div>
                 <div class="p-4 bg-slate-100 border-t flex flex-wrap justify-center gap-3">
                     <a href="${navLink}" target="_blank" class="flex-1 text-center bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-diamond-turn-right mr-2"></i>נווט</a>
                     ${item.link ? `<a href="${item.link}" target="_blank" class="flex-1 text-center bg-green-500 text-white font-bold py-3 px-5 rounded-lg hover:bg-green-600 transition"><i class="fa-solid fa-link mr-2"></i>אתר</a>` : ''}
                     <button data-id="${item.id}" class="edit-btn-modal flex-1 text-center bg-slate-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-slate-700 transition"><i class="fas fa-pencil mr-2"></i>ערוך</button>
-                </div>`;
+                </div>
+            `;
 
-            dom.detailsModal.classList.remove('hidden');
-            dom.detailsModal.classList.add('flex');
+            detailsModal.classList.remove('hidden');
+            detailsModal.classList.add('flex');
+            
             document.getElementById('details-modal-close').addEventListener('click', closeDetailsModal);
-            document.querySelector('.edit-btn-modal').addEventListener('click', (e) => { closeDetailsModal(); openModalHandler(e.currentTarget.dataset.id); });
+            document.querySelector('.edit-btn-modal').addEventListener('click', (e) => {
+                closeDetailsModal();
+                openModalHandler(e.currentTarget.dataset.id);
+            });
 
             if (item.coords) {
                 initDetailsMap(item.coords);
                 if (userLocation) {
                     const locationInfoDiv = document.getElementById('details-location-info');
                     locationInfoDiv.style.display = 'block';
-                    if (item.driving) document.getElementById('details-driving-text').textContent = `זמן נסיעה של כ-${item.driving.duration.text} (${item.driving.distance.text})`;
-                    if (item.walking) document.getElementById('details-walking-text').textContent = `זמן הליכה של כ-${item.walking.duration.text} (${item.walking.distance.text})`;
+                    document.getElementById('details-driving-text').textContent = (item.driving) ? `זמן נסיעה של כ-${item.driving.duration.text} (${item.driving.distance.text})` : 'לא זמין';
+                    document.getElementById('details-walking-text').textContent = (item.walking) ? `זמן הליכה של כ-${item.walking.duration.text} (${item.walking.distance.text})` : 'לא זמין';
                 }
             }
         }
 
         function closeDetailsModal() {
-            dom.detailsModal.classList.add('hidden');
-            dom.detailsModal.classList.remove('flex');
-            detailsMap = null; detailsMarker = null;
+            detailsModal.classList.add('hidden');
+            detailsModal.classList.remove('flex');
+            detailsMap = null;
+            detailsMarker = null;
         }
 
         function initDetailsMap(coords) {
             const mapDiv = document.getElementById('details-map');
-            if (mapDiv && !detailsMap) {
-                detailsMap = new google.maps.Map(mapDiv, { center: coords, zoom: 15, disableDefaultUI: true });
+            if (mapDiv && (!detailsMap || mapDiv.childElementCount === 0)) {
+                detailsMap = new google.maps.Map(mapDiv, {
+                    center: coords, zoom: 15, disableDefaultUI: true,
+                });
                 detailsMarker = new google.maps.Marker({ map: detailsMap, position: coords });
             }
         }
 
         // --- Event Listeners ---
-        dom.nextBtn.addEventListener('click', () => { if (currentModalStep < totalModalSteps) { currentModalStep++; updateModalView(); } });
-        dom.backBtn.addEventListener('click', () => { if (currentModalStep > 1) { currentModalStep--; updateModalView(); } });
-        dom.closeModalBtn.addEventListener('click', closeModalHandler);
-        dom.detailsModal.addEventListener('click', (e) => { if (e.target.id === 'details-modal') closeDetailsModal(); });
-
-        dom.form.addEventListener('click', e => {
-            if (e.target.id === 'confirm-place-btn') handleConfirmPlace();
-            if (e.target.id === 'search-again-btn') handleSearchAgain();
-            if (e.target.closest('.delete-category-btn')) {
-                const btn = e.target.closest('.delete-category-btn');
-                const id = btn.dataset.id;
-                if (confirm('האם אתה בטוח שברצונך למחוק קטגוריה זו?')) {
-                    deleteDoc(doc(db, 'customCategories', id)).catch(err => console.error("Error deleting category", err));
-                }
-            }
+        nextBtn.addEventListener('click', () => { 
+            if (currentModalStep < totalModalSteps) { 
+                currentModalStep++; 
+                updateModalView(); 
+            } 
         });
-        
-        dom.form.addEventListener('change', e => {
-            if (e.target.name === 'item-placeType' || e.target.name === 'item-foodType') {
-                const category = e.target.name.split('-')[1];
-                const otherInput = document.getElementById(`item-${category}-other`);
-                if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
-                if (e.target.name === 'item-placeType') {
-                    // Force regeneration of subsequent steps
-                    document.querySelectorAll('.modal-step').forEach((el, index) => {
-                        const stepNum = parseInt(el.id.split('-')[1]);
-                        if(stepNum > 3) el.innerHTML = '';
-                    });
-                    updateModalView();
-                }
-            }
+        backBtn.addEventListener('click', () => { 
+            if (currentModalStep > 1) { 
+                currentModalStep--; 
+                updateModalView(); 
+            } 
         });
+        closeModalBtn.addEventListener('click', closeModalHandler);
+        detailsModal.addEventListener('click', (e) => { if (e.target.id === 'details-modal') closeDetailsModal(); });
 
-        dom.form.addEventListener('keydown', e => {
+        form.addEventListener('keydown', e => {
             if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && !e.target.closest('.pac-container')) {
                 e.preventDefault();
-                if (!dom.nextBtn.classList.contains('hidden')) dom.nextBtn.click();
-                else if (!dom.finishBtn.classList.contains('hidden')) dom.finishBtn.click();
+                if (!nextBtn.classList.contains('hidden')) nextBtn.click();
+                else if (!finishBtn.classList.contains('hidden')) finishBtn.click();
             }
         });
         
-        dom.form.addEventListener('submit', async (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (currentModalStep !== totalModalSteps) return;
 
             const getVal = id => document.getElementById(id) ? document.getElementById(id).value : null;
-            const getRadioVal = name => dom.form.querySelector(`input[name="${name}"]:checked`)?.value;
             
             const name = getVal('item-name');
-            if (!name || name.trim() === '') { showModalError('שם המקום הוא שדה חובה.'); return; }
+            if (!name || name.trim() === '') {
+                showModalError('שם המקום הוא שדה חובה.');
+                return;
+            }
 
-            const saveNewCategory = async (category) => {
-                let finalType = getRadioVal(`item-${category}`);
-                if (finalType === 'אחר') {
-                    const otherValue = getVal(`item-${category}-other`)?.trim();
-                    if (otherValue) {
-                        finalType = otherValue;
-                        const existing = customCategories[category].find(c => c.name.toLowerCase() === otherValue.toLowerCase());
-                        if (!existing) {
-                            await addDoc(customCategoriesCollection, { name: finalType, type: category, createdBy: currentUser.uid });
-                        }
-                    } else { finalType = 'כללי'; }
+            let finalType = getVal('item-type');
+            if (finalType === 'אחר') {
+                finalType = getVal('item-type-other').trim() || 'כללי';
+                if (finalType !== 'כללי' && !siteData.placeTypes.includes(finalType)) {
+                    await updateDoc(settingsDocRef, { placeTypes: arrayUnion(finalType) });
+                    siteData.customPlaceTypes.push(finalType);
                 }
-                return finalType;
-            };
+            }
 
-            const finalPlaceType = await saveNewCategory('placeType');
-            let finalFoodType = null;
-            if(isRestaurant) finalFoodType = await saveNewCategory('foodType');
+            let finalFoodType = isRestaurant ? getVal('item-food-type') : null;
+            if (isRestaurant && finalFoodType === 'אחר') {
+                finalFoodType = getVal('item-food-type-other').trim() || null;
+                if (finalFoodType && !siteData.foodTypes[finalFoodType]) {
+                    await updateDoc(settingsDocRef, { foodTypes: arrayUnion(finalFoodType) });
+                    siteData.customFoodTypes[finalFoodType] = '🍴';
+                }
+            }
 
             const data = {
                 name: name,
                 destination: getVal('item-destination'),
-                type: finalPlaceType,
+                type: finalType,
                 shortDescription: getVal('item-short-description'),
                 description: getVal('item-description'),
                 isKosher: isRestaurant ? getVal('item-kosher') : null,
@@ -879,70 +1005,80 @@
                 link: getVal('item-link'),
                 reservation: getVal('item-reservation'),
                 author: currentUser.uid,
-                coords: googlePlaceDetails?.coords || (editingItemId ? allItems.find(i=>i.id===editingItemId)?.coords : null),
-                photos: googlePlaceDetails?.photos || (editingItemId ? allItems.find(i=>i.id===editingItemId)?.photos : []),
-                googlePlaceId: googlePlaceDetails?.placeId || (editingItemId ? allItems.find(i=>i.id===editingItemId)?.googlePlaceId : null),
-                rating: googlePlaceDetails?.rating || (editingItemId ? allItems.find(i=>i.id===editingItemId)?.rating : null),
-                user_ratings_total: googlePlaceDetails?.user_ratings_total || (editingItemId ? allItems.find(i=>i.id===editingItemId)?.user_ratings_total : null),
+                coords: googlePlaceDetails?.coords || null,
+                photos: googlePlaceDetails?.photos || [],
+                googlePlaceId: googlePlaceDetails?.placeId || null,
+                rating: googlePlaceDetails?.rating || null,
+                userRatingsTotal: googlePlaceDetails?.userRatingsTotal || null,
             };
 
             try {
                 if (editingItemId) {
                     const itemRef = doc(db, 'attractions', editingItemId);
-                    if (!data.coords && data.location) {
-                        const result = await geocoder.geocode({ address: data.location });
-                        if (result.results[0]) data.coords = { lat: result.results[0].geometry.location.lat(), lng: result.results[0].geometry.location.lng() };
-                    }
                     await updateDoc(itemRef, data);
                 } else {
                     data.createdAt = serverTimestamp();
-                    if (!data.coords && data.location) {
-                       const result = await geocoder.geocode({ address: data.location });
-                        if (result.results[0]) data.coords = { lat: result.results[0].geometry.location.lat(), lng: result.results[0].geometry.location.lng() };
-                    }
                     await addDoc(attractionsCollection, data); 
                 }
                 closeModalHandler(); 
-            } catch (err) { console.error("Error saving document:", err); showModalError("שגיאה בשמירת הפריט."); }
+            } 
+            catch (err) { 
+                console.error("Error saving document:", err);
+                showModalError("שגיאה בשמירת הפריט."); 
+            }
         });
 
-        dom.itemsContainer.addEventListener('click', (e) => {
+        itemsContainer.addEventListener('click', (e) => {
             const card = e.target.closest('.item-card');
             if (!card) return;
+
             const actionBtn = e.target.closest('.action-btn');
+
             if (actionBtn) {
                 e.stopPropagation();
                 const id = card.dataset.id;
                 const item = allItems.find(i => i.id === id);
+                
                 if (actionBtn.matches('.delete-btn')) {
                     const modalTitle = document.getElementById('delete-modal-title');
                     const confirmBtn = document.getElementById('delete-modal-confirm');
                     modalTitle.textContent = `האם למחוק את "${item.name}"?`;
+                    
                     const confirmHandler = async () => {
                         try { await deleteDoc(doc(db, 'attractions', id)); } 
                         catch (error) { console.error("Failed to delete item:", error); } 
                         finally { closeDeleteModal(); }
                     };
+
                     const closeDeleteModal = () => {
-                        dom.deleteModal.classList.add('hidden');
-                        dom.deleteModal.classList.remove('flex');
+                        deleteModal.classList.add('hidden');
+                        deleteModal.classList.remove('flex');
                         confirmBtn.removeEventListener('click', confirmHandler);
                     };
+                    
                     confirmBtn.addEventListener('click', confirmHandler, { once: true });
                     document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
-                    dom.deleteModal.classList.remove('hidden');
-                    dom.deleteModal.classList.add('flex');
-                } else if (actionBtn.matches('.edit-btn')) { openModalHandler(id); }
-            } else { openDetailsModal(card.dataset.id); }
+
+                    deleteModal.classList.remove('hidden');
+                    deleteModal.classList.add('flex');
+                } else if (actionBtn.matches('.edit-btn')) {
+                    openModalHandler(id);
+                }
+            } else {
+                openDetailsModal(card.dataset.id);
+            }
         });
         
-        dom.itemsContainer.addEventListener('change', async e => {
+        itemsContainer.addEventListener('change', async e => {
             const dest = e.target.dataset.destination;
             if (!dest) return;
+            
             const destSection = e.target.closest('details');
             const loader = destSection.querySelector('.section-loader');
+
             if (e.target.matches('.local-filter-kosher')) activeFilters[dest].kosher = e.target.checked;
             if (e.target.matches('.local-filter-food-type')) activeFilters[dest].foodType = e.target.value;
+            
             if (e.target.matches('.sort-distance-toggle')) {
                 activeFilters[dest].sortByDistance = e.target.checked;
                 if(e.target.checked && !userLocation) {
@@ -954,11 +1090,14 @@
                 }
             }
             if (loader) loader.classList.remove('hidden');
-            setTimeout(() => { renderAllItems(); if (loader) loader.classList.add('hidden'); }, 50);
+            setTimeout(() => {
+                renderAllItems();
+                if (loader) loader.classList.add('hidden');
+            }, 50);
         });
 
         // --- Auth & Initial Load ---
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 const authContainer = document.getElementById('auth-container');
@@ -966,18 +1105,25 @@
                 authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
                 document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
                 
+                await loadCustomSettings();
+
                 const checkMapsReady = setInterval(() => {
                     if (window.google && window.google.maps && window.google.maps.places) {
                         clearInterval(checkMapsReady);
                         initApp();
                     }
                 }, 100);
-            } else { window.location.replace('login.html'); }
+
+            } else {
+                window.location.replace('login.html');
+            }
         });
         
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-              navigator.serviceWorker.register('/service-worker.js').then(() => console.log('SW registered')).catch(err => console.log('SW failed:', err));
+              navigator.serviceWorker.register('/service-worker.js')
+                .then(() => console.log('SW registered'))
+                .catch(err => console.log('SW failed:', err));
             });
         }
     </script>
