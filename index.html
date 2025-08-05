@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -123,14 +124,6 @@
                             <a href="summary.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
                                 <i class="fas fa-plane-departure text-3xl mb-2"></i><span class="font-bold">סיכום מלונות ומעברים</span>
                             </a>
-                             <!-- Gemini Button - START -->
-                             <div class="sm:col-span-3 mt-4">
-                                <button id="gemini-nearby-btn" class="main-nav-button bg-gradient-to-r from-purple-500 to-indigo-600 w-full flex items-center justify-center gap-3 p-4 rounded-xl text-white text-center shadow-lg">
-                                    <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i>
-                                    <span class="font-bold text-base">מה יש לעשות בסביבה שלי? (שאל את Gemini)</span>
-                                </button>
-                            </div>
-                            <!-- Gemini Button - END -->
                         </div>
                     </section>
 
@@ -258,7 +251,6 @@
         const cashbackModalClose = document.getElementById('cashback-modal-close');
         const cashbackModalSave = document.getElementById('cashback-modal-save');
         const cashbackAmountInput = document.getElementById('cashback-amount');
-        const geminiNearbyBtn = document.getElementById('gemini-nearby-btn'); // Gemini Button
 
         // --- Functions ---
         function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
@@ -311,73 +303,18 @@
         }
         
         /**
-         * REVISED function to handle the Gemini recommendations button click.
+         * Parses a date string (e.g., "25/12/2025" or "25/12/2025 - 26/12/2025")
+         * and returns a JavaScript Date object for the start date.
+         * @param {string} dateString The date string to parse.
+         * @returns {Date|null} A Date object or null if the format is invalid.
          */
-        function handleGeminiNearbyClick() {
-            const button = geminiNearbyBtn;
-            const originalContent = button.innerHTML;
-
-            if (!navigator.geolocation) {
-                alert("שירותי מיקום אינם נתמכים בדפדפן זה.");
-                return;
-            }
-
-            button.disabled = true;
-            button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span class="font-bold">ממתין לאישור מיקום...</span>`;
-
-            // 1. Open a new window immediately. It will be blank for a moment.
-            const geminiWindow = window.open('', '_blank');
-            if (!geminiWindow) {
-                alert("נראה שהדפדפן שלך חסם חלון קופץ. אנא אפשר חלונות קופצים עבור אתר זה ונסה שוב.");
-                button.disabled = false;
-                button.innerHTML = originalContent;
-                return;
-            }
-            geminiWindow.document.write('טוען המלצות מ-Gemini...');
-
-            // 2. Request the location
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    // 3. On success, build the URL and redirect the new window
-                    const { latitude, longitude } = position.coords;
-                    
-                    const prompt = `You are a friendly and expert travel guide.
-My current and exact location is: latitude ${latitude}, longitude ${longitude}.
-
-Please provide a detailed list of the most recommended and worthwhile attractions within a 3-kilometer radius of my location.
-
-For each attraction, please include the following details in Hebrew:
-1.  The name of the attraction.
-2.  The approximate distance from my current location (e.g., "about 1.2 km away").
-3.  A detailed description of what it is and what there is to do there.
-4.  The opening hours, if available.`;
-
-                    const encodedPrompt = encodeURIComponent(prompt);
-                    const geminiUrl = `https://gemini.google.com/prompt/${encodedPrompt}`;
-                    
-                    geminiWindow.location.href = geminiUrl;
-                    
-                    button.disabled = false;
-                    button.innerHTML = originalContent;
-                },
-                (error) => {
-                    // 4. On error, close the new window and show an error
-                    console.error("Geolocation error:", error);
-                    alert("לא ניתן היה לקבל את המיקום. אנא ודא שאישרת את הבקשה בדפדפן ונסה שוב.");
-                    
-                    geminiWindow.close();
-
-                    button.disabled = false;
-                    button.innerHTML = originalContent;
-                }
-            );
-        }
-
         function parseStartDateString(dateString) {
             if (!dateString) return null;
+            // Takes the first date in a range or the single date
             const datePart = dateString.split(' - ')[0]; 
             const [day, month, year] = datePart.split('/').map(Number);
-            if (!day || !month || !year) return null;
+            if (!day || !month || !year) return null; // Handle invalid format
+            // new Date(year, month-1, day)
             return new Date(year, month - 1, day);
         }
 
@@ -541,7 +478,7 @@ For each attraction, please include the following details in Hebrew:
             const mapContainer = document.getElementById('trip-map-container');
             if (!mapContainer || mapContainer._leaflet_id) return;
             const tripMap = L.map('trip-map-container').setView([38, -95], 3.5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CARTO', maxZoom: 20 }).addTo(tripMap);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 20 }).addTo(tripMap);
             const pathCoords = Object.values(siteData.locations).map(loc => loc.coords);
             Object.values(siteData.locations).forEach(loc => { L.marker(loc.coords, { icon: L.divIcon({ className: 'leaflet-div-icon', html: '📍' }) }).addTo(tripMap).bindTooltip(loc.name, {permanent: true, direction: 'top', offset: [0, -10]}).openTooltip(); });
             L.polyline(pathCoords, { color: '#38bdf8', weight: 3, opacity: 0.7, dashArray: '5, 10' }).addTo(tripMap);
@@ -555,7 +492,6 @@ For each attraction, please include the following details in Hebrew:
         editCashbackBtn.addEventListener('click', openCashbackModal);
         cashbackModalClose.addEventListener('click', closeCashbackModal);
         cashbackModalSave.addEventListener('click', saveCashback);
-        geminiNearbyBtn.addEventListener('click', handleGeminiNearbyClick); // Gemini button listener
         
         document.querySelector('#hotel-summary-section').addEventListener('click', function(e) {
             const navBtn = e.target.closest('.nav-btn');
@@ -583,18 +519,22 @@ For each attraction, please include the following details in Hebrew:
         onAuthStateChanged(auth, user => {
             const authContainer = document.getElementById('auth-container');
             if (user) {
-                const displayName = user.displayName || 'משתמש';
+                const displayName = user.displayName || user.email.split('@')[0];
                 authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span>`;
                 
                 onSnapshot(query(logisticsCollection), (snapshot) => {
                     allLogisticsItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    const hotels = allLogisticsItems.filter(item => item.type === 'hotel').sort((a,b) => parseStartDateString(a.dates) - parseStartDateString(b.dates));
+                    const hotels = allLogisticsItems.filter(item => item.type === 'hotel');
                     let flights = allLogisticsItems.filter(item => item.type === 'flight');
                     
+                    // Sort flights by their start date
                     flights.sort((a, b) => {
                         const dateA = parseStartDateString(a.dates);
                         const dateB = parseStartDateString(b.dates);
-                        if (dateA && dateB) { return dateA - dateB; }
+                        if (dateA && dateB) {
+                            return dateA - dateB;
+                        }
+                        // Keep original order if dates are invalid or missing
                         return 0; 
                     });
                     
@@ -612,9 +552,9 @@ For each attraction, please include the following details in Hebrew:
                     if (doc.exists()) {
                         topCashbackAmountILS = doc.data().topCashbackAmount || -3068;
                     } else {
-                        topCashbackAmountILS = -3068;
+                        topCashbackAmountILS = -3068; // Default if not set
                     }
-                    buildCostTables();
+                    buildCostTables(); // Rerender costs when cashback amount changes
                 });
 
             } else {
