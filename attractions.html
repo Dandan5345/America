@@ -3,1041 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מסע חלומות 🗽 אטרקציות ומסעדות</title>
-    <link rel="manifest" href="manifest.json">
+    <title>איתור מקומות מתקדם</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Assistant', sans-serif; }
-        #sidebar { transition: transform 0.3s ease-in-out; }
-        .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
-        .submenu.open { max-height: 1200px; }
-        .form-input, .form-select, .form-textarea { transition: all 0.2s ease-in-out; border-radius: 0.5rem; border: 1px solid #cbd5e1; }
-        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #38bdf8; box-shadow: 0 0 0 2px #38bdf840; outline: none; }
-        .modal-step { display: none; }
-        .modal-step.active { display: block; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        #map-preview, #details-map { height: 200px; border-radius: 0.5rem; background-color: #e2e8f0; }
-        .leaflet-container { z-index: 10; }
-        details > summary { list-style: none; cursor: pointer; }
-        details > summary::-webkit-details-marker { display: none; }
-        .chevron-icon { transition: transform 0.3s ease-out; }
-        details[open] > summary .chevron-icon { transform: rotate(180deg); }
-        .step-indicator { transition: all 0.4s ease-in-out; }
-        .item-card { cursor: pointer; }
-        .leaflet-control-container { z-index: 80 !important; }
-        
-        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #2563eb; }
-        input:checked + .slider:before { transform: translateX(22px); }
-
-        /* NEW: Initial Loader Styles */
-        #initial-loader {
+        body {
+            font-family: 'Heebo', sans-serif;
+            background-color: #f7fafc;
+        }
+        /* Style for the autocomplete dropdown */
+        .pac-container {
+            background-color: #FFF;
+            z-index: 1000;
             position: fixed;
-            inset: 0;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 0.5s ease-out;
+            display: inline-block;
+            float: left;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            font-family: 'Heebo', sans-serif;
         }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        .pac-item {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border-top: 1px solid #e6e6e6;
         }
-        .plane-spinner {
-            animation: spin 2s linear infinite;
+        .pac-item:first-child {
+            border-top: none;
         }
-        
-        /* NEW: Section Loader Styles */
-        .section-loader {
+        .pac-item:hover {
+            background-color: #f2f2f2;
+        }
+        .pac-item-query {
+            font-weight: 500;
+        }
+        .pac-icon {
+            display: none;
+        }
+        /* Star rating */
+        .stars-outer {
+            position: relative;
+            display: inline-block;
+        }
+        .stars-inner {
             position: absolute;
-            inset: 0;
-            background-color: rgba(241, 245, 249, 0.8); /* bg-slate-100/80 */
-            z-index: 20;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 1rem; /* rounded-xl */
+            top: 0;
+            left: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            width: 0;
+        }
+        .stars-outer::before {
+            content: "★★★★★";
+            font-weight: 900;
+            color: #ccc;
+        }
+        .stars-inner::before {
+            content: "★★★★★";
+            font-weight: 900;
+            color: #f8ce0b;
         }
     </style>
 </head>
-<body class="bg-slate-100">
-    
-    <!-- NEW: Initial Loader -->
-    <div id="initial-loader">
-        <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.imgur.com/xC0eTsS.jpeg');"></div>
-        <div class="fixed inset-0 z-0 bg-black/50"></div>
-        <div class="text-white text-center relative z-10">
-            <i class="fas fa-plane-departure fa-4x plane-spinner mb-4"></i>
-            <p class="text-2xl font-bold">מתחברים למסע...</p>
-        </div>
-    </div>
+<body>
 
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-3xl">
+        <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 text-center mb-2">חיפוש מקומות חכם</h1>
+            <p class="text-gray-500 text-center mb-6">התחל להקליד שם של עסק, מסעדה או מקום בישראל</p>
 
-    <!-- Fixed Background -->
-    <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.imgur.com/xC0eTsS.jpeg');"></div>
-    <div class="fixed inset-0 z-0 bg-black/50"></div>
-
-    <!-- Sidebar and Overlay -->
-    <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-[60] transform translate-x-full overflow-y-auto">
-        <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
-            <h2 class="text-2xl font-bold text-slate-800">תפריט המסע 🧭</h2>
-            <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
-        </div>
-        <nav id="main-menu" class="p-4 space-y-2"></nav>
-    </aside>
-    <div id="overlay" class="fixed inset-0 bg-black/60 z-50 hidden"></div>
-
-    <!-- Scrollable Content Wrapper -->
-    <div id="main-content" class="relative z-10 opacity-0 transition-opacity duration-500">
-        <!-- Header -->
-        <header class="bg-white/70 backdrop-blur-md sticky top-0 z-30 shadow-sm">
-            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center gap-4">
-                        <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" title="חזרה לדף הבית"><i class="fas fa-home fa-lg"></i></a>
-                        <h1 class="text-xl font-bold text-slate-800">אטרקציות ומסעדות</h1>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div id="auth-container" class="flex items-center"></div>
-                        <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none"><i class="fas fa-bars fa-lg"></i></button>
-                    </div>
-                </div>
+            <!-- Search Form -->
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="לדוגמה: מוזיאון ישראל, ויטרינה תל אביב..." class="w-full px-4 py-3 text-lg bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
             </div>
-        </header>
 
-        <main class="p-4 sm:p-6 lg:p-8">
-            <div class="max-w-7xl mx-auto">
-                <div class="text-center mb-12">
-                    <h2 class="text-5xl font-extrabold text-white drop-shadow-lg">תחנות במסע ✨</h2>
-                    <p class="mt-4 text-lg text-slate-200 max-w-2xl mx-auto">הבנק המרכזי שלנו להמלצות, תגליות ומקומות שאסור לפספס.</p>
-                    <div class="mt-8 flex justify-center items-center gap-4 flex-wrap">
-                        <button id="open-modal-btn" class="bg-gradient-to-r from-sky-500 to-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-105">
-                            <i class="fas fa-plus mr-2"></i>הוספת מקום
-                        </button>
-                        <button id="get-location-btn" class="bg-white/20 backdrop-blur-sm text-white font-semibold py-3 px-6 rounded-full shadow-md hover:bg-white/40 transition-all transform hover:scale-105">
-                            <i class="fas fa-location-arrow mr-2"></i> הפעל שירותי מיקום
-                        </button>
+            <!-- Results Area -->
+            <div id="resultsContainer" class="hidden mt-8">
+                <div id="place-details">
+                    <!-- Map will be injected here -->
+                    <div id="map" class="w-full h-64 sm:h-80 bg-gray-200 rounded-xl mb-6 border"></div>
+                    
+                    <!-- Place Name and Rating -->
+                    <div class="flex justify-between items-start mb-2">
+                         <h2 id="place-name" class="text-3xl font-bold text-gray-900"></h2>
+                         <div id="place-rating" class="flex items-center">
+                            <span class="text-lg font-bold text-gray-700 mr-2"></span>
+                            <div class="stars-outer">
+                                <div class="stars-inner"></div>
+                            </div>
+                         </div>
+                    </div>
+
+                    <!-- Address -->
+                    <p id="place-address" class="text-gray-600 text-lg mb-6 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                        <span></span>
+                    </p>
+
+                    <!-- Photos -->
+                    <div id="place-photos" class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6"></div>
+
+                    <!-- Details Grid -->
+                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base border-t border-gray-200 pt-4">
+                        <div id="place-phone" class="flex items-center gap-3 p-2"></div>
+                        <div id="place-website" class="flex items-center gap-3 p-2"></div>
+                        <div id="place-hours" class="sm:col-span-2 flex items-start gap-3 p-2"></div>
                     </div>
                 </div>
-
-                <!-- Display Area -->
-                <div id="items-container" class="space-y-8">
-                    <p id="loading-message" class="text-center text-white bg-black/20 p-4 rounded-lg">טוען המלצות...</p>
-                </div>
-            </div>
-        </main>
-    </div>
-    
-    <!-- Add/Edit Item Modal -->
-    <div id="item-modal" class="fixed inset-0 bg-black/60 z-40 hidden items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col">
-            <div class="p-5 border-b flex justify-between items-center bg-slate-50 rounded-t-2xl">
-                <h3 id="modal-title" class="text-2xl font-bold text-slate-800">הוספת מקום חדש</h3>
-                <button id="modal-close-btn" class="text-slate-400 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
-            </div>
-            <div class="w-full bg-slate-200 h-2.5">
-                <div id="step-progress-bar" class="bg-blue-500 h-2.5 rounded-r-full transition-all duration-500" style="width: 0%;"></div>
-            </div>
-            <form id="item-form" class="flex-grow overflow-y-auto p-6 space-y-6">
-                 <div id="step-1" class="modal-step"></div><div id="step-2" class="modal-step"></div><div id="step-3" class="modal-step"></div><div id="step-4" class="modal-step"></div><div id="step-5" class="modal-step"></div><div id="step-6" class="modal-step"></div><div id="step-7" class="modal-step"></div><div id="step-8" class="modal-step"></div><div id="step-9" class="modal-step"></div><div id="step-10" class="modal-step"></div><div id="step-11" class="modal-step"></div>
-            </form>
-            <div class="p-4 bg-slate-100 border-t flex justify-between items-center rounded-b-2xl">
-                <button type="button" id="modal-back-btn" class="py-2 px-5 rounded-lg hover:bg-slate-200 transition hidden font-semibold">אחורה</button>
-                <div class="flex-grow text-center"><div id="modal-error-message" class="text-red-500 text-sm font-bold h-5"></div></div>
-                <div id="modal-steps-indicator" class="text-sm text-slate-500 font-semibold mx-4"></div>
-                <button type="button" id="modal-next-btn" class="py-2 px-5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">הבא</button>
-                <button type="submit" form="item-form" id="modal-finish-btn" class="py-2 px-5 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition hidden">הוסף לדף</button>
             </div>
         </div>
     </div>
 
-    <!-- Details Modal -->
-    <div id="details-modal" class="fixed inset-0 bg-black/60 z-[70] hidden items-center justify-center p-4">
-        <div id="details-modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative">
-            <!-- Content will be injected by JS -->
-        </div>
-    </div>
+    <script>
+        // --- Configuration ---
+        const API_KEY = 'AIzaSyAz7QZ2CBpCK_aOVbkqQLjfMRG5taaFs8c'; // המפתח שהנפקת
 
+        // --- Global Variables ---
+        let map;
+        let autocomplete;
+        let placesService;
 
-    <!-- Delete Confirmation Modal -->
-    <div id="delete-confirm-modal" class="fixed inset-0 bg-black/60 z-[80] hidden items-center justify-center">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full">
-            <div class="text-red-500 mb-4"><i class="fas fa-exclamation-triangle fa-3x"></i></div>
-            <h3 id="delete-modal-title" class="text-xl font-bold text-slate-800 mb-4">האם למחוק?</h3>
-            <p id="delete-modal-text" class="text-slate-600 mb-6">פעולה זו היא בלתי הפיכה.</p>
-            <div class="flex justify-center gap-4">
-                <button id="delete-modal-cancel" class="py-2 px-6 bg-slate-200 font-semibold rounded-lg hover:bg-slate-300">ביטול</button>
-                <button id="delete-modal-confirm" class="py-2 px-6 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600">מחק</button>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBuhPaw4P-rLeb1Xzou2COUE1O0hX3z44w",
-            authDomain: "america1tour.firebaseapp.com",
-            projectId: "america1tour",
-            storageBucket: "america1tour.firebasestorage.app",
-            messagingSenderId: "70515728009",
-            appId: "1:70515728009:web:aded0696b4f72c910b7058",
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const attractionsCollection = collection(db, 'attractions');
-
-        // --- App State ---
-        let currentUser = null;
-        let currentModalStep = 1;
-        let totalModalSteps = 1;
-        let isRestaurant = false;
-        let addEditMap = null;
-        let addEditMarker = null;
-        let detailsMap = null;
-        let detailsMarker = null;
-        let allItems = [];
-        let activeFilters = {}; 
-        let editingItemId = null;
-        let userLocation = null;
-        let locationCoordsCache = {};
-        let distancesCalculated = false;
-        let isInitialLoad = true;
-
-        const siteData = {
-            menu: [
-                { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
-                { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [ { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }, { id: 'day-01-01', label: '01/01' } ]},
-                { id: 'niagara', page: 'niagara.html', title: '❄️ קנדה', emoji: '🇨🇦', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
-                { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
-                { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
-                { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
-                { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
-                { id: 'arizona', page: 'arizona.html', title: '🏜️ אריזונה', emoji: '🏜️', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' } ]},
-                { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
-                { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
-            ],
-            destinations: ["ניו יורק", "מפלי הניאגרה וקנדה", "וושינגטון די סי", "אורלנדו", "מיאמי", "פונטה קאנה", "אריזונה", "לוס אנג'לס", "סן פרנסיסקו"],
-            placeTypes: ["מסעדה/אוכל", "סופר", "מוזיאון", "קניון/מרכז קניות", "אטרקציה", "חוף", "סיור"],
-            foodTypes: { "איטלקי": "🍝", "חלבי": "🧀", "בשרי": "🥩", "צמחוני": "🥗", "אסייתי": "🍜", "שווארמה": "🥙", "פיצה": "🍕", "המבורגר": "🍔", "בית קפה": "☕", "אחר": "🍴" },
-            destinationEmojis: { "ניו יורק": "🗽", "מפלי הניאגרה וקנדה": "🇨🇦", "וושינגטון די סי": "🏛️", "אורלנדו": "🎢", "מיאמי": "🌴", "פונטה קאנה": "🇩🇴", "אריזונה": "🏜️", "לוס אנג'לס": "🎬", "סן פרנסיסקו": "🌉" },
-            placeTypeEmojis: { "מסעדה/אוכל": "🍔", "סופר": "🛒", "מוזיאון": "🏛️", "קניון/מרכז קניות": "🛍️", "אטרקציה": "🎢", "חוף": "🏖️", "סיור": "🚶‍♂️" }
-        };
-
-        // --- DOM Elements ---
-        const initialLoader = document.getElementById('initial-loader');
-        const mainContent = document.getElementById('main-content');
-        const modal = document.getElementById('item-modal');
-        const form = document.getElementById('item-form');
-        const itemsContainer = document.getElementById('items-container');
-        const loadingMessage = document.getElementById('loading-message');
-        const openModalBtn = document.getElementById('open-modal-btn');
-        const closeModalBtn = document.getElementById('modal-close-btn');
-        const nextBtn = document.getElementById('modal-next-btn');
-        const backBtn = document.getElementById('modal-back-btn');
-        const finishBtn = document.getElementById('modal-finish-btn');
-        const stepsIndicator = document.getElementById('modal-steps-indicator');
-        const progressBar = document.getElementById('step-progress-bar');
-        const modalError = document.getElementById('modal-error-message');
-        const deleteModal = document.getElementById('delete-confirm-modal');
-        const detailsModal = document.getElementById('details-modal');
-        const getLocationBtn = document.getElementById('get-location-btn');
-
-        // --- Location & Distance Calculation Helpers ---
-        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radius of the earth in km
-            const dLat = deg2rad(lat2 - lat1);
-            const dLon = deg2rad(lon2 - lon1);
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c; // Distance in km
-        }
-
-        function deg2rad(deg) { return deg * (Math.PI / 180); }
-
-        function estimateTravelTime(distanceKm) {
-            const avgSpeedKmph = 40;
-            const timeHours = distanceKm / avgSpeedKmph;
-            if (distanceKm < 1) return `~${Math.round(timeHours * 60)} דקות`;
-            const hours = Math.floor(timeHours);
-            const minutes = Math.round((timeHours - hours) * 60);
-            let timeString = '';
-            if (hours > 0) timeString += `${hours} שעות`;
-            if (minutes > 0) timeString += ` ${minutes} דקות`;
-            return `~${timeString.trim()}`;
-        }
-
-        async function getCoordsForAddress(address) {
-            if (locationCoordsCache[address]) return locationCoordsCache[address];
-            try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-                const data = await response.json();
-                if (data && data.length > 0) {
-                    const coords = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-                    locationCoordsCache[address] = coords;
-                    return coords;
-                }
-                return null;
-            } catch (err) {
-                console.error("Geocoding error:", err);
-                return null;
-            }
-        }
-        
-        async function calculateAllDistances() {
-            if (!userLocation) return;
-            const promises = allItems.map(async (item) => {
-                if (item.location) {
-                    const destCoords = await getCoordsForAddress(item.location);
-                    if (destCoords) {
-                        item.distanceFromUser = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lon, destCoords.lat, destCoords.lon);
-                    }
-                }
+        // --- Initialization Function ---
+        function initMap() {
+            // Create a map instance (initially centered on Israel)
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 31.7683, lng: 35.2137 },
+                zoom: 8,
+                disableDefaultUI: true,
+                gestureHandling: "cooperative",
             });
-            await Promise.all(promises);
-            distancesCalculated = true;
+
+            // Create the Places service
+            placesService = new google.maps.places.PlacesService(map);
+
+            // Create the Autocomplete object
+            const input = document.getElementById("searchInput");
+            const options = {
+                componentRestrictions: { country: "il" }, // Restrict to Israel
+                fields: ["place_id", "geometry", "name"], // Request only necessary fields for autocomplete
+                types: ["establishment"]
+            };
+            autocomplete = new google.maps.places.Autocomplete(input, options);
+
+            // Add a listener for when the user selects a place from the dropdown
+            autocomplete.addListener("place_changed", onPlaceChanged);
         }
 
-        async function handleGetLocation() {
-            return new Promise((resolve, reject) => {
-                if (!navigator.geolocation) {
-                    alert("דפדפן זה אינו תומך בשירותי מיקום.");
-                    return reject();
-                }
-                getLocationBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> מאתר מיקום...`;
-                getLocationBtn.disabled = true;
+        // --- Event Handler for Place Selection ---
+        function onPlaceChanged() {
+            const place = autocomplete.getPlace();
 
-                navigator.geolocation.getCurrentPosition(
-                    async (position) => {
-                        userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
-                        await calculateAllDistances();
-                        getLocationBtn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> מיקום עודכן`;
-                        getLocationBtn.disabled = false;
-                        resolve();
-                    },
-                    (error) => {
-                        console.error("Geolocation error:", error);
-                        getLocationBtn.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> הפעלת מיקום נכשלה`;
-                        getLocationBtn.disabled = false;
-                        alert("לא ניתן היה לקבל את מיקומך. אנא ודא שאישרת את הבקשה בדפדפן.");
-                        reject();
-                    }
-                );
-            });
-        }
-
-        async function calculateAndDisplayDistance(cardElement, item) {
-            const placeholder = cardElement.querySelector('.location-info-placeholder');
-            if (!placeholder || !userLocation || !distancesCalculated) return;
-
-            placeholder.style.display = 'flex';
-            const distanceSpan = placeholder.querySelector('.distance-text');
-            
-            if (typeof item.distanceFromUser !== 'undefined') {
-                 distanceSpan.innerHTML = `
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-route fa-fw text-blue-500"></i> ${item.distanceFromUser.toFixed(1)} ק"מ</span>
-                    <span class="text-slate-400 mx-1">|</span>
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-car fa-fw text-green-500"></i> ${estimateTravelTime(item.distanceFromUser)}</span>
-                `;
-            } else {
-                 placeholder.style.display = 'none';
+            if (!place.place_id) {
+                console.error("Autocomplete's returned place contains no geometry or place_id");
+                return;
             }
+
+            // Request details for the selected place
+            getPlaceDetails(place.place_id);
         }
 
-
-        // --- App Initialization ---
-        function initApp() {
-            const sidebar = document.getElementById('sidebar');
-            const hamburgerBtn = document.getElementById('hamburger-btn');
-            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-            const overlay = document.getElementById('overlay');
-            const mainMenu = document.getElementById('main-menu');
-
-            const toggleSidebar = () => {
-                sidebar.classList.toggle('translate-x-full');
-                overlay.classList.toggle('hidden');
+        // --- Function to Fetch Place Details ---
+        function getPlaceDetails(placeId) {
+            const request = {
+                placeId: placeId,
+                // Specify which data fields to return
+                fields: [
+                    "name", "formatted_address", "geometry", "rating",
+                    "photos", "opening_hours", "formatted_phone_number", "website"
+                ],
             };
 
-            const buildMenu = () => {
-                mainMenu.innerHTML = '';
-                siteData.menu.forEach(dest => {
-                    const div = document.createElement('div');
-                    const btn = document.createElement('button');
-                    btn.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center';
-                    btn.innerHTML = `<span>${dest.title}</span> <i class="fas fa-chevron-down chevron-icon"></i>`;
-                    const submenu = document.createElement('div');
-                    submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
-                    dest.days.forEach(day => {
-                        const link = document.createElement('a');
-                        link.href = `${dest.page}#${day.id}`;
-                        link.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md';
-                        link.textContent = `${dest.title.split(' ')[1]} ${day.label} ${dest.emoji}`;
-                        submenu.appendChild(link);
-                    });
-                    btn.onclick = () => { submenu.classList.toggle('open'); btn.querySelector('i').classList.toggle('rotate-180'); };
-                    div.append(btn, submenu);
-                    mainMenu.appendChild(div);
+            placesService.getDetails(request, (place, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+                    displayPlaceDetails(place);
+                    document.getElementById('resultsContainer').classList.remove('hidden');
+                } else {
+                    console.error("PlacesService failed due to: " + status);
+                }
+            });
+        }
+
+        // --- Function to Display Place Details on the Page ---
+        function displayPlaceDetails(place) {
+            // Update map and marker
+            map.setCenter(place.geometry.location);
+            map.setZoom(17);
+            new google.maps.Marker({
+                map: map,
+                position: place.geometry.location,
+            });
+
+            // Populate text fields
+            document.getElementById("place-name").textContent = place.name;
+            document.getElementById("place-address").querySelector('span').textContent = place.formatted_address || 'כתובת לא זמינה';
+
+            // Handle Rating
+            const ratingEl = document.getElementById("place-rating");
+            if (place.rating) {
+                ratingEl.querySelector('span').textContent = place.rating.toFixed(1);
+                const starsInner = ratingEl.querySelector('.stars-inner');
+                const starPercentage = (place.rating / 5) * 100;
+                starsInner.style.width = `${starPercentage}%`;
+                ratingEl.classList.remove('hidden');
+            } else {
+                 ratingEl.classList.add('hidden');
+            }
+
+            // Handle Photos
+            const photosEl = document.getElementById("place-photos");
+            photosEl.innerHTML = ''; // Clear previous photos
+            if (place.photos && place.photos.length > 0) {
+                place.photos.slice(0, 3).forEach(photo => { // Show up to 3 photos
+                    const img = document.createElement('img');
+                    img.src = photo.getUrl({ maxWidth: 400, maxHeight: 400 });
+                    img.className = 'w-full h-32 object-cover rounded-lg';
+                    img.alt = `תמונה של ${place.name}`;
+                    photosEl.appendChild(img);
                 });
-            };
-
-            buildMenu();
-            hamburgerBtn.addEventListener('click', toggleSidebar);
-            closeSidebarBtn.addEventListener('click', toggleSidebar);
-            overlay.addEventListener('click', toggleSidebar);
-            openModalBtn.addEventListener('click', () => openModalHandler());
-            getLocationBtn.addEventListener('click', async () => {
-                await handleGetLocation();
-                renderAllItems();
-            });
-
-            const q = query(attractionsCollection);
-            onSnapshot(q, async (snapshot) => {
-                allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                allItems.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
-                if (userLocation) {
-                    await calculateAllDistances();
-                }
-                renderAllItems();
-                
-                if (isInitialLoad) {
-                    isInitialLoad = false;
-                    initialLoader.style.opacity = '0';
-                    mainContent.style.opacity = '1';
-                    setTimeout(() => { initialLoader.style.display = 'none'; }, 500);
-                }
-            }, (error) => { 
-                console.error("Firestore snapshot error:", error);
-                loadingMessage.textContent = "שגיאה בטעינת המידע."; 
-            });
-        }
-
-        // --- Add/Edit Modal & Form Logic ---
-        async function openModalHandler(itemId = null) {
-            editingItemId = itemId;
-            form.reset();
-            for(let i = 1; i <= 11; i++) {
-                const stepContainer = document.getElementById(`step-${i}`);
-                if(stepContainer) stepContainer.innerHTML = '';
             }
 
-            const modalTitle = document.getElementById('modal-title');
-            const finishButton = document.getElementById('modal-finish-btn');
-
-            if (editingItemId) {
-                modalTitle.textContent = 'עריכת מקום';
-                finishButton.textContent = 'שמור שינויים';
-                const item = allItems.find(i => i.id === editingItemId);
-                if (item) {
-                    isRestaurant = item.type === 'מסעדה/אוכל';
-                    totalModalSteps = isRestaurant ? 11 : 9;
-                    for(let i=1; i<= totalModalSteps; i++) {
-                        generateStepContent(i);
-                    }
-                    // Now populate the fields
-                    document.getElementById('item-name').value = item.name || '';
-                    document.getElementById('item-destination').value = item.destination || '';
-                    document.getElementById('item-type').value = item.type || '';
-                    document.getElementById('item-short-description').value = item.shortDescription || '';
-                    document.getElementById('item-description').value = item.description || '';
-
-                    if (isRestaurant) {
-                        document.getElementById('item-kosher').value = item.isKosher || 'לא';
-                        
-                        const foodTypeSelect = document.getElementById('item-food-type');
-                        const foodTypeOtherInput = document.getElementById('item-food-type-other');
-                        if (Object.keys(siteData.foodTypes).includes(item.foodType)) {
-                            foodTypeSelect.value = item.foodType;
-                        } else {
-                            foodTypeSelect.value = 'אחר';
-                            foodTypeOtherInput.value = item.foodType || '';
-                            foodTypeOtherInput.classList.remove('hidden');
-                        }
-
-                        document.getElementById('item-location-restaurant').value = item.location || '';
-                        document.getElementById('item-hours-restaurant').value = item.hours || '';
-                        document.getElementById('item-link-restaurant').value = item.link || '';
-                        document.getElementById('item-reservation-restaurant').value = item.reservation || 'לא';
-                    } else {
-                        document.getElementById('item-location-other').value = item.location || '';
-                        document.getElementById('item-hours-other').value = item.hours || '';
-                        document.getElementById('item-link-other').value = item.link || '';
-                        document.getElementById('item-reservation-other').value = item.reservation || 'לא';
-                    }
-                }
+            // Handle Phone Number
+            const phoneEl = document.getElementById('place-phone');
+            if (place.formatted_phone_number) {
+                 phoneEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg> <span>${place.formatted_phone_number}</span>`;
             } else {
-                modalTitle.textContent = 'הוספת מקום חדש';
-                finishButton.textContent = 'הוסף לדף';
+                phoneEl.innerHTML = '';
             }
-            
-            currentModalStep = 1;
-            updateModalView();
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
 
-        function closeModalHandler() {
-            editingItemId = null;
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            if (addEditMap) { addEditMap.remove(); addEditMap = null; addEditMarker = null; }
-            showModalError('');
-        }
-        
-        function updateModalView() {
-            const itemTypeEl = document.getElementById('item-type');
-            isRestaurant = itemTypeEl ? itemTypeEl.value === 'מסעדה/אוכל' : isRestaurant;
-            totalModalSteps = isRestaurant ? 11 : 9;
-
-            document.querySelectorAll('.modal-step').forEach(step => step.classList.remove('active'));
-            const currentStepEl = document.getElementById(`step-${currentModalStep}`);
-            if (currentStepEl) {
-                currentStepEl.classList.add('active');
-                if (!currentStepEl.innerHTML.trim()) {
-                    generateStepContent(currentModalStep);
-                }
-            }
-            
-            if (document.getElementById('map-preview')) initAddEditMap();
-
-            backBtn.classList.toggle('hidden', currentModalStep === 1);
-            nextBtn.classList.toggle('hidden', currentModalStep === totalModalSteps);
-            finishBtn.classList.toggle('hidden', currentModalStep !== totalModalSteps);
-            stepsIndicator.textContent = `שלב ${currentModalStep} מתוך ${totalModalSteps}`;
-            progressBar.style.width = `${(currentModalStep / totalModalSteps) * 100}%`;
-        }
-        
-        function generateStepContent(step) {
-            const stepContainer = document.getElementById(`step-${step}`);
-            if (!stepContainer) return;
-            let content = '';
-            const labelClass = "flex items-center gap-3 text-lg font-bold text-slate-700 mb-3";
-            const commonSteps = {
-                1: `<label class="${labelClass}"><i class="fa-solid fa-signature text-slate-400"></i>שם המקום</label><input type="text" id="item-name" required class="form-input w-full p-3" placeholder="לדוגמה: Top of the Rock">`,
-                2: `<label class="${labelClass}"><i class="fa-solid fa-map-pin text-slate-400"></i>לאיזה יעד?</label><select id="item-destination" required class="form-select w-full p-3">${siteData.destinations.map(o=>`<option value="${o}">${siteData.destinationEmojis[o] || '📍'} ${o}</option>`).join('')}</select>`,
-                3: `<label class="${labelClass}"><i class="fa-solid fa-shapes text-slate-400"></i>סוג המקום</label><select id="item-type" required class="form-select w-full p-3">${[...siteData.placeTypes].map(o=>`<option value="${o}">${siteData.placeTypeEmojis[o] || '📌'} ${o}</option>`).join('')}<option value="אחר">✨ אחר</option></select><input type="text" id="item-type-other" class="form-input w-full p-3 mt-3 hidden" placeholder="הגדר סוג חדש">`,
-            };
-
-            if (commonSteps[step]) {
-                content = commonSteps[step];
-            } else if (isRestaurant) {
-                switch(step) {
-                    case 4: content = `<label class="${labelClass}"><i class="fa-solid fa-star-of-david text-slate-400"></i>האם המסעדה כשרה?</label><select id="item-kosher" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option></select>`; break;
-                    case 5: content = `<label class="${labelClass}"><i class="fa-solid fa-utensils text-slate-400"></i>סוג אוכל</label><select id="item-food-type" class="form-select w-full p-3">${Object.entries(siteData.foodTypes).map(([name, emoji]) => `<option value="${name}">${emoji} ${name}</option>`).join('')}</select><input type="text" id="item-food-type-other" class="form-input w-full p-3 mt-3 hidden" placeholder="הגדר סוג אוכל">`; break;
-                    case 6: content = createLocationHtml('item-location-restaurant'); break;
-                    case 7: content = `<label class="${labelClass}"><i class="fa-regular fa-clock text-slate-400"></i>שעות וימי פתיחה (אופציונלי)</label><input type="text" id="item-hours-restaurant" class="form-input w-full p-3" placeholder="לדוגמה: א'-ה' 12:00-23:00">`; break;
-                    case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-link text-slate-400"></i>קישור לאתר/תפריט (אופציונלי)</label><input type="url" id="item-link-restaurant" class="form-input w-full p-3" placeholder="https://example.com">`; break;
-                    case 9: content = `<label class="${labelClass}"><i class="fa-solid fa-calendar-check text-slate-400"></i>צריך להזמין מקום?</label><select id="item-reservation-restaurant" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option><option value="מומלץ">מומלץ</option></select>`; break;
-                    case 10: content = `<label class="${labelClass}"><i class="fa-solid fa-quote-left text-slate-400"></i>פירוט קצר (אופציונלי)</label><textarea id="item-short-description" class="form-textarea w-full p-3" rows="2" placeholder="משפט או שניים שיופיעו בכרטיסייה הראשית..."></textarea>`; break;
-                    case 11: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור מלא (אופציונלי)</label><textarea id="item-description" class="form-textarea w-full p-3" rows="4" placeholder="פרטים נוספים, המלצות, טיפים..."></textarea>`; break;
-                }
+            // Handle Website
+            const websiteEl = document.getElementById('place-website');
+            if (place.website) {
+                websiteEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9V3m-9 9h18" /></svg> <a href="${place.website}" target="_blank" class="text-blue-600 hover:underline">${place.website.split('/')[2]}</a>`;
             } else {
-                switch(step) {
-                    case 4: content = createLocationHtml('item-location-other'); break;
-                    case 5: content = `<label class="${labelClass}"><i class="fa-regular fa-clock text-slate-400"></i>שעות וימי פתיחה (אופציונלי)</label><input type="text" id="item-hours-other" class="form-input w-full p-3" placeholder="לדוגמה: כל יום 09:00-18:00">`; break;
-                    case 6: content = `<label class="${labelClass}"><i class="fa-solid fa-link text-slate-400"></i>קישור לאתר (אופציונלי)</label><input type="url" id="item-link-other" class="form-input w-full p-3" placeholder="https://example.com">`; break;
-                    case 7: content = `<label class="${labelClass}"><i class="fa-solid fa-calendar-check text-slate-400"></i>צריך להזמין מקום/כרטיסים מראש?</label><select id="item-reservation-other" class="form-select w-full p-3"><option value="לא">לא</option><option value="כן">כן</option><option value="מומלץ">מומלץ</option></select>`; break;
-                    case 8: content = `<label class="${labelClass}"><i class="fa-solid fa-quote-left text-slate-400"></i>פירוט קצר (אופציונלי)</label><textarea id="item-short-description" class="form-textarea w-full p-3" rows="2" placeholder="משפט או שניים שיופיעו בכרטיסייה הראשית..."></textarea>`; break;
-                    case 9: content = `<label class="${labelClass}"><i class="fa-solid fa-pen-to-square text-slate-400"></i>תיאור מלא (אופציונלי)</label><textarea id="item-description" class="form-textarea w-full p-3" rows="4" placeholder="פרטים נוספים, המלצות, טיפים..."></textarea>`; break;
-                }
-            }
-            stepContainer.innerHTML = content;
-            if (content.includes('map-preview')) initAddEditMap();
-            
-            const typeSelect = document.getElementById('item-type');
-            if (typeSelect) typeSelect.addEventListener('change', handleTypeChange);
-            const foodTypeSelect = document.getElementById('item-food-type');
-            if(foodTypeSelect) foodTypeSelect.addEventListener('change', handleFoodTypeChange);
-        }
-        
-        function handleTypeChange(e) {
-            const otherInput = document.getElementById('item-type-other');
-            if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
-            for(let i = currentModalStep + 1; i <= 11; i++) {
-                const stepContainer = document.getElementById(`step-${i}`);
-                if(stepContainer) stepContainer.innerHTML = '';
-            }
-            updateModalView();
-        }
-
-        function handleFoodTypeChange(e) {
-            const otherInput = document.getElementById('item-food-type-other');
-            if (otherInput) otherInput.classList.toggle('hidden', e.target.value !== 'אחר');
-        }
-
-        function createLocationHtml(inputId) {
-            return `
-                <label for="${inputId}" class="flex items-center gap-3 text-lg font-bold text-slate-700 mb-3"><i class="fa-solid fa-location-dot text-slate-400"></i>מיקום/כתובת</label>
-                <div class="flex gap-2">
-                    <input type="text" id="${inputId}" class="form-input w-full p-3" placeholder="הכנס כתובת לחיפוש...">
-                    <button type="button" class="find-location-btn bg-slate-200 px-4 rounded-lg hover:bg-slate-300"><i class="fa-solid fa-magnifying-glass"></i></button>
-                </div>
-                <div id="map-preview" class="mt-3"></div>
-                <p class="text-xs text-slate-500 mt-1">ודא שהסימון על המפה נכון לפני שאתה ממשיך.</p>
-            `;
-        }
-
-        function initAddEditMap() {
-            setTimeout(() => {
-                const mapDiv = document.getElementById('map-preview');
-                if (mapDiv && !mapDiv._leaflet_id) {
-                    addEditMap = L.map(mapDiv).setView([40.7128, -74.0060], 10);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(addEditMap);
-                }
-                if (addEditMap) addEditMap.invalidateSize();
-            }, 200);
-        }
-
-        async function findLocationOnMap(e, mapInstance, markerInstance) {
-            const input = e.target.closest('div').querySelector('input');
-            const address = input.value;
-            if (!address || !mapInstance) return;
-            try {
-                const coords = await getCoordsForAddress(address);
-                if (coords) {
-                    mapInstance.setView([coords.lat, coords.lon], 15);
-                    if (markerInstance) markerInstance.setLatLng([coords.lat, coords.lon]);
-                    else markerInstance = L.marker([coords.lat, coords.lon]).addTo(mapInstance);
-                    return markerInstance;
-                } else {
-                    showModalError('לא נמצאה כתובת. נסה שוב.');
-                }
-            } catch (err) { 
-                console.error("Location search error:", err);
-                showModalError('שגיאה בחיפוש הכתובת.'); 
-            }
-            return markerInstance;
-        }
-        
-        function showModalError(message) {
-            modalError.textContent = message;
-            if (message) setTimeout(() => { modalError.textContent = ''; }, 4000);
-        }
-
-        // --- Firestore & Rendering Logic ---
-        function renderAllItems() {
-            if (!itemsContainer) return;
-            if (allItems.length === 0 && !isInitialLoad) {
-                itemsContainer.innerHTML = `<div class="text-center p-16 bg-white/70 backdrop-blur-md rounded-2xl shadow-sm"><i class="fas fa-map-signs fa-4x text-slate-400 mb-6"></i><h3 class="text-2xl font-bold text-slate-700">עדיין אין המלצות...</h3><p class="text-slate-500 mt-2">זה הזמן להתחיל! לחץ על "הוספת מקום" כדי ליצור את הראשון.</p></div>`;
-                loadingMessage.style.display = 'none';
-                return;
-            }
-            
-            const preservedOpenStates = {};
-            document.querySelectorAll('#items-container details').forEach(detail => {
-                preservedOpenStates[detail.dataset.dest] = detail.open;
-            });
-
-            itemsContainer.innerHTML = '';
-            loadingMessage.style.display = 'none';
-
-            const groupedByDest = allItems.reduce((acc, item) => {
-                const dest = item.destination || 'כללי';
-                if (!acc[dest]) acc[dest] = [];
-                acc[dest].push(item);
-                return acc;
-            }, {});
-
-            siteData.destinations.forEach(dest => {
-                if (groupedByDest[dest]) {
-                    if (!activeFilters[dest]) activeFilters[dest] = { kosher: false, foodType: '', sortByDistance: false };
-
-                    const destSection = document.createElement('details');
-                    destSection.className = "bg-white/70 backdrop-blur-md rounded-2xl shadow-lg overflow-hidden relative";
-                    destSection.open = preservedOpenStates[dest] || false;
-                    destSection.dataset.dest = dest;
-
-                    const destEmoji = siteData.destinationEmojis[dest] || '📍';
-                    destSection.innerHTML = `<summary class="text-2xl md:text-3xl font-bold text-slate-800 flex justify-between items-center p-5 hover:bg-white/30 transition"><span class="flex items-center gap-4">${destEmoji} ${dest}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
-                    
-                    const contentDiv = document.createElement('div');
-                    contentDiv.className = 'p-4 space-y-6 bg-slate-50/70';
-                    
-                    const toolsDiv = document.createElement('div');
-                    toolsDiv.className = 'flex items-center justify-end gap-4 p-2 bg-slate-200/50 rounded-lg mb-4';
-                    toolsDiv.innerHTML = `
-                        <label for="sort-toggle-${dest.replace(/\s/g, '')}" class="text-sm font-semibold text-slate-700">מיין לפי מרחק</label>
-                        <label class="switch">
-                            <input type="checkbox" id="sort-toggle-${dest.replace(/\s/g, '')}" class="sort-distance-toggle" data-destination="${dest}" ${activeFilters[dest].sortByDistance ? 'checked' : ''}>
-                            <span class="slider"></span>
-                        </label>
-                    `;
-                    contentDiv.appendChild(toolsDiv);
-
-                    let itemsForDestination = [...groupedByDest[dest]];
-                    
-                    if (activeFilters[dest].sortByDistance && userLocation && distancesCalculated) {
-                        itemsForDestination.sort((a, b) => (a.distanceFromUser ?? Infinity) - (b.distanceFromUser ?? Infinity));
-                    }
-
-                    const groupedByType = itemsForDestination.reduce((acc, item) => {
-                        const type = item.type || 'כללי';
-                        if (!acc[type]) acc[type] = [];
-                        acc[type].push(item);
-                        return acc;
-                    }, {});
-
-                    Object.keys(groupedByType).sort().forEach(type => {
-                        const typeSection = document.createElement('details');
-                        typeSection.className = "bg-white/80 p-4 rounded-xl shadow-md";
-                        typeSection.open = true;
-                        
-                        const typeIcon = siteData.placeTypeEmojis[type] || '📌';
-                        let summaryHtml = `<summary class="text-lg md:text-xl font-semibold text-slate-700 flex justify-between items-center"><span>${typeIcon} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
-                        
-                        const typeContentDiv = document.createElement('div');
-                        typeContentDiv.className = "mt-4 pt-4 border-t space-y-4";
-                        
-                        let itemsForType = groupedByType[type];
-                        
-                        if (type === 'מסעדה/אוכל') {
-                             const allFoodTypesInDest = [...new Set(itemsForDestination.map(i => i.foodType).filter(Boolean))];
-                             let filterHtml = `
-                                <div class="local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center gap-4 mb-4">
-                                    <span class="font-bold text-slate-600 text-sm">סינון:</span>
-                                    <div class="flex items-center gap-2">
-                                        <input type="checkbox" id="kosher-filter-${dest.replace(/\s/g, '')}" data-destination="${dest}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest].kosher ? 'checked' : ''}>
-                                        <label for="kosher-filter-${dest.replace(/\s/g, '')}" class="text-sm font-medium text-slate-600">כשר בלבד</label>
-                                    </div>
-                                    <select data-destination="${dest}" class="local-filter-food-type form-select rounded-md text-sm py-1">
-                                        <option value="">כל סוגי האוכל</option>
-                                        ${allFoodTypesInDest.sort().map(ft => `<option value="${ft}" ${activeFilters[dest].foodType === ft ? 'selected' : ''}>${siteData.foodTypes[ft] || '🍴'} ${ft}</option>`).join('')}
-                                    </select>
-                                </div>
-                             `;
-                             typeContentDiv.insertAdjacentHTML('afterbegin', filterHtml);
-
-                             if (activeFilters[dest].kosher) itemsForType = itemsForType.filter(item => item.isKosher === 'כן');
-                             if (activeFilters[dest].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest].foodType);
-                        }
-                        
-                        const cardGrid = document.createElement('div');
-                        cardGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
-
-                        if (itemsForType.length > 0) {
-                            itemsForType.forEach(item => {
-                                const card = document.createElement('div');
-                                card.className = 'item-card bg-white/90 p-4 rounded-xl shadow-lg flex flex-col justify-between transition-transform hover:scale-105 hover:shadow-2xl';
-                                card.dataset.id = item.id;
-                                
-                                let tagsHtml = '';
-                                if(item.isKosher === 'כן') tagsHtml += `<span class="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">כשר</span>`;
-                                if(item.foodType) tagsHtml += `<span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded-full">${siteData.foodTypes[item.foodType] || ''} ${item.foodType}</span>`;
-                                if(item.reservation && item.reservation !== 'לא') tagsHtml += `<span class="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
-
-                                const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
-
-                                card.innerHTML = `
-                                    <div class="flex-grow">
-                                        <h5 class="text-base md:text-lg font-bold text-slate-800 truncate mb-2">${item.name}</h5>
-                                        <div class="flex flex-wrap gap-2 min-h-[26px] mb-3">${tagsHtml}</div>
-                                        ${item.shortDescription ? `<p class="text-sm text-slate-600 mb-4">${item.shortDescription}</p>` : ''}
-                                        <div class="location-info-placeholder text-xs text-slate-600 mt-2 border-t pt-2 gap-2" style="display: none;">
-                                            <span class="distance-text flex-grow flex items-center justify-center gap-2"></span>
-                                        </div>
-                                    </div>
-                                    <div class="mt-auto pt-3 border-t flex items-center justify-between gap-2">
-                                        <div class="flex gap-2">
-                                            <a href="${navLink}" target="_blank" class="action-btn bg-blue-100 text-blue-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-200 transition" title="נווט עם Google Maps"><i class="fa-solid fa-diamond-turn-right"></i></a>
-                                            ${item.link ? `<a href="${item.link}" target="_blank" class="action-btn bg-green-100 text-green-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-green-200 transition" title="פתח אתר"><i class="fa-solid fa-link"></i></a>` : ''}
-                                        </div>
-                                        <div class="flex gap-2">
-                                            <button class="edit-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-slate-300 transition" title="עריכה"><i class="fas fa-pencil"></i></button>
-                                            <button class="delete-btn action-btn bg-slate-200 text-slate-600 w-9 h-9 flex items-center justify-center rounded-full hover:text-red-500 hover:bg-red-100 transition" title="מחיקה"><i class="fas fa-trash"></i></button>
-                                        </div>
-                                    </div>
-                                `;
-                                cardGrid.appendChild(card);
-                                if (userLocation && item.location) {
-                                    calculateAndDisplayDistance(card, item);
-                                }
-                            });
-                        } else {
-                            cardGrid.innerHTML = `<p class="text-slate-500 col-span-full text-center">אין מקומות התואמים לסינון.</p>`;
-                        }
-                        
-                        typeContentDiv.appendChild(cardGrid);
-                        typeSection.innerHTML = summaryHtml;
-                        typeSection.appendChild(typeContentDiv);
-                        contentDiv.appendChild(typeSection);
-                    });
-
-                    destSection.appendChild(contentDiv);
-                    const sectionLoader = document.createElement('div');
-                    sectionLoader.className = 'section-loader hidden';
-                    sectionLoader.innerHTML = `<i class="fas fa-sync-alt fa-2x fa-spin text-blue-500"></i>`;
-                    destSection.appendChild(sectionLoader);
-                    itemsContainer.appendChild(destSection);
-                }
-            });
-        }
-        
-        // --- Details Modal Logic ---
-        async function openDetailsModal(itemId) {
-            const item = allItems.find(i => i.id === itemId);
-            if (!item) return;
-
-            const modalContent = document.getElementById('details-modal-content');
-            
-            let tagsHtml = '';
-            if(item.isKosher === 'כן') tagsHtml += `<span class="text-sm font-bold text-green-700 bg-green-100 px-3 py-1 rounded-full">כשר</span>`;
-            if(item.foodType) tagsHtml += `<span class="text-sm font-bold text-sky-700 bg-sky-100 px-3 py-1 rounded-full">${siteData.foodTypes[item.foodType] || ''} ${item.foodType}</span>`;
-            if(item.reservation && item.reservation !== 'לא') tagsHtml += `<span class="text-sm font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">הזמנה: ${item.reservation}</span>`;
-
-            const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
-
-            modalContent.innerHTML = `
-                <button id="details-modal-close" class="absolute top-3 left-3 w-8 h-8 bg-slate-100 rounded-full text-slate-500 hover:text-red-500 hover:bg-red-100 z-10 transition-colors"><i class="fas fa-times"></i></button>
-                <div class="p-6 border-b">
-                    <h3 class="text-3xl font-bold text-slate-800">${item.name}</h3>
-                    <p class="text-slate-500 mt-1">${siteData.placeTypeEmojis[item.type] || '📌'} ${item.type}</p>
-                </div>
-                <div class="p-6 flex-grow overflow-y-auto space-y-5 bg-slate-50">
-                    ${tagsHtml ? `<div class="flex flex-wrap gap-3 items-center">${tagsHtml}</div>` : ''}
-                    ${item.shortDescription ? `<div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded"><p class="text-slate-700 font-semibold">${item.shortDescription}</p></div>` : ''}
-                    ${item.description ? `<div class="bg-white p-4 rounded-lg shadow-inner"><p class="text-slate-700 whitespace-pre-wrap">${item.description}</p></div>` : ''}
-                    ${item.location ? `<div class="flex items-start gap-4"><i class="fa-solid fa-location-dot fa-fw text-slate-400 mt-1"></i><p class="text-slate-700 font-semibold">${item.location}</p></div>` : ''}
-                    ${item.hours ? `<div class="flex items-start gap-4"><i class="fa-regular fa-clock fa-fw text-slate-400 mt-1"></i><p class="text-slate-700">${item.hours}</p></div>` : ''}
-                    ${item.location ? `<div id="details-map" class="w-full h-48 rounded-lg shadow-md"></div>` : ''}
-                    <div id="details-location-info" class="pt-4 border-t space-y-2" style="display: none;">
-                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
-                            <i class="fa-solid fa-route fa-fw text-blue-500"></i>
-                            <span id="details-distance-text" class="text-slate-700"></span>
-                        </div>
-                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
-                            <i class="fa-solid fa-car fa-fw text-green-500"></i>
-                            <span id="details-time-text" class="text-slate-700"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="p-4 bg-slate-100 border-t flex flex-wrap justify-center gap-3">
-                    <a href="${navLink}" target="_blank" class="flex-1 text-center bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-diamond-turn-right mr-2"></i>נווט</a>
-                    ${item.link ? `<a href="${item.link}" target="_blank" class="flex-1 text-center bg-green-500 text-white font-bold py-3 px-5 rounded-lg hover:bg-green-600 transition"><i class="fa-solid fa-link mr-2"></i>אתר</a>` : ''}
-                    <button data-id="${item.id}" class="edit-btn-modal flex-1 text-center bg-slate-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-slate-700 transition"><i class="fas fa-pencil mr-2"></i>ערוך</button>
-                </div>
-            `;
-
-            detailsModal.classList.remove('hidden');
-            detailsModal.classList.add('flex');
-            
-            document.getElementById('details-modal-close').addEventListener('click', closeDetailsModal);
-            document.querySelector('.edit-btn-modal').addEventListener('click', (e) => {
-                closeDetailsModal();
-                openModalHandler(e.currentTarget.dataset.id);
-            });
-
-            if (item.location) {
-                initDetailsMap(item.location);
-                if (userLocation && typeof item.distanceFromUser !== 'undefined') {
-                    const locationInfoDiv = document.getElementById('details-location-info');
-                    locationInfoDiv.style.display = 'block';
-                    const distanceEl = document.getElementById('details-distance-text');
-                    const timeEl = document.getElementById('details-time-text');
-                    distanceEl.textContent = `מרחק של כ-${item.distanceFromUser.toFixed(1)} ק"מ מהמיקום שלך.`;
-                    timeEl.textContent = `זמן נסיעה מוערך של ${estimateTravelTime(item.distanceFromUser)}.`;
-                }
-            }
-        }
-
-        function closeDetailsModal() {
-            detailsModal.classList.add('hidden');
-            detailsModal.classList.remove('flex');
-            if (detailsMap) { detailsMap.remove(); detailsMap = null; detailsMarker = null; }
-        }
-
-        function initDetailsMap(address) {
-            setTimeout(async () => {
-                const mapDiv = document.getElementById('details-map');
-                if (mapDiv && !mapDiv._leaflet_id) {
-                    detailsMap = L.map(mapDiv).setView([40.7128, -74.0060], 10);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(detailsMap);
-                    
-                    try {
-                        const coords = await getCoordsForAddress(address);
-                        if (coords) {
-                            detailsMap.setView([coords.lat, coords.lon], 15);
-                            if (detailsMarker) detailsMarker.setLatLng([coords.lat, coords.lon]);
-                            else detailsMarker = L.marker([coords.lat, coords.lon]).addTo(detailsMap);
-                        }
-                    } catch (err) { console.error("Details map error:", err); }
-                }
-                if (detailsMap) detailsMap.invalidateSize();
-            }, 200);
-        }
-
-        // --- Event Listeners ---
-        nextBtn.addEventListener('click', () => { if (currentModalStep < totalModalSteps) { currentModalStep++; updateModalView(); } });
-        backBtn.addEventListener('click', () => { if (currentModalStep > 1) { currentModalStep--; updateModalView(); } });
-        modal.addEventListener('click', async e => { 
-            if (e.target.closest('.find-location-btn')) {
-                addEditMarker = await findLocationOnMap(e, addEditMap, addEditMarker);
-            } 
-        });
-        closeModalBtn.addEventListener('click', closeModalHandler);
-        detailsModal.addEventListener('click', (e) => { if (e.target.id === 'details-modal') closeDetailsModal(); });
-
-
-        form.addEventListener('keydown', e => {
-            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                if (!nextBtn.classList.contains('hidden')) nextBtn.click();
-                else if (!finishBtn.classList.contains('hidden')) finishBtn.click();
-            }
-        });
-        
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (currentModalStep !== totalModalSteps) return;
-
-            const getVal = id => document.getElementById(id) ? document.getElementById(id).value : null;
-            
-            const name = getVal('item-name');
-            if (!name || name.trim() === '') {
-                showModalError('שם המקום הוא שדה חובה.');
-                return;
+                 websiteEl.innerHTML = '';
             }
 
-            let finalType = getVal('item-type');
-            if (finalType === 'אחר') finalType = getVal('item-type-other').trim() || 'כללי';
-
-            let finalFoodType = isRestaurant ? getVal('item-food-type') : null;
-            if (isRestaurant && finalFoodType === 'אחר') finalFoodType = getVal('item-food-type-other').trim() || null;
-
-            const data = {
-                name: name,
-                destination: getVal('item-destination'),
-                type: finalType,
-                shortDescription: getVal('item-short-description'),
-                description: getVal('item-description'),
-                isKosher: isRestaurant ? getVal('item-kosher') : null,
-                foodType: finalFoodType,
-                location: isRestaurant ? getVal('item-location-restaurant') : getVal('item-location-other'),
-                hours: isRestaurant ? getVal('item-hours-restaurant') : getVal('item-hours-other'),
-                link: isRestaurant ? getVal('item-link-restaurant') : getVal('item-link-other'),
-                reservation: isRestaurant ? getVal('item-reservation-restaurant') : getVal('item-reservation-other'),
-                author: currentUser.uid,
-            };
-
-            try {
-                if (editingItemId) {
-                    const itemRef = doc(db, 'attractions', editingItemId);
-                    await updateDoc(itemRef, data);
-                } else {
-                    data.createdAt = serverTimestamp();
-                    await addDoc(attractionsCollection, data); 
-                }
-                closeModalHandler(); 
-            } 
-            catch (err) { 
-                console.error("Error saving document:", err);
-                showModalError("שגיאה בשמירת הפריט."); 
-            }
-        });
-
-        itemsContainer.addEventListener('click', (e) => {
-            const card = e.target.closest('.item-card');
-            if (!card) return;
-
-            const actionBtn = e.target.closest('.action-btn');
-
-            if (actionBtn) {
-                e.stopPropagation();
-                const id = card.dataset.id;
-                const item = allItems.find(i => i.id === id);
-                
-                if (actionBtn.matches('.delete-btn')) {
-                    const modalTitle = document.getElementById('delete-modal-title');
-                    const confirmBtn = document.getElementById('delete-modal-confirm');
-                    modalTitle.textContent = `האם למחוק את "${item.name}"?`;
-                    
-                    const confirmHandler = async () => {
-                        try { await deleteDoc(doc(db, 'attractions', id)); } 
-                        catch (error) { console.error("Failed to delete item:", error); } 
-                        finally { closeDeleteModal(); }
-                    };
-
-                    const closeDeleteModal = () => {
-                        deleteModal.classList.add('hidden');
-                        deleteModal.classList.remove('flex');
-                        confirmBtn.removeEventListener('click', confirmHandler);
-                    };
-                    
-                    confirmBtn.addEventListener('click', confirmHandler, { once: true });
-                    document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
-
-                    deleteModal.classList.remove('hidden');
-                    deleteModal.classList.add('flex');
-                } else if (actionBtn.matches('.edit-btn')) {
-                    openModalHandler(id);
-                }
+            // Handle Opening Hours
+            const hoursEl = document.getElementById('place-hours');
+            if (place.opening_hours) {
+                const isOpen = place.opening_hours.isOpen();
+                let hoursHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg><div><p class="font-bold ${isOpen ? 'text-green-600' : 'text-red-600'}">${isOpen ? 'פתוח עכשיו' : 'סגור עכשיו'}</p><ul class="text-gray-600">${place.opening_hours.weekday_text.map(day => `<li>${day}</li>`).join('')}</ul></div>`;
+                hoursEl.innerHTML = hoursHTML;
             } else {
-                openDetailsModal(card.dataset.id);
+                hoursEl.innerHTML = '';
             }
-        });
-        
-        itemsContainer.addEventListener('change', async e => {
-            const dest = e.target.dataset.destination;
-            if (!dest) return;
-            
-            const destSection = e.target.closest('details');
-            const loader = destSection.querySelector('.section-loader');
-
-            if (e.target.matches('.local-filter-kosher')) activeFilters[dest].kosher = e.target.checked;
-            if (e.target.matches('.local-filter-food-type')) activeFilters[dest].foodType = e.target.value;
-            
-            if (e.target.matches('.sort-distance-toggle')) {
-                activeFilters[dest].sortByDistance = e.target.checked;
-                if(e.target.checked && !userLocation) {
-                    if (loader) loader.classList.remove('hidden');
-                    await handleGetLocation().catch(() => {}); // Handle potential rejection
-                    // Re-render will be triggered by handleGetLocation's success path
-                    if (loader) loader.classList.add('hidden');
-                    renderAllItems();
-                    return;
-                }
-            }
-            if (loader) loader.classList.remove('hidden');
-            // Use a timeout to ensure the loader is visible before the re-render blocks the main thread
-            setTimeout(() => {
-                renderAllItems();
-                if (loader) loader.classList.add('hidden');
-            }, 50);
-        });
-
-        // --- Auth & Initial Load ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                const authContainer = document.getElementById('auth-container');
-                const displayName = user.displayName || user.email.split('@')[0];
-                authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span><button id="sign-out-btn" title="התנתק" class="p-2 text-slate-600 hover:text-red-500"><i class="fas fa-right-from-bracket fa-lg"></i></button>`;
-                document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
-                initApp();
-            } else {
-                window.location.replace('login.html');
-            }
-        });
-        
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-              navigator.serviceWorker.register('/service-worker.js')
-                .then(() => console.log('SW registered'))
-                .catch(err => console.log('SW failed:', err));
-            });
         }
-        
+
     </script>
+    <!-- Async script to load the Google Maps API -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places&callback=initMap">
+    </script>
+
 </body>
 </html>
