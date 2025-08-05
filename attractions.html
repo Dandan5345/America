@@ -254,12 +254,10 @@
                 distancesCalculated = true;
                 return;
             }
-            console.log("Starting distance calculation...");
-
+            
             const itemsWithCoords = allItems.filter(item => item.coords && item.coords.lat && item.coords.lng);
             if (itemsWithCoords.length === 0) {
                 distancesCalculated = true;
-                console.log("No items with coordinates to calculate.");
                 return;
             }
 
@@ -285,15 +283,10 @@
                 const walkingResults = walkingResponse.rows[0]?.elements || [];
 
                 itemsWithCoords.forEach((item, index) => {
-                    if (drivingResults[index]?.status === 'OK') {
-                        item.driving = drivingResults[index];
-                    }
-                    if (walkingResults[index]?.status === 'OK') {
-                        item.walking = walkingResults[index];
-                    }
+                    if (drivingResults[index]?.status === 'OK') item.driving = drivingResults[index];
+                    if (walkingResults[index]?.status === 'OK') item.walking = walkingResults[index];
                 });
                 distancesCalculated = true;
-                console.log("Distance calculation finished.");
             } catch (error) {
                 console.error('Distance Matrix failed:', error);
                 distancesCalculated = false;
@@ -312,7 +305,6 @@
                 navigator.geolocation.getCurrentPosition(
                     async (position) => {
                         userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
-                        console.log("User location found:", userLocation);
                         await calculateAllDistances();
                         getLocationBtn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> מיקום עודכן`;
                         getLocationBtn.disabled = false;
@@ -338,12 +330,12 @@
             if (!distanceSpan) return;
             
             let html = '';
-            if (item.driving && item.driving.duration) {
-                html += `<span class="flex items-center gap-2"><i class="fa-solid fa-car fa-fw text-green-500"></i> ${item.driving.duration.text}</span>`;
+            if (item.driving?.duration?.text && item.driving?.distance?.text) {
+                html += `<span class="flex items-center gap-2"><i class="fa-solid fa-car fa-fw text-green-500"></i> ${item.driving.duration.text} (${item.driving.distance.text})</span>`;
             }
-            if (item.walking && item.walking.duration) {
+            if (item.walking?.duration?.text && item.walking?.distance?.text) {
                 if (html) html += `<span class="text-slate-400 mx-1">|</span>`;
-                html += `<span class="flex items-center gap-2"><i class="fa-solid fa-person-walking fa-fw text-blue-500"></i> ${item.walking.duration.text}</span>`;
+                html += `<span class="flex items-center gap-2"><i class="fa-solid fa-person-walking fa-fw text-blue-500"></i> ${item.walking.duration.text} (${item.walking.distance.text})</span>`;
             }
 
             if (html) {
@@ -363,11 +355,10 @@
                     siteData.customPlaceTypes = data.placeTypes || [];
                     if (data.foodTypes) {
                         data.foodTypes.forEach(type => {
-                            siteData.customFoodTypes[type] = '🍴'; // Assign default emoji
+                            siteData.customFoodTypes[type] = '🍴';
                         });
                     }
                 } else {
-                    // If doc doesn't exist, create it with empty arrays
                     await setDoc(settingsDocRef, { placeTypes: [], foodTypes: [] });
                 }
             } catch (error) {
@@ -444,7 +435,7 @@
         // --- Add/Edit Modal & Form Logic ---
         function openModalHandler(itemId = null) {
             editingItemId = itemId;
-            googlePlaceDetails = null; // Reset
+            googlePlaceDetails = null;
             form.reset();
             for(let i = 1; i <= 9; i++) {
                 const stepContainer = document.getElementById(`step-${i}`);
@@ -460,28 +451,31 @@
                 const item = allItems.find(i => i.id === editingItemId);
                 if (item) {
                     isRestaurant = item.type === 'מסעדה/אוכל';
-                    // Populate fields for later steps
                     setTimeout(() => {
-                        document.getElementById('item-name').value = item.name || '';
-                        document.getElementById('item-destination').value = item.destination || '';
-                        document.getElementById('item-type').value = item.type || '';
-                        document.getElementById('item-short-description').value = item.shortDescription || '';
-                        document.getElementById('item-description').value = item.description || '';
-                        document.getElementById('item-location').value = item.location || '';
-                        document.getElementById('item-hours').value = item.hours || '';
-                        document.getElementById('item-link').value = item.link || '';
-                        document.getElementById('item-reservation').value = item.reservation || 'לא';
+                        if(document.getElementById('item-name')) document.getElementById('item-name').value = item.name || '';
+                        if(document.getElementById('item-destination')) document.getElementById('item-destination').value = item.destination || '';
+                        if(document.getElementById('item-type')) document.getElementById('item-type').value = item.type || '';
+                        if(document.getElementById('item-short-description')) document.getElementById('item-short-description').value = item.shortDescription || '';
+                        if(document.getElementById('item-description')) document.getElementById('item-description').value = item.description || '';
+                        if(document.getElementById('item-location')) document.getElementById('item-location').value = item.location || '';
+                        if(document.getElementById('item-hours')) document.getElementById('item-hours').value = item.hours || '';
+                        if(document.getElementById('item-link')) document.getElementById('item-link').value = item.link || '';
+                        if(document.getElementById('item-reservation')) document.getElementById('item-reservation').value = item.reservation || 'לא';
 
                         if (isRestaurant) {
-                            document.getElementById('item-kosher').value = item.isKosher || 'לא';
+                            if(document.getElementById('item-kosher')) document.getElementById('item-kosher').value = item.isKosher || 'לא';
                             const foodTypeSelect = document.getElementById('item-food-type');
                             const foodTypeOtherInput = document.getElementById('item-food-type-other');
-                            if (siteData.foodTypes[item.foodType]) {
-                                foodTypeSelect.value = item.foodType;
-                            } else {
-                                foodTypeSelect.value = 'אחר';
-                                foodTypeOtherInput.value = item.foodType || '';
-                                foodTypeOtherInput.classList.remove('hidden');
+                            if (foodTypeSelect) {
+                                if (siteData.foodTypes[item.foodType]) {
+                                    foodTypeSelect.value = item.foodType;
+                                } else {
+                                    foodTypeSelect.value = 'אחר';
+                                    if(foodTypeOtherInput) {
+                                        foodTypeOtherInput.value = item.foodType || '';
+                                        foodTypeOtherInput.classList.remove('hidden');
+                                    }
+                                }
                             }
                         }
                     }, 100);
@@ -886,11 +880,11 @@
                     <div id="details-location-info" class="pt-4 border-t space-y-2" style="display: none;">
                         <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
                             <i class="fa-solid fa-car fa-fw text-green-500"></i>
-                            <span id="details-driving-text" class="text-slate-700">טוען...</span>
+                            <span id="details-driving-text" class="text-slate-700"></span>
                         </div>
                         <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
                              <i class="fa-solid fa-person-walking fa-fw text-blue-500"></i>
-                            <span id="details-walking-text" class="text-slate-700">טוען...</span>
+                            <span id="details-walking-text" class="text-slate-700"></span>
                         </div>
                     </div>
                 </div>
@@ -915,8 +909,10 @@
                 if (userLocation) {
                     const locationInfoDiv = document.getElementById('details-location-info');
                     locationInfoDiv.style.display = 'block';
-                    document.getElementById('details-driving-text').textContent = (item.driving) ? `זמן נסיעה של כ-${item.driving.duration.text} (${item.driving.distance.text})` : 'לא זמין';
-                    document.getElementById('details-walking-text').textContent = (item.walking) ? `זמן הליכה של כ-${item.walking.duration.text} (${item.walking.distance.text})` : 'לא זמין';
+                    const drivingText = (item.driving?.duration?.text) ? `זמן נסיעה של כ-${item.driving.duration.text} (${item.driving.distance.text})` : 'לא זמין';
+                    const walkingText = (item.walking?.duration?.text) ? `זמן הליכה של כ-${item.walking.duration.text} (${item.walking.distance.text})` : 'לא זמין';
+                    document.getElementById('details-driving-text').textContent = drivingText;
+                    document.getElementById('details-walking-text').textContent = walkingText;
                 }
             }
         }
@@ -1085,7 +1081,7 @@
                     if (loader) loader.classList.remove('hidden');
                     await handleGetLocation().catch(() => {});
                     if (loader) loader.classList.add('hidden');
-                    renderAllItems();
+                    renderAllItems(); // Re-render after getting location
                     return;
                 }
             }
