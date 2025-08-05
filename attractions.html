@@ -30,6 +30,13 @@
         .step-indicator { transition: all 0.4s ease-in-out; }
         .item-card { cursor: pointer; }
         
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #2563eb; }
+        input:checked + .slider:before { transform: translateX(22px); }
+
         #initial-loader {
             position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s ease-out;
         }
@@ -37,11 +44,11 @@
         .plane-spinner { animation: spin 2s linear infinite; }
         
         .section-loader {
-            position: absolute; inset: 0; background-color: rgba(241, 245, 249, 0.8); z-index: 20; display: flex; align-items: center; justify-content: center; border-radius: 1rem;
+            position: absolute; inset: 0; background-color: rgba(241, 245, 249, 0.8); /* bg-slate-100/80 */ z-index: 20; display: flex; align-items: center; justify-content: center; border-radius: 1rem; /* rounded-xl */
         }
         /* Style for Google Maps Autocomplete dropdown */
         .pac-container { z-index: 9999 !important; border-radius: 0.5rem; font-family: 'Assistant', sans-serif; }
-        .rating-stars { color: #f59e0b; }
+        .rating-stars { color: #f59e0b; /* amber-500 */ }
     </style>
 </head>
 <body class="bg-slate-100">
@@ -173,6 +180,8 @@
         const db = getFirestore(app);
         const attractionsCollection = collection(db, 'attractions');
         const settingsDocRef = doc(db, 'app_settings', 'custom_types');
+        // [NEW] Firestore collection for shared cache
+        const cacheCollection = collection(db, 'shared_distance_cache');
 
         // --- App State ---
         let currentUser = null;
@@ -183,8 +192,6 @@
         let activeFilters = {}; 
         let editingItemId = null;
         let userLocation = null;
-        // [NEW] State to track which categories are sorted by distance
-        let distanceSortState = {}; 
         let isInitialLoad = true;
         let googlePlaceDetails = null;
 
@@ -242,8 +249,48 @@
         const detailsModal = document.getElementById('details-modal');
         const getLocationBtn = document.getElementById('get-location-btn');
 
-        // --- Location & Distance Calculation ---
+        // --- [NEW] Cache & Distance Calculation Helpers ---
+
+        /**
+         * Generates a geographic cell ID from a location object.
+         * Rounds lat/lng to 3 decimal places to create cells of ~110x110 meters.
+         * @param {object} location - An object with lat and lng properties.
+         * @returns {string} A string representing the cell ID.
+         */
+        function generateCellId(location) {
+            const lat = location.lat.toFixed(3);
+            const lng = location.lng.toFixed(3);
+            return `cell_${lat}_${lng}`;
+        }
+
+        /**
+         * Calculates the distance between two geographical points in meters using the Haversine formula.
+         * @param {object} loc1 - Location object 1 {lat, lng}
+         * @param {object} loc2 - Location object 2 {lat, lng}
+         * @returns {number} Distance in meters
+         */
+        function calculateDistanceInMeters(loc1, loc2) {
+            const R = 6371e3; // Earth's radius in meters
+            const phi1 = loc1.lat * Math.PI / 180;
+            const phi2 = loc2.lat * Math.PI / 180;
+            const deltaPhi = (loc2.lat - loc1.lat) * Math.PI / 180;
+            const deltaLambda = (loc2.lng - loc1.lng) * Math.PI / 180;
+
+            const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                      Math.cos(phi1) * Math.cos(phi2) *
+                      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c;
+        }
         
+        /**
+         * Helper function to split an array into smaller chunks.
+         * This is to avoid hitting Google Maps API limits.
+         * @param {Array} arr The array to chunk.
+         * @param {number} size The size of each chunk.
+         * @returns {Array<Array>} An array of chunks.
+         */
         function chunkArray(arr, size) {
             const chunkedArr = [];
             for (let i = 0; i < arr.length; i += size) {
@@ -252,73 +299,146 @@
             return chunkedArr;
         }
 
+        // --- Location & Distance Calculation ---
+        
         /**
-         * [NEW] Calculates distances for a specific category of items.
-         * @param {string} destination The destination name (e.g., "ניו יורק").
-         * @param {string} type The category type (e.g., "מסעדה/אוכל").
+         * [REVISED] Fetches distances for a specific list of items from Google's API.
+         * This is called on a cache miss.
+         * @param {Array} itemsToCalculate - The specific items requiring distance calculation.
+         * @returns {Object|null} The results object from the Distance Matrix API or null on failure.
          */
-        async function calculateDistancesForCategory(destination, type) {
-            if (!userLocation) {
-                // If location is not available, get it first.
-                try {
-                    await handleGetLocation();
-                } catch {
-                    // If user denies location, stop the process.
-                    return;
-                }
+        async function fetchDistancesFromGoogle(itemsToCalculate) {
+            if (!userLocation || !distanceService || !itemsToCalculate || itemsToCalculate.length === 0) {
+                return null;
+            }
+            
+            const itemsWithCoords = itemsToCalculate.filter(item => item.coords && item.coords.lat && item.coords.lng);
+            if (itemsWithCoords.length === 0) {
+                return null;
             }
 
-            // Filter for the specific items that need distance calculation.
-            const itemsToCalculate = allItems.filter(item => 
-                item.destination === destination && 
-                item.type === type && 
-                item.coords && item.coords.lat && item.coords.lng
-            );
-
-            if (itemsToCalculate.length === 0) {
-                console.log(`No items with coordinates in ${destination} - ${type} to calculate.`);
-                return;
-            }
-
-            const itemChunks = chunkArray(itemsToCalculate, 25);
+            const itemChunks = chunkArray(itemsWithCoords, 25);
+            const allDrivingResults = [];
+            const allWalkingResults = [];
 
             for (const chunk of itemChunks) {
                 const destinations = chunk.map(item => new google.maps.LatLng(item.coords.lat, item.coords.lng));
                 
                 try {
-                    const response = await distanceService.getDistanceMatrix({
-                        origins: [userLocation],
-                        destinations: destinations,
-                        travelMode: 'DRIVING', // We can calculate both if needed, but driving is often primary.
-                        unitSystem: google.maps.UnitSystem.METRIC,
-                    });
+                    const [drivingResponse, walkingResponse] = await Promise.all([
+                        distanceService.getDistanceMatrix({
+                            origins: [userLocation],
+                            destinations: destinations,
+                            travelMode: 'DRIVING',
+                            unitSystem: google.maps.UnitSystem.METRIC,
+                        }),
+                        distanceService.getDistanceMatrix({
+                            origins: [userLocation],
+                            destinations: destinations,
+                            travelMode: 'WALKING',
+                            unitSystem: google.maps.UnitSystem.METRIC,
+                        })
+                    ]);
 
-                    const results = response.rows[0]?.elements || [];
+                    if (drivingResponse.rows[0]) allDrivingResults.push(...drivingResponse.rows[0].elements);
+                    if (walkingResponse.rows[0]) allWalkingResults.push(...walkingResponse.rows[0].elements);
 
-                    chunk.forEach((item, index) => {
-                        if (results[index]?.status === 'OK') {
-                            item.driving = results[index];
-                        } else {
-                            item.driving = null;
-                        }
-                        // For simplicity and to save API calls, we can omit walking or add it here if needed.
-                        item.walking = null; 
-                    });
                 } catch (error) {
                     console.error('Distance Matrix chunk failed:', error);
+                    // Push nulls to maintain array length correspondence
+                    allDrivingResults.push(...Array(chunk.length).fill(null));
+                    allWalkingResults.push(...Array(chunk.length).fill(null));
                 }
             }
-            console.log(`Finished calculating distances for ${destination} - ${type}.`);
+            
+            // Re-structure results to be keyed by item ID for easier lookup
+            const resultsByItemId = {};
+            itemsWithCoords.forEach((item, index) => {
+                resultsByItemId[item.id] = {
+                    driving: allDrivingResults[index] && allDrivingResults[index].status === 'OK' ? allDrivingResults[index] : null,
+                    walking: allWalkingResults[index] && allWalkingResults[index].status === 'OK' ? allWalkingResults[index] : null,
+                };
+            });
+            
+            return resultsByItemId;
         }
 
         /**
-         * [REVISED] Gets user location and stores it. Does NOT trigger distance calculation.
+         * [REVISED] Main handler for a sort request. Implements the shared cache logic.
+         * @param {string} destination - The destination being sorted.
+         * @param {string} type - The place type being sorted.
+         */
+        async function handleSortRequest(destination, type) {
+            if (!userLocation) {
+                console.log("User location not available. Prompting...");
+                try {
+                    await handleGetLocation(); // This will set userLocation
+                } catch {
+                    console.error("Could not get user location for sorting.");
+                    // Uncheck the toggle as we failed
+                    const toggle = document.getElementById(`sort-toggle-${destination.replace(/\s/g, '')}-${type.replace(/[\s/]/g, '')}`);
+                    if (toggle) toggle.checked = false;
+                    return;
+                }
+            }
+
+            const itemsToSort = allItems.filter(item => item.destination === destination && item.type === type);
+            if (itemsToSort.length === 0) return;
+
+            const cellId = generateCellId(userLocation);
+            const cacheRef = doc(db, 'shared_distance_cache', cellId);
+            const cacheSnap = await getDoc(cacheRef);
+
+            let distanceResults = null;
+
+            if (cacheSnap.exists()) {
+                const cacheData = cacheSnap.data();
+                const distance = calculateDistanceInMeters(userLocation, cacheData.centerLocation);
+
+                if (distance < 250) { // Cache Hit radius is 250m
+                    console.log(`Cache Hit for cell ${cellId}! Using shared cache from Firestore.`);
+                    distanceResults = cacheData.results;
+                }
+            }
+
+            if (!distanceResults) { // Cache Miss
+                console.log(`Cache Miss for cell ${cellId}. Calling Google Maps API.`);
+                distanceResults = await fetchDistancesFromGoogle(itemsToSort);
+
+                if (distanceResults) {
+                    console.log("Updating shared cache for cell:", cellId);
+                    const newCacheData = {
+                        centerLocation: userLocation,
+                        results: distanceResults,
+                        timestamp: serverTimestamp()
+                    };
+                    await setDoc(cacheRef, newCacheData);
+                }
+            }
+            
+            if (distanceResults) {
+                // Apply the results to the global items array
+                allItems.forEach(item => {
+                    if (distanceResults[item.id]) {
+                        item.driving = distanceResults[item.id].driving;
+                        item.walking = distanceResults[item.id].walking;
+                    }
+                });
+            }
+
+            // Finally, re-render the entire view with the new data
+            renderAllItems();
+        }
+
+
+        /**
+         * [REVISED] Gets user's location and updates the button. Does NOT trigger calculations.
          */
         async function handleGetLocation() {
             return new Promise((resolve, reject) => {
                 if (!navigator.geolocation) {
-                    showModalError("דפדפן זה אינו תומך בשירותי מיקום.");
-                    return reject(new Error("Geolocation not supported."));
+                    alert("דפדפן זה אינו תומך בשירותי מיקום.");
+                    return reject("No geolocation support");
                 }
                 getLocationBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> מאתר מיקום...`;
                 getLocationBtn.disabled = true;
@@ -328,14 +448,14 @@
                         userLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
                         getLocationBtn.innerHTML = `<i class="fas fa-check-circle mr-2"></i> מיקום עודכן`;
                         getLocationBtn.disabled = false;
-                        // We no longer calculate all distances here.
-                        resolve();
+                        console.log("User location updated:", userLocation);
+                        resolve(userLocation);
                     },
                     (error) => {
                         console.error("Geolocation error:", error);
                         getLocationBtn.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i> הפעלת מיקום נכשלה`;
                         getLocationBtn.disabled = false;
-                        showModalError("לא ניתן היה לקבל את מיקומך.");
+                        alert("לא ניתן היה לקבל את מיקומך. אנא בדוק הרשאות.");
                         reject(error);
                     },
                     { enableHighAccuracy: true }
@@ -346,6 +466,14 @@
         function displayDistanceInfo(cardElement, item) {
             const placeholder = cardElement.querySelector('.location-info-placeholder');
             if (!placeholder) return;
+            
+            // Only show distance if sorting is active for this section
+            const dest = item.destination;
+            const type = item.type;
+            if (!activeFilters[dest] || !activeFilters[dest][type] || !activeFilters[dest][type].sortByDistance) {
+                 placeholder.style.display = 'none';
+                 return;
+            }
 
             const distanceSpan = placeholder.querySelector('.distance-text');
             if (!distanceSpan) return;
@@ -354,13 +482,17 @@
             if (item.driving?.duration?.text && item.driving?.distance?.text) {
                 html += `<span class="flex items-center gap-2"><i class="fa-solid fa-car fa-fw text-green-500"></i> ${item.driving.duration.text} (${item.driving.distance.text})</span>`;
             }
-            
+            if (item.walking?.duration?.text && item.walking?.distance?.text) {
+                if (html) html += `<span class="text-slate-400 mx-1">|</span>`;
+                html += `<span class="flex items-center gap-2"><i class="fa-solid fa-person-walking fa-fw text-blue-500"></i> ${item.walking.duration.text} (${item.walking.distance.text})</span>`;
+            }
+
             if (html) {
                 distanceSpan.innerHTML = html;
                 placeholder.style.display = 'flex';
             } else {
-                distanceSpan.innerHTML = '';
-                placeholder.style.display = 'none';
+                distanceSpan.innerHTML = 'חישוב מרחק לא זמין'; 
+                placeholder.style.display = 'flex';
             }
         }
 
@@ -426,7 +558,7 @@
             getLocationBtn.addEventListener('click', handleGetLocation);
 
             const q = query(attractionsCollection);
-            onSnapshot(q, (snapshot) => {
+            onSnapshot(q, async (snapshot) => {
                 allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 allItems.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
                 
@@ -444,7 +576,7 @@
             });
         }
 
-        // --- Add/Edit Modal & Form Logic ---
+        // --- Add/Edit Modal & Form Logic (Largely Unchanged) ---
         function openModalHandler(itemId = null) {
             editingItemId = itemId;
             googlePlaceDetails = null;
@@ -463,10 +595,12 @@
                 const item = allItems.find(i => i.id === editingItemId);
                 if (item) {
                     isRestaurant = item.type === 'מסעדה/אוכל';
+                    // Defer filling form to allow step content to generate
                     setTimeout(() => {
-                        generateStepContent(1);
+                        generateStepContent(1); // Ensure step 1 content exists
                         document.getElementById('item-name').value = item.name || '';
                         
+                        // Pre-fill other fields after they are generated
                         if(document.getElementById('item-destination')) document.getElementById('item-destination').value = item.destination || '';
                         if(document.getElementById('item-type')) document.getElementById('item-type').value = item.type || '';
                         if(document.getElementById('item-short-description')) document.getElementById('item-short-description').value = item.shortDescription || '';
@@ -520,8 +654,8 @@
             const currentType = itemTypeEl ? itemTypeEl.value : (allItems.find(i => i.id === editingItemId)?.type || '');
             isRestaurant = currentType === 'מסעדה/אוכל';
             
-            const baseSteps = [1, 2, 3, 4, 5, 6, 7];
-            const restaurantSteps = [8, 9];
+            const baseSteps = [1, 2, 3, 4, 5, 6, 7]; // Name, Dest, Type, Location, Reservation, ShortDesc, FullDesc
+            const restaurantSteps = [8, 9]; // Kosher, FoodType
             
             let activeSteps = [...baseSteps];
             if (isRestaurant) {
@@ -544,8 +678,8 @@
             }
             
             if (document.getElementById('map-preview')) {
-                 const item = allItems.find(i => i.id === editingItemId);
-                 initAddEditMap(item?.coords);
+                const item = allItems.find(i => i.id === editingItemId);
+                initAddEditMap(item?.coords);
             }
 
             backBtn.classList.toggle('hidden', currentModalStep === 1);
@@ -680,7 +814,7 @@
             if (message) setTimeout(() => { modalError.textContent = ''; }, 4000);
         }
 
-        // --- Firestore & Rendering Logic ---
+        // --- [REVISED] Firestore & Rendering Logic ---
         function renderAllItems() {
             if (!itemsContainer) return;
             if (allItems.length === 0 && !isInitialLoad) {
@@ -689,6 +823,12 @@
                 return;
             }
             
+            const preservedOpenStates = {};
+            document.querySelectorAll('#items-container details').forEach(detail => {
+                const key = detail.dataset.key; // e.g., "ניו יורק" or "ניו יורק-מסעדה/אוכל"
+                if (key) preservedOpenStates[key] = detail.open;
+            });
+
             itemsContainer.innerHTML = '';
             loadingMessage.style.display = 'none';
 
@@ -701,13 +841,13 @@
 
             siteData.destinations.forEach(dest => {
                 if (groupedByDest[dest]) {
-                    if (!activeFilters[dest]) activeFilters[dest] = { kosher: false, foodType: '' };
+                    if (!activeFilters[dest]) activeFilters[dest] = {};
 
                     const destSection = document.createElement('details');
                     destSection.className = "bg-white/70 backdrop-blur-md rounded-2xl shadow-lg overflow-hidden relative";
-                    // [REVISED] Default to closed
-                    destSection.open = false; 
-                    destSection.dataset.dest = dest;
+                    // [MODIFIED] Default to closed
+                    destSection.open = preservedOpenStates[dest] || false; 
+                    destSection.dataset.key = dest;
 
                     const destEmoji = siteData.destinationEmojis[dest] || '📍';
                     destSection.innerHTML = `<summary class="text-2xl md:text-3xl font-bold text-slate-800 flex justify-between items-center p-5 hover:bg-white/30 transition"><span class="flex items-center gap-4">${destEmoji} ${dest}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
@@ -725,69 +865,70 @@
                     }, {});
 
                     Object.keys(groupedByType).sort().forEach(type => {
+                        if (!activeFilters[dest][type]) activeFilters[dest][type] = { kosher: false, foodType: '', sortByDistance: false };
+
                         const typeSection = document.createElement('details');
                         typeSection.className = "bg-white/80 p-4 rounded-xl shadow-md";
-                        // [REVISED] Default to closed
-                        typeSection.open = false; 
+                        // [MODIFIED] Default to closed
+                        typeSection.open = preservedOpenStates[`${dest}-${type}`] || false;
+                        typeSection.dataset.key = `${dest}-${type}`;
                         
                         const typeIcon = siteData.placeTypeEmojis[type] || '📌';
-                        const categoryId = `${dest}-${type}`;
-                        const isSorted = distanceSortState[categoryId];
-
-                        let summaryHtml = `
-                            <summary class="text-lg md:text-xl font-semibold text-slate-700 flex justify-between items-center">
-                                <span>${typeIcon} ${type}</span>
-                                <i class="fa-solid fa-chevron-down chevron-icon"></i>
-                            </summary>`;
+                        let summaryHtml = `<summary class="text-lg md:text-xl font-semibold text-slate-700 flex justify-between items-center"><span>${typeIcon} ${type}</span><i class="fa-solid fa-chevron-down chevron-icon"></i></summary>`;
                         
                         const typeContentDiv = document.createElement('div');
                         typeContentDiv.className = "mt-4 pt-4 border-t space-y-4";
                         
                         let itemsForType = groupedByType[type];
                         
-                        // [NEW] Toolbar for filtering and sorting within each category
-                        const categoryToolbar = document.createElement('div');
-                        categoryToolbar.className = 'local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center gap-4 mb-4';
+                        // [NEW] Local filter and sort bar for each type
+                        const toolsIdSuffix = `${dest.replace(/\s/g, '')}-${type.replace(/[\s/]/g, '')}`;
+                        let filterHtml = `<div class="local-filters bg-slate-100 p-3 rounded-lg flex flex-wrap items-center justify-between gap-4 mb-4">`;
                         
-                        let filterHtml = `<span class="font-bold text-slate-600 text-sm">סינון:</span>`;
+                        // Food-specific filters
                         if (type === 'מסעדה/אוכל') {
-                             const allFoodTypesInDest = [...new Set(itemsForDestination.filter(i => i.type === 'מסעדה/אוכל' && i.foodType).map(i => i.foodType))];
-                             filterHtml += `
-                                <div class="flex items-center gap-2">
-                                    <input type="checkbox" id="kosher-filter-${dest.replace(/\s/g, '')}" data-destination="${dest}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest].kosher ? 'checked' : ''}>
-                                    <label for="kosher-filter-${dest.replace(/\s/g, '')}" class="text-sm font-medium text-slate-600">כשר בלבד</label>
+                            const allFoodTypesInDest = [...new Set(itemsForDestination.filter(i => i.type === 'מסעדה/אוכל').map(i => i.foodType).filter(Boolean))];
+                            filterHtml += `
+                                <div class="flex items-center gap-4">
+                                    <span class="font-bold text-slate-600 text-sm">סינון:</span>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="kosher-filter-${toolsIdSuffix}" data-destination="${dest}" data-type="${type}" class="local-filter-kosher h-4 w-4 rounded" ${activeFilters[dest][type].kosher ? 'checked' : ''}>
+                                        <label for="kosher-filter-${toolsIdSuffix}" class="text-sm font-medium text-slate-600">כשר בלבד</label>
+                                    </div>
+                                    <select data-destination="${dest}" data-type="${type}" class="local-filter-food-type form-select rounded-md text-sm py-1">
+                                        <option value="">כל סוגי האוכל</option>
+                                        ${allFoodTypesInDest.sort().map(ft => `<option value="${ft}" ${activeFilters[dest][type].foodType === ft ? 'selected' : ''}>${siteData.foodTypes[ft] || '🍴'} ${ft}</option>`).join('')}
+                                    </select>
                                 </div>
-                                <select data-destination="${dest}" class="local-filter-food-type form-select rounded-md text-sm py-1">
-                                    <option value="">כל סוגי האוכל</option>
-                                    ${allFoodTypesInDest.sort().map(ft => `<option value="${ft}" ${activeFilters[dest].foodType === ft ? 'selected' : ''}>${siteData.foodTypes[ft] || '🍴'} ${ft}</option>`).join('')}
-                                </select>
-                             `;
+                            `;
+                        } else {
+                            filterHtml += `<div></div>`; // Placeholder for alignment
                         }
 
-                        // [NEW] Sort by distance button logic
-                        const sortButtonText = isSorted ? 'בטל מיון' : 'מיין לפי מרחק';
-                        const sortButtonIcon = isSorted ? 'fa-times' : 'fa-location-arrow';
-                        const sortButtonClass = isSorted ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-500 hover:bg-blue-600';
-
+                        // Sort by distance toggle
                         filterHtml += `
-                            <button class="sort-by-distance-btn text-white text-sm font-semibold py-1 px-3 rounded-md transition ${sortButtonClass}" data-destination="${dest}" data-type="${type}">
-                                <i class="fas ${sortButtonIcon} mr-1"></i> ${sortButtonText}
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <label for="sort-toggle-${toolsIdSuffix}" class="text-sm font-semibold text-slate-700">מיין לפי מרחק</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="sort-toggle-${toolsIdSuffix}" class="sort-distance-toggle" data-destination="${dest}" data-type="${type}" ${activeFilters[dest][type].sortByDistance ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         `;
+                        filterHtml += `</div>`;
+                        typeContentDiv.insertAdjacentHTML('afterbegin', filterHtml);
 
-                        categoryToolbar.innerHTML = filterHtml;
-                        typeContentDiv.appendChild(categoryToolbar);
-                        
+                        // Apply filters
                         if (type === 'מסעדה/אוכל') {
-                            if (activeFilters[dest].kosher) itemsForType = itemsForType.filter(item => item.isKosher === 'כן');
-                            if (activeFilters[dest].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest].foodType);
+                            if (activeFilters[dest][type].kosher) itemsForType = itemsForType.filter(item => item.isKosher === 'כן');
+                            if (activeFilters[dest][type].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest][type].foodType);
                         }
-                        
-                        // [REVISED] Sort based on the new state object
-                        if (isSorted) {
+
+                        // Apply sorting
+                        if (activeFilters[dest][type].sortByDistance) {
                             itemsForType.sort((a, b) => (a.driving?.duration.value ?? Infinity) - (b.driving?.duration.value ?? Infinity));
                         }
-
+                        
                         const cardGrid = document.createElement('div');
                         cardGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
 
@@ -839,9 +980,7 @@
                                     </div>
                                 `;
                                 cardGrid.appendChild(card);
-                                if (isSorted) {
-                                    displayDistanceInfo(card, item);
-                                }
+                                displayDistanceInfo(card, item);
                             });
                         } else {
                             cardGrid.innerHTML = `<p class="text-slate-500 col-span-full text-center">אין מקומות התואמים לסינון.</p>`;
@@ -854,6 +993,10 @@
                     });
 
                     destSection.appendChild(contentDiv);
+                    const sectionLoader = document.createElement('div');
+                    sectionLoader.className = 'section-loader hidden';
+                    sectionLoader.innerHTML = `<i class="fas fa-sync-alt fa-2x fa-spin text-blue-500"></i>`;
+                    destSection.appendChild(sectionLoader);
                     itemsContainer.appendChild(destSection);
                 }
             });
@@ -908,6 +1051,16 @@
                     ${item.location ? `<div class="flex items-start gap-4"><i class="fa-solid fa-location-dot fa-fw text-slate-400 mt-1"></i><p class="text-slate-700 font-semibold">${item.location}</p></div>` : ''}
                     ${item.hours ? `<div class="flex items-start gap-4"><i class="fa-regular fa-clock fa-fw text-slate-400 mt-1"></i><p class="text-slate-700 whitespace-pre-wrap">${item.hours}</p></div>` : ''}
                     ${item.location ? `<div id="details-map" class="w-full h-48 rounded-lg shadow-md"></div>` : ''}
+                    <div id="details-location-info" class="pt-4 border-t space-y-2" style="display: none;">
+                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
+                            <i class="fa-solid fa-car fa-fw text-green-500"></i>
+                            <span id="details-driving-text" class="text-slate-700"></span>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white p-3 rounded-lg shadow-inner">
+                             <i class="fa-solid fa-person-walking fa-fw text-blue-500"></i>
+                            <span id="details-walking-text" class="text-slate-700"></span>
+                        </div>
+                    </div>
                 </div>
                 <div class="p-4 bg-slate-100 border-t flex flex-wrap justify-center gap-3">
                     <a href="${navLink}" target="_blank" class="flex-1 text-center bg-blue-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-blue-700 transition"><i class="fa-solid fa-diamond-turn-right mr-2"></i>נווט</a>
@@ -927,6 +1080,20 @@
 
             if (item.coords) {
                 initDetailsMap(item.coords);
+                // Show distance info if it's already calculated and available on the item
+                if (userLocation && (item.driving || item.walking)) {
+                    const locationInfoDiv = document.getElementById('details-location-info');
+                    const drivingTextEl = document.getElementById('details-driving-text');
+                    const walkingTextEl = document.getElementById('details-walking-text');
+                    
+                    const drivingText = (item.driving?.duration?.text) ? `זמן נסיעה של כ-${item.driving.duration.text} (${item.driving.distance.text})` : 'חישוב מרחק נסיעה לא זמין';
+                    const walkingText = (item.walking?.duration?.text) ? `זמן הליכה של כ-${item.walking.duration.text} (${item.walking.distance.text})` : 'חישוב מרחק הליכה לא זמין';
+                    
+                    drivingTextEl.textContent = drivingText;
+                    walkingTextEl.textContent = walkingText;
+                    
+                    locationInfoDiv.style.display = 'block';
+                }
             }
         }
 
@@ -1001,6 +1168,7 @@
                 }
             }
             
+            // Preserve existing coordinates if a new place isn't selected
             const existingItem = editingItemId ? allItems.find(i => i.id === editingItemId) : null;
             let coords = existingItem?.coords || null;
             let photos = existingItem?.photos || [];
@@ -1052,77 +1220,91 @@
             }
         });
 
-        itemsContainer.addEventListener('click', async (e) => {
+        itemsContainer.addEventListener('click', (e) => {
             const card = e.target.closest('.item-card');
-            const sortBtn = e.target.closest('.sort-by-distance-btn');
+            if (!card) return;
 
-            if (sortBtn) {
-                e.preventDefault();
+            const actionBtn = e.target.closest('.action-btn');
+
+            if (actionBtn) {
                 e.stopPropagation();
-                const dest = sortBtn.dataset.destination;
-                const type = sortBtn.dataset.type;
-                const categoryId = `${dest}-${type}`;
+                const id = card.dataset.id;
+                const item = allItems.find(i => i.id === id);
                 
-                // Toggle the sort state
-                distanceSortState[categoryId] = !distanceSortState[categoryId];
-
-                // If we are turning sorting ON, and distances haven't been calculated yet for this item
-                // (we can check the first item in the category)
-                const firstItemInCategory = allItems.find(i => i.destination === dest && i.type === type);
-                if (distanceSortState[categoryId] && firstItemInCategory && firstItemInCategory.driving === undefined) {
-                    await calculateDistancesForCategory(dest, type);
-                }
-
-                renderAllItems();
-                return;
-            }
-            
-            if (card) {
-                const actionBtn = e.target.closest('.action-btn');
-                if (actionBtn) {
-                    e.stopPropagation();
-                    const id = card.dataset.id;
-                    const item = allItems.find(i => i.id === id);
+                if (actionBtn.matches('.delete-btn')) {
+                    const modalTitle = document.getElementById('delete-modal-title');
+                    const confirmBtn = document.getElementById('delete-modal-confirm');
+                    modalTitle.textContent = `האם למחוק את "${item.name}"?`;
                     
-                    if (actionBtn.matches('.delete-btn')) {
-                        const modalTitle = document.getElementById('delete-modal-title');
-                        const confirmBtn = document.getElementById('delete-modal-confirm');
-                        modalTitle.textContent = `האם למחוק את "${item.name}"?`;
-                        
-                        const confirmHandler = async () => {
-                            try { await deleteDoc(doc(db, 'attractions', id)); } 
-                            catch (error) { console.error("Failed to delete item:", error); } 
-                            finally { closeDeleteModal(); }
-                        };
+                    const confirmHandler = async () => {
+                        try { await deleteDoc(doc(db, 'attractions', id)); } 
+                        catch (error) { console.error("Failed to delete item:", error); } 
+                        finally { closeDeleteModal(); }
+                    };
 
-                        const closeDeleteModal = () => {
-                            deleteModal.classList.add('hidden');
-                            deleteModal.classList.remove('flex');
-                            confirmBtn.removeEventListener('click', confirmHandler);
-                        };
-                        
-                        confirmBtn.addEventListener('click', confirmHandler, { once: true });
-                        document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
+                    const closeDeleteModal = () => {
+                        deleteModal.classList.add('hidden');
+                        deleteModal.classList.remove('flex');
+                        confirmBtn.removeEventListener('click', confirmHandler);
+                    };
+                    
+                    confirmBtn.addEventListener('click', confirmHandler, { once: true });
+                    document.getElementById('delete-modal-cancel').addEventListener('click', closeDeleteModal, { once: true });
 
-                        deleteModal.classList.remove('hidden');
-                        deleteModal.classList.add('flex');
-                    } else if (actionBtn.matches('.edit-btn')) {
-                        openModalHandler(id);
-                    }
-                } else {
-                    openDetailsModal(card.dataset.id);
+                    deleteModal.classList.remove('hidden');
+                    deleteModal.classList.add('flex');
+                } else if (actionBtn.matches('.edit-btn')) {
+                    openModalHandler(id);
                 }
+            } else {
+                openDetailsModal(card.dataset.id);
             }
         });
         
-        itemsContainer.addEventListener('change', e => {
-            const dest = e.target.dataset.destination;
-            if (!dest) return;
+        // [REVISED] Event listener for all filters and sorting toggles
+        itemsContainer.addEventListener('change', async e => {
+            const target = e.target;
+            const dest = target.dataset.destination;
+            const type = target.dataset.type;
+            if (!dest || !type) return;
             
-            if (e.target.matches('.local-filter-kosher')) activeFilters[dest].kosher = e.target.checked;
-            if (e.target.matches('.local-filter-food-type')) activeFilters[dest].foodType = e.target.value;
+            const typeSection = target.closest('details[data-key]');
+            const loader = typeSection.querySelector('.section-loader'); // This might not exist, handle gracefully
+
+            let shouldReRender = false;
+            let shouldSort = false;
+
+            if (target.matches('.local-filter-kosher')) {
+                activeFilters[dest][type].kosher = target.checked;
+                shouldReRender = true;
+            }
+            if (target.matches('.local-filter-food-type')) {
+                activeFilters[dest][type].foodType = target.value;
+                shouldReRender = true;
+            }
             
-            renderAllItems();
+            if (target.matches('.sort-distance-toggle')) {
+                activeFilters[dest][type].sortByDistance = target.checked;
+                if (target.checked) {
+                    shouldSort = true;
+                } else {
+                    // If unchecking, just re-render without sorting
+                    shouldReRender = true;
+                }
+            }
+
+            if (shouldSort) {
+                if(loader) loader.classList.remove('hidden');
+                await handleSortRequest(dest, type); // This function now handles getting location and re-rendering
+                if(loader) loader.classList.add('hidden');
+            } else if (shouldReRender) {
+                if(loader) loader.classList.remove('hidden');
+                // Use a timeout to allow the UI to show the loader before re-rendering
+                setTimeout(() => {
+                    renderAllItems();
+                    if(loader) loader.classList.add('hidden');
+                }, 50);
+            }
         });
 
         // --- Auth & Initial Load ---
