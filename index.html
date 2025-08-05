@@ -300,6 +300,22 @@
                 alert("אנא הזן מספר תקין.");
             }
         }
+        
+        /**
+         * Parses a date string (e.g., "25/12/2025" or "25/12/2025 - 26/12/2025")
+         * and returns a JavaScript Date object for the start date.
+         * @param {string} dateString The date string to parse.
+         * @returns {Date|null} A Date object or null if the format is invalid.
+         */
+        function parseStartDateString(dateString) {
+            if (!dateString) return null;
+            // Takes the first date in a range or the single date
+            const datePart = dateString.split(' - ')[0]; 
+            const [day, month, year] = datePart.split('/').map(Number);
+            if (!day || !month || !year) return null; // Handle invalid format
+            // new Date(year, month-1, day)
+            return new Date(year, month - 1, day);
+        }
 
         function parseDateRange(dateString) {
             if (!dateString || !dateString.includes(' - ')) return { start: null, end: null };
@@ -508,7 +524,18 @@
                 onSnapshot(query(logisticsCollection), (snapshot) => {
                     allLogisticsItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     const hotels = allLogisticsItems.filter(item => item.type === 'hotel');
-                    const flights = allLogisticsItems.filter(item => item.type === 'flight');
+                    let flights = allLogisticsItems.filter(item => item.type === 'flight');
+                    
+                    // Sort flights by their start date
+                    flights.sort((a, b) => {
+                        const dateA = parseStartDateString(a.dates);
+                        const dateB = parseStartDateString(b.dates);
+                        if (dateA && dateB) {
+                            return dateA - dateB;
+                        }
+                        // Keep original order if dates are invalid or missing
+                        return 0; 
+                    });
                     
                     buildHotelCards(hotels);
                     buildFlightCards(flights);
