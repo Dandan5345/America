@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>מסע חלומות 🗽 דף הבית</title>
     <link rel="manifest" href="manifest.json">
-    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -41,19 +40,15 @@
 </head>
 <body>
 
-    <!-- Loading Overlay -->
     <div id="loading-overlay" class="fixed inset-0 bg-white/90 backdrop-blur-sm z-[200] flex flex-col items-center justify-center gap-4">
         <i class="fas fa-plane text-5xl text-blue-600 animate-spin"></i>
         <p class="text-xl font-bold text-slate-700">טוען את מרכז הבקרה...</p>
     </div>
 
-    <!-- Fixed Background -->
     <div class="fixed inset-0 z-0 bg-cover bg-center" style="background-image: url('https://i.imgur.com/PXLTIi4.jpeg');"></div>
     <div class="fixed inset-0 z-0 bg-black/50"></div>
 
-    <!-- Scrollable Content Wrapper -->
     <div class="relative z-10">
-        <!-- Navigation Modal -->
         <div id="nav-modal" class="modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden opacity-0">
             <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
                 <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
@@ -66,7 +61,6 @@
             </div>
         </div>
         
-        <!-- TopCashback Edit Modal -->
         <div id="cashback-modal" class="modal fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 hidden opacity-0">
             <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
                 <h3 class="text-xl font-bold text-slate-800 mb-4">עדכון החזר TopCashback</h3>
@@ -82,7 +76,6 @@
         </div>
 
 
-        <!-- Sidebar (Full Navigation Menu) -->
         <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
             <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
                 <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
@@ -91,7 +84,6 @@
             <nav id="main-menu" class="p-4 space-y-2"></nav>
         </aside>
 
-        <!-- Main Content -->
         <div id="main-content" class="min-h-screen">
             <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
                 <div class="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -109,7 +101,6 @@
             <main>
                 <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
                 
-                    <!-- Hero Section with New Navigation -->
                     <section class="text-center">
                         <h2 class="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg">ההרפתקה הגדולה שלנו מחוף לחוף</h2>
                         <p class="mt-4 text-lg text-slate-200 max-w-3xl mx-auto">זהו מרכז הבקרה של הטיול! מכאן אפשר לנווט לכל המידע החשוב.</p>
@@ -123,28 +114,30 @@
                             <a href="summary.html" class="main-nav-button bg-white/20 backdrop-blur-md hover:bg-white/30 flex flex-col items-center justify-center p-4 rounded-xl text-white text-center">
                                 <i class="fas fa-plane-departure text-3xl mb-2"></i><span class="font-bold">סיכום מלונות ומעברים</span>
                             </a>
-                        </div>
+                             <div class="sm:col-span-3 mt-4">
+                                <button id="gemini-nearby-btn" class="main-nav-button bg-gradient-to-r from-purple-500 to-indigo-600 w-full flex items-center justify-center gap-3 p-4 rounded-xl text-white text-center shadow-lg">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i>
+                                    <span class="font-bold text-base">מה יש לעשות בסביבה שלי? (שאל את Gemini)</span>
+                                </button>
+                            </div>
+                            </div>
                     </section>
 
-                    <!-- Trip Map -->
                     <section>
                         <h3 class="text-3xl font-bold text-white mb-4 text-center drop-shadow-md">מפת המסע הכללית</h3>
                         <div class="bg-white/90 backdrop-blur-sm p-4 rounded-2xl shadow-lg"><div id="trip-map-container"></div></div>
                     </section>
 
-                    <!-- Hotel Summary -->
                     <section id="hotel-summary-section">
                         <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">🏨 סיכום המלונות שלנו</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                     </section>
                     
-                    <!-- Flight Summary -->
                     <section id="flight-summary-section">
                         <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">✈️ סיכום הטיסות שלנו</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                     </section>
 
-                    <!-- Cost Summaries -->
                     <section>
                         <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md flex items-center justify-center gap-4">
                             <span>📊 סיכומי עלויות</span>
@@ -157,7 +150,6 @@
                         </div>
                     </section>
 
-                     <!-- Destination Costs -->
                      <section>
                         <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">💸 סיכומי עלויות לפי יעד</h3>
                         <div class="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg">
@@ -250,6 +242,7 @@
         const cashbackModalClose = document.getElementById('cashback-modal-close');
         const cashbackModalSave = document.getElementById('cashback-modal-save');
         const cashbackAmountInput = document.getElementById('cashback-amount');
+        const geminiNearbyBtn = document.getElementById('gemini-nearby-btn'); // Gemini Button
 
         // --- Functions ---
         function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
@@ -302,18 +295,59 @@
         }
         
         /**
-         * Parses a date string (e.g., "25/12/2025" or "25/12/2025 - 26/12/2025")
-         * and returns a JavaScript Date object for the start date.
-         * @param {string} dateString The date string to parse.
-         * @returns {Date|null} A Date object or null if the format is invalid.
+         * New function to handle the Gemini recommendations button click.
          */
+        function handleGeminiNearbyClick() {
+            const button = geminiNearbyBtn;
+            const originalContent = button.innerHTML;
+            
+            if (!navigator.geolocation) {
+                alert("שירותי מיקום אינם נתמכים בדפדפן זה.");
+                return;
+            }
+
+            button.disabled = true;
+            button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span class="font-bold">מאכן את מיקומך...</span>`;
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    
+                    const prompt = `You are a friendly and expert travel guide.
+My current and exact location is: latitude ${latitude}, longitude ${longitude}.
+
+Please provide a detailed list of the most recommended and worthwhile attractions within a 3-kilometer radius of my location.
+
+For each attraction, please include the following details in Hebrew:
+1.  The name of the attraction.
+2.  The approximate distance from my current location (e.g., "about 1.2 km away").
+3.  A detailed description of what it is and what there is to do there.
+4.  The opening hours, if available.`;
+
+                    const encodedPrompt = encodeURIComponent(prompt);
+                    const geminiUrl = `https://gemini.google.com/prompt/${encodedPrompt}`;
+                    
+                    window.open(geminiUrl, '_blank');
+                    
+                    // Restore button
+                    button.disabled = false;
+                    button.innerHTML = originalContent;
+                },
+                (error) => {
+                    console.error("Geolocation error:", error);
+                    alert("לא ניתן היה לקבל את המיקום. אנא ודא שאישרת את הבקשה בדפדפן.");
+                    // Restore button
+                    button.disabled = false;
+                    button.innerHTML = originalContent;
+                }
+            );
+        }
+
         function parseStartDateString(dateString) {
             if (!dateString) return null;
-            // Takes the first date in a range or the single date
             const datePart = dateString.split(' - ')[0]; 
             const [day, month, year] = datePart.split('/').map(Number);
-            if (!day || !month || !year) return null; // Handle invalid format
-            // new Date(year, month-1, day)
+            if (!day || !month || !year) return null;
             return new Date(year, month - 1, day);
         }
 
@@ -477,7 +511,7 @@
             const mapContainer = document.getElementById('trip-map-container');
             if (!mapContainer || mapContainer._leaflet_id) return;
             const tripMap = L.map('trip-map-container').setView([38, -95], 3.5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 20 }).addTo(tripMap);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap © CARTO', maxZoom: 20 }).addTo(tripMap);
             const pathCoords = Object.values(siteData.locations).map(loc => loc.coords);
             Object.values(siteData.locations).forEach(loc => { L.marker(loc.coords, { icon: L.divIcon({ className: 'leaflet-div-icon', html: '📍' }) }).addTo(tripMap).bindTooltip(loc.name, {permanent: true, direction: 'top', offset: [0, -10]}).openTooltip(); });
             L.polyline(pathCoords, { color: '#38bdf8', weight: 3, opacity: 0.7, dashArray: '5, 10' }).addTo(tripMap);
@@ -491,6 +525,7 @@
         editCashbackBtn.addEventListener('click', openCashbackModal);
         cashbackModalClose.addEventListener('click', closeCashbackModal);
         cashbackModalSave.addEventListener('click', saveCashback);
+        geminiNearbyBtn.addEventListener('click', handleGeminiNearbyClick); // Gemini button listener
         
         document.querySelector('#hotel-summary-section').addEventListener('click', function(e) {
             const navBtn = e.target.closest('.nav-btn');
@@ -518,22 +553,18 @@
         onAuthStateChanged(auth, user => {
             const authContainer = document.getElementById('auth-container');
             if (user) {
-                const displayName = user.displayName || user.email.split('@')[0];
+                const displayName = user.displayName || 'משתמש';
                 authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span>`;
                 
                 onSnapshot(query(logisticsCollection), (snapshot) => {
                     allLogisticsItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    const hotels = allLogisticsItems.filter(item => item.type === 'hotel');
+                    const hotels = allLogisticsItems.filter(item => item.type === 'hotel').sort((a,b) => parseStartDateString(a.dates) - parseStartDateString(b.dates));
                     let flights = allLogisticsItems.filter(item => item.type === 'flight');
                     
-                    // Sort flights by their start date
                     flights.sort((a, b) => {
                         const dateA = parseStartDateString(a.dates);
                         const dateB = parseStartDateString(b.dates);
-                        if (dateA && dateB) {
-                            return dateA - dateB;
-                        }
-                        // Keep original order if dates are invalid or missing
+                        if (dateA && dateB) { return dateA - dateB; }
                         return 0; 
                     });
                     
@@ -551,9 +582,9 @@
                     if (doc.exists()) {
                         topCashbackAmountILS = doc.data().topCashbackAmount || -3068;
                     } else {
-                        topCashbackAmountILS = -3068; // Default if not set
+                        topCashbackAmountILS = -3068;
                     }
-                    buildCostTables(); // Rerender costs when cashback amount changes
+                    buildCostTables();
                 });
 
             } else {
