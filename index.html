@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
@@ -38,6 +37,13 @@
         
         /* Loading Overlay */
         #loading-overlay { transition: opacity 0.5s ease-in-out; }
+        .btn-spinner {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -135,7 +141,13 @@
 
                     <!-- Hotel Summary -->
                     <section id="hotel-summary-section">
-                        <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md">🏨 סיכום המלונות שלנו</h3>
+                        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
+                            <h3 class="text-3xl font-bold text-white text-center drop-shadow-md">🏨 סיכום המלונות שלנו</h3>
+                            <button id="refresh-rates-btn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-5 rounded-lg transition flex items-center gap-2 shadow-md">
+                                <i id="refresh-rates-icon" class="fas fa-sync-alt"></i>
+                                <span id="refresh-rates-text">רענן המרות</span>
+                            </button>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                     </section>
                     
@@ -147,12 +159,16 @@
 
                     <!-- Cost Summaries -->
                     <section>
-                        <h3 class="text-3xl font-bold text-white mb-6 text-center drop-shadow-md flex items-center justify-center gap-4">
+                        <h3 class="text-3xl font-bold text-white mb-2 text-center drop-shadow-md flex items-center justify-center gap-4">
                             <span>📊 סיכומי עלויות</span>
                             <button id="edit-cashback-btn" class="p-2 text-white/70 hover:text-white" title="ערוך החזר כספי">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>
                         </h3>
+                        <div id="exchange-rates-display" class="text-center text-slate-200 text-sm mb-4">
+                            <p id="usd-rate-display">טוען שער דולר...</p>
+                            <p id="cad-rate-display">טוען שער דולר קנדי...</p>
+                        </div>
                         <div class="bg-white/90 backdrop-blur-sm p-6 rounded-2xl shadow-lg">
                             <table id="final-summary-table" class="w-full"></table>
                         </div>
@@ -181,7 +197,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, query, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Firebase Configuration ---
@@ -202,6 +218,7 @@
 
         let allLogisticsItems = [];
         let topCashbackAmountILS = -3068; // Default value
+        let exchangeRates = { USD: null, CAD: null };
 
         const siteData = {
             menu: [
@@ -251,6 +268,9 @@
         const cashbackModalClose = document.getElementById('cashback-modal-close');
         const cashbackModalSave = document.getElementById('cashback-modal-save');
         const cashbackAmountInput = document.getElementById('cashback-amount');
+        const refreshRatesBtn = document.getElementById('refresh-rates-btn');
+        const usdRateDisplay = document.getElementById('usd-rate-display');
+        const cadRateDisplay = document.getElementById('cad-rate-display');
 
         // --- Functions ---
         function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
@@ -302,19 +322,11 @@
             }
         }
         
-        /**
-         * Parses a date string (e.g., "25/12/2025" or "25/12/2025 - 26/12/2025")
-         * and returns a JavaScript Date object for the start date.
-         * @param {string} dateString The date string to parse.
-         * @returns {Date|null} A Date object or null if the format is invalid.
-         */
         function parseStartDateString(dateString) {
             if (!dateString) return null;
-            // Takes the first date in a range or the single date
             const datePart = dateString.split(' - ')[0]; 
             const [day, month, year] = datePart.split('/').map(Number);
-            if (!day || !month || !year) return null; // Handle invalid format
-            // new Date(year, month-1, day)
+            if (!day || !month || !year) return null;
             return new Date(year, month - 1, day);
         }
 
@@ -333,8 +345,9 @@
         function navigateToCurrentHotel(hotels) {
             const today = new Date();
             let targetHotel = null;
+            const sortedHotels = [...hotels].sort((a, b) => parseStartDateString(a.dates) - parseStartDateString(b.dates));
 
-            for (const hotel of hotels) {
+            for (const hotel of sortedHotels) {
                 const range = parseDateRange(hotel.dates);
                 if (range.start && range.end && today >= range.start && today <= range.end) {
                     targetHotel = hotel;
@@ -343,13 +356,14 @@
             }
             
             if (!targetHotel) {
-                const upcomingHotels = hotels
-                    .map(hotel => ({ hotel, range: parseDateRange(hotel.dates) }))
-                    .filter(item => item.range.start && item.range.start > today)
-                    .sort((a, b) => a.range.start - b.range.start);
+                const upcomingHotels = sortedHotels
+                    .filter(hotel => {
+                        const range = parseDateRange(hotel.dates);
+                        return range.start && range.start > today;
+                    });
 
                 if (upcomingHotels.length > 0) {
-                    targetHotel = upcomingHotels[0].hotel;
+                    targetHotel = upcomingHotels[0];
                 }
             }
 
@@ -361,6 +375,7 @@
         }
 
         function buildMenu() {
+            mainMenu.innerHTML = '';
             siteData.menu.forEach(destination => {
                 const destinationDiv = document.createElement('div');
                 const button = document.createElement('button');
@@ -386,16 +401,28 @@
             const container = document.querySelector('#hotel-summary-section .grid');
             if (!container) return;
             container.innerHTML = '';
-            hotels.forEach(hotel => {
+            
+            const sortedHotels = [...hotels].sort((a, b) => {
+                const dateA = parseStartDateString(a.dates);
+                const dateB = parseStartDateString(b.dates);
+                if (!dateA) return 1;
+                if (!dateB) return -1;
+                return dateA - dateB;
+            });
+
+            sortedHotels.forEach(hotel => {
                 let kitchenIcon = '', breakfastIcon = '';
                 if (hotel.kitchen === "הכל כלול") { kitchenIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-star fa-fw text-amber-500"></i> <strong>הכל כלול</strong></li>`; }
                 else if (hotel.kitchenette !== null) { kitchenIcon = hotel.kitchenette ? `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-green-500"></i> <strong>מטבחון:</strong> כן</li>` : `<li class="flex items-center gap-2"><i class="fa-solid fa-utensils fa-fw text-red-500"></i> <strong>מטבחון:</strong> אין</li>`; }
                 if (hotel.breakfast === "הכל כלול") {} 
                 else if (hotel.breakfast !== null) { breakfastIcon = `<li class="flex items-center gap-2"><i class="fa-solid fa-mug-saucer fa-fw text-blue-500"></i> <strong>א. בוקר:</strong> ${hotel.breakfast}</li>`; }
                 
+                const priceUSD = hotel.price || 0;
+                const priceILS = exchangeRates.USD ? (priceUSD * exchangeRates.USD).toLocaleString('he-IL', {maximumFractionDigits: 0}) : '...';
+
                 const card = document.createElement('div');
                 card.className = "bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg flex flex-col";
-                card.innerHTML = `<h4 class="font-bold text-lg text-slate-800">${hotel.name}</h4><p class="text-sm text-slate-500 mb-3">${hotel.destination} | ${hotel.dates}</p><ul class="space-y-2 text-slate-600 text-sm mb-4">${kitchenIcon}${breakfastIcon}<li class="flex items-center gap-2"><i class="fa-solid fa-tag fa-fw text-blue-500"></i> <strong>מחיר:</strong> $${(hotel.price || 0).toLocaleString()}</li></ul><div class="mt-auto pt-4 border-t grid grid-cols-2 gap-2"><a href="${hotel.link}" target="_blank" class="text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition ${!hotel.link ? 'opacity-50 cursor-not-allowed' : ''}">לאתר <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a><button data-address="${hotel.address}" data-name="${hotel.name}" class="nav-btn text-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition">נווט <i class="fa-solid fa-diamond-turn-right text-xs"></i></button></div>`;
+                card.innerHTML = `<h4 class="font-bold text-lg text-slate-800">${hotel.name}</h4><p class="text-sm text-slate-500 mb-3">${hotel.destination} | ${hotel.dates}</p><ul class="space-y-2 text-slate-600 text-sm mb-4">${kitchenIcon}${breakfastIcon}<li class="flex items-center gap-2"><i class="fa-solid fa-dollar-sign fa-fw text-blue-500"></i> <strong>מחיר:</strong> $${priceUSD.toLocaleString()}</li><li class="flex items-center gap-2"><i class="fa-solid fa-shekel-sign fa-fw text-green-600"></i> <strong>בשקלים:</strong> ${priceILS} ₪</li></ul><div class="mt-auto pt-4 border-t grid grid-cols-2 gap-2"><a href="${hotel.link}" target="_blank" class="text-center bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition ${!hotel.link ? 'opacity-50 cursor-not-allowed' : ''}">לאתר <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a><button data-address="${hotel.address}" data-name="${hotel.name}" class="nav-btn text-center bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition">נווט <i class="fa-solid fa-diamond-turn-right text-xs"></i></button></div>`;
                 container.appendChild(card);
             });
         }
@@ -410,7 +437,12 @@
                 card.className = "main-nav-button bg-white/90 backdrop-blur-sm p-5 rounded-2xl shadow-lg flex items-center gap-4 text-right";
                 
                 const title = `טיסה: ${flight.from?.destination || ''} ← ${flight.to?.destination || ''}`;
-                const details = `<p class="text-sm text-slate-500">${flight.airline}</p><p class="text-sm text-slate-600 font-semibold">${flight.dates || ''}</p>`;
+                const pricePerPerson = flight.price_per_person || 0;
+                const numSeats = flight.seats?.length || 1;
+                const totalPriceUSD = pricePerPerson * numSeats;
+                const priceILS = exchangeRates.USD ? (totalPriceUSD * exchangeRates.USD).toLocaleString('he-IL', {maximumFractionDigits: 0}) : '...';
+
+                const details = `<p class="text-sm text-slate-500">${flight.airline}</p><p class="text-sm text-slate-600 font-semibold">${flight.dates || ''}</p><p class="text-sm text-slate-800 font-bold mt-2">מחיר: $${totalPriceUSD.toLocaleString()} (${priceILS} ₪)</p>`;
 
                 card.innerHTML = `
                     <i class="fas fa-plane-departure fa-2x text-sky-500"></i>
@@ -424,15 +456,16 @@
         }
 
         function buildCostTables() {
+            const summaryBody = document.getElementById('final-summary-table');
+            if (!summaryBody || !exchangeRates.USD) {
+                if(summaryBody) summaryBody.innerHTML = `<tr><td class="py-4 text-center">טוען שערי המרה...</td></tr>`;
+                return;
+            }
+            
             const hotels = allLogisticsItems.filter(item => item.type === 'hotel');
             const flights = allLogisticsItems.filter(item => item.type === 'flight');
             const cars = allLogisticsItems.filter(item => item.type === 'car_rental');
             
-            const summaryBody = document.getElementById('final-summary-table');
-            if (!summaryBody) return;
-            
-            const USD_TO_ILS_RATE = 3.75;
-
             const totalHotelsUSD = hotels.reduce((sum, hotel) => sum + (hotel.price || 0), 0);
             const totalFlightsUSD = flights.reduce((sum, flight) => {
                 const numSeats = flight.seats?.length || 1;
@@ -440,8 +473,8 @@
             }, 0);
             const totalCarsUSD = cars.reduce((sum, car) => sum + (car.price || 0), 0);
 
-            const totalHotelsILS = totalHotelsUSD * USD_TO_ILS_RATE;
-            const totalTransportILS = (totalFlightsUSD + totalCarsUSD) * USD_TO_ILS_RATE;
+            const totalHotelsILS = totalHotelsUSD * exchangeRates.USD;
+            const totalTransportILS = (totalFlightsUSD + totalCarsUSD) * exchangeRates.USD;
 
             const subTotal = totalHotelsILS + totalTransportILS;
             const finalTotal = subTotal + topCashbackAmountILS;
@@ -473,7 +506,6 @@
             });
         }
 
-
         function buildTripMap() {
             const mapContainer = document.getElementById('trip-map-container');
             if (!mapContainer || mapContainer._leaflet_id) return;
@@ -484,6 +516,52 @@
             L.polyline(pathCoords, { color: '#38bdf8', weight: 3, opacity: 0.7, dashArray: '5, 10' }).addTo(tripMap);
         }
 
+        async function fetchExchangeRates() {
+            const refreshIcon = document.getElementById('refresh-rates-icon');
+            const refreshText = document.getElementById('refresh-rates-text');
+            refreshIcon.classList.add('btn-spinner');
+            refreshText.textContent = 'מעדכן...';
+            refreshRatesBtn.disabled = true;
+
+            try {
+                const [usdRes, cadRes] = await Promise.all([
+                    fetch('https://api.frankfurter.app/latest?from=USD&to=ILS'),
+                    fetch('https://api.frankfurter.app/latest?from=CAD&to=ILS')
+                ]);
+                const usdData = await usdRes.json();
+                const cadData = await cadRes.json();
+                
+                exchangeRates.USD = usdData.rates.ILS;
+                exchangeRates.CAD = cadData.rates.ILS;
+
+                usdRateDisplay.textContent = `שער הדולר: 1$ = ${exchangeRates.USD.toFixed(3)}₪`;
+                cadRateDisplay.textContent = `שער קנדי: 1$ = ${exchangeRates.CAD.toFixed(3)}₪`;
+                
+                rerenderAllWithNewRates();
+
+            } catch (e) {
+                console.error("Failed to fetch exchange rates:", e);
+                usdRateDisplay.textContent = 'שגיאה בטעינת שער דולר';
+                cadRateDisplay.textContent = 'שגיאה בטעינת שער קנדי';
+            } finally {
+                refreshIcon.classList.remove('btn-spinner');
+                refreshText.textContent = 'רענן המרות';
+                refreshRatesBtn.disabled = false;
+            }
+        }
+
+        function rerenderAllWithNewRates() {
+            if (!allLogisticsItems.length) return;
+            const hotels = allLogisticsItems.filter(item => item.type === 'hotel');
+            const flights = allLogisticsItems.filter(item => item.type === 'flight');
+            
+            flights.sort((a, b) => parseStartDateString(a.dates) - parseStartDateString(b.dates));
+            
+            buildHotelCards(hotels);
+            buildFlightCards(flights);
+            buildCostTables();
+        }
+
         // --- Event Listeners ---
         hamburgerBtn.addEventListener('click', toggleSidebar);
         closeSidebarBtn.addEventListener('click', toggleSidebar);
@@ -492,6 +570,7 @@
         editCashbackBtn.addEventListener('click', openCashbackModal);
         cashbackModalClose.addEventListener('click', closeCashbackModal);
         cashbackModalSave.addEventListener('click', saveCashback);
+        refreshRatesBtn.addEventListener('click', fetchExchangeRates);
         
         document.querySelector('#hotel-summary-section').addEventListener('click', function(e) {
             const navBtn = e.target.closest('.nav-btn');
@@ -519,33 +598,22 @@
         onAuthStateChanged(auth, user => {
             const authContainer = document.getElementById('auth-container');
             if (user) {
-                const displayName = user.displayName || user.email.split('@')[0];
+                const displayName = user.displayName || user.email?.split('@')[0] || 'אורח';
                 authContainer.innerHTML = `<span class="text-sm font-semibold text-slate-700 hidden sm:block">שלום, ${displayName} 👋</span>`;
                 
-                onSnapshot(query(logisticsCollection), (snapshot) => {
-                    allLogisticsItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    const hotels = allLogisticsItems.filter(item => item.type === 'hotel');
-                    let flights = allLogisticsItems.filter(item => item.type === 'flight');
-                    
-                    // Sort flights by their start date
-                    flights.sort((a, b) => {
-                        const dateA = parseStartDateString(a.dates);
-                        const dateB = parseStartDateString(b.dates);
-                        if (dateA && dateB) {
-                            return dateA - dateB;
-                        }
-                        // Keep original order if dates are invalid or missing
-                        return 0; 
+                // Fetch rates first to avoid re-rendering multiple times
+                fetchExchangeRates().then(() => {
+                    onSnapshot(query(logisticsCollection), (snapshot) => {
+                        allLogisticsItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        rerenderAllWithNewRates(); // This will now render everything with rates
+                        
+                        const hotels = allLogisticsItems.filter(item => item.type === 'hotel');
+                        navigateHotelBtn.onclick = () => navigateToCurrentHotel(hotels);
+                        hideLoader();
+                    }, (error) => {
+                        console.error("Snapshot error:", error);
+                        hideLoader();
                     });
-                    
-                    buildHotelCards(hotels);
-                    buildFlightCards(flights);
-                    buildCostTables();
-                    navigateHotelBtn.onclick = () => navigateToCurrentHotel(hotels);
-                    hideLoader();
-                }, (error) => {
-                    console.error("Snapshot error:", error);
-                    hideLoader();
                 });
 
                 onSnapshot(configDocRef, (doc) => {
