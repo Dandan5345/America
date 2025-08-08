@@ -3,243 +3,389 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ממיר מטבעות בזמן אמת</title>
-    <!-- Loading Tailwind CSS for styling -->
+    <title>מסע חלומות 🇮🇱 יום היציאה</title>
+    <link rel="manifest" href="manifest.json">
+    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for a nice font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+
     <style>
-        /* Custom styles */
-        body {
-            font-family: 'Rubik', sans-serif;
+        body { font-family: 'Assistant', sans-serif; background-color: #f8fafc; }
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        .submenu { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+        .submenu.open { max-height: 1200px; }
+        #map-container { height: 400px; border-radius: 1rem; z-index: 0; }
+        .leaflet-div-icon { background: transparent; border: none; }
+        
+        /* Modal Styles */
+        #nav-modal { transition: opacity 0.3s ease; }
+        
+        /* Custom styles for interactive checklist */
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        .checklist-item input:checked + label {
+            text-decoration: line-through;
+            color: #9ca3af; /* gray-400 */
         }
-        /* Simple spinner animation */
-        .spinner {
-            border-top-color: transparent;
-            animation: spin 1s linear infinite;
+        .checklist-item input:checked + label .fa-circle { display: none; }
+        .checklist-item input:checked + label .fa-check-circle { display: inline-block; color: #22c55e; /* green-500 */ }
+        .fa-check-circle { display: none; }
+        
+        /* Nav Buttons in Schedule */
+        .nav-button {
+            display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem;
+            border-radius: 9999px; font-size: 0.875rem; font-weight: 600; color: white; transition: background-color 0.2s;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        /* Removing number input arrows for a cleaner look */
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
+        .nav-button.waze { background-color: #33ccff; }
+        .nav-button.waze:hover { background-color: #00bfff; }
+        .nav-button.gmaps { background-color: #4285F4; }
+        .nav-button.gmaps:hover { background-color: #3367D6; }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
+<body class="bg-slate-50">
 
-    <div id="loader" class="fixed inset-0 bg-gray-100 dark:bg-gray-900 z-50 flex flex-col items-center justify-center">
-        <div class="spinner w-12 h-12 border-4 border-blue-500 rounded-full"></div>
-        <p class="mt-4 text-lg text-gray-700 dark:text-gray-300">טוען שערי חליפין...</p>
-    </div>
-
-    <div class="container mx-auto p-4 max-w-lg mt-10">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8">
-            <h1 class="text-3xl font-bold text-center text-gray-800 dark:text-white mb-2">ממיר מטבעות</h1>
-            <p class="text-center text-gray-500 dark:text-gray-400 mb-6">שערי חליפין מעודכנים בזמן אמת</p>
-
-            <!-- Amount Input -->
-            <div class="mb-4">
-                <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">סכום</label>
-                <input type="number" id="amount" value="100" class="w-full p-3 text-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border-2 border-transparent focus:border-blue-500 focus:ring-0 outline-none transition">
+    <!-- Navigation Modal -->
+    <div id="nav-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm text-center">
+            <h3 id="nav-modal-title" class="text-xl font-bold text-slate-800 mb-4">נווט אל...</h3>
+            <div id="nav-modal-content" class="flex flex-col gap-4">
+                <a id="nav-waze-link" href="#" target="_blank" class="block w-full text-center bg-[#33ccff] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#00bfff] transition text-lg"><i class="fa-brands fa-waze"></i> Waze</a>
+                <a id="nav-gmaps-link" href="#" target="_blank" class="block w-full text-center bg-[#4285F4] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#3367D6] transition text-lg"><i class="fa-solid fa-map-location-dot"></i> Google Maps</a>
             </div>
-
-            <!-- Currency Selectors -->
-            <div class="flex items-center justify-between space-x-2 rtl:space-x-reverse">
-                <!-- From Currency -->
-                <div class="w-full">
-                    <label for="fromCurrency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ממטבע</label>
-                    <select id="fromCurrency" class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border-2 border-transparent focus:border-blue-500 focus:ring-0 outline-none transition"></select>
-                </div>
-
-                <!-- Swap Button -->
-                <div class="pt-6">
-                    <button id="swapBtn" title="החלף מטבעות" class="p-3 bg-gray-200 dark:bg-gray-600 hover:bg-blue-500 hover:text-white text-gray-600 dark:text-gray-300 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 focus:ring-blue-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- To Currency -->
-                <div class="w-full">
-                    <label for="toCurrency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">למטבע</label>
-                    <select id="toCurrency" class="w-full p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg border-2 border-transparent focus:border-blue-500 focus:ring-0 outline-none transition"></select>
-                </div>
-            </div>
-
-            <!-- Result Display -->
-            <div class="mt-8 text-center">
-                <p id="rateInfo" class="text-sm text-gray-500 dark:text-gray-400 mb-2 h-5"></p>
-                <div id="result" class="text-4xl font-bold text-blue-600 dark:text-blue-400 break-words"></div>
-                 <p id="error" class="text-red-500 mt-2 h-5"></p>
-            </div>
-            
-            <div class="text-center mt-6 text-xs text-gray-400 dark:text-gray-500">
-                <p>השערים מסופקים על ידי <a href="https://exchangerate.host" target="_blank" class="hover:underline">exchangerate.host</a></p>
-                <p id="lastUpdated"></p>
-            </div>
+             <p id="nav-modal-message" class="text-slate-600 hidden"></p>
+            <button id="nav-modal-close" class="mt-6 text-slate-500 hover:text-slate-700">סגור</button>
         </div>
     </div>
 
+    <!-- Sidebar (Full Navigation Menu) -->
+    <aside id="sidebar" class="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform translate-x-full overflow-y-auto">
+        <div class="p-4 flex justify-between items-center border-b sticky top-0 bg-white">
+            <h2 class="text-2xl font-bold text-slate-800">תפריט המסע</h2>
+            <button id="close-sidebar-btn" class="p-2 text-slate-500 hover:text-red-500"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <nav id="main-menu" class="p-4 space-y-2">
+            <!-- Menu will be built by JavaScript -->
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div id="main-content" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-30 shadow-sm">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center gap-2">
+                         <h1 class="text-lg sm:text-xl font-bold text-slate-800">✨ מסע חלומות: יום היציאה ✨</h1>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="index.html" class="p-2 text-slate-600 hover:text-blue-600" aria-label="דף הבית">
+                            <i class="fas fa-house fa-lg"></i>
+                        </a>
+                        <button id="navigate-hotel-btn" class="p-2 text-slate-600 hover:text-blue-600" aria-label="נווט למלון">
+                            <i class="fas fa-hotel fa-lg"></i>
+                        </button>
+                        <button id="hamburger-btn" class="p-2 text-slate-600 hover:text-blue-600 focus:outline-none">
+                            <i class="fas fa-bars fa-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Itinerary Display Area for Dec 22 -->
+        <main class="p-4 sm:p-6 lg:p-8">
+             <section id="day-22-12">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6">🇮🇱 22 בדצמבר: מתניעים!</h2>
+                <div class="bg-white p-6 rounded-2xl shadow-md">
+                    
+                    <!-- Schedule with Integrated Checklist and Nav Buttons -->
+                    <h3 class="text-xl font-bold text-slate-700 mb-4">לו"ז מפורט</h3>
+                    <ul class="space-y-4 text-slate-600 mb-8">
+                        <li class="flex items-center gap-4"><span class="font-bold text-lg text-slate-800 w-20">10:00</span><span class="text-lg">☀️ השכמה ובוקר טוב</span></li>
+                        <li class="flex items-center gap-4"><span class="font-bold text-lg text-slate-800 w-20">11:00</span><span class="text-lg">🥐 ארוחת בוקר אחרונה בארץ</span></li>
+                        
+                        <li>
+                            <details class="group">
+                                <summary class="flex items-center gap-4 cursor-pointer list-none">
+                                    <span class="font-bold text-lg text-slate-800 w-20">12:00</span>
+                                    <span class="text-lg flex-grow">🗂️ בדיקת מסמכים קריטית</span>
+                                    <i class="fa-solid fa-chevron-down transition-transform duration-300 group-open:rotate-180 text-slate-400"></i>
+                                </summary>
+                                <div id="checklist" class="mt-4 space-y-3 pr-2 pl-12 border-r-2 border-slate-200 mr-8"></div>
+                            </details>
+                        </li>
+
+                        <li class="flex items-start gap-4">
+                            <span class="font-bold text-lg text-slate-800 w-20 pt-1">13:00</span>
+                            <div class="flex-grow">
+                                <span class="text-lg">🛒 קניות אחרונות ב"אושר עד"</span>
+                                <div class="flex gap-2 mt-1">
+                                    <a href="https://waze.com/ul?q=כנפי%20נשרים%2024%2C%20ירושלים" target="_blank" class="nav-button waze"><i class="fa-brands fa-waze"></i> Waze</a>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=כנפי%20נשרים%2024%2C%20ירושלים" target="_blank" class="nav-button gmaps"><i class="fa-solid fa-map-location-dot"></i> Google</a>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li class="flex items-start gap-4">
+                            <span class="font-bold text-lg text-slate-800 w-20 pt-1">15:00</span>
+                             <div class="flex-grow">
+                                <span class="text-lg">😴 שנ"צ אסטרטגי</span>
+                                <div class="flex gap-2 mt-1">
+                                    <a href="https://waze.com/ul?q=רחל%20המשוררת%204%2C%20ירושלים" target="_blank" class="nav-button waze"><i class="fa-solid fa-house"></i> לבית</a>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <li class="flex items-center gap-4"><span class="font-bold text-lg text-slate-800 w-20">18:30</span><span class="text-lg">🚿 התארגנות סופית</span></li>
+                        
+                        <li class="flex items-start gap-4">
+                            <span class="font-bold text-lg text-slate-800 w-20 pt-1">19:30</span>
+                            <div class="flex-grow">
+                                <span class="text-lg">🚕 יציאה לנתב"ג!</span>
+                                <div class="flex gap-2 mt-1">
+                                    <a href="https://waze.com/ul?q=Ben%20Gurion%20Airport" target="_blank" class="nav-button waze"><i class="fa-brands fa-waze"></i> Waze</a>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=Ben%20Gurion%20Airport" target="_blank" class="nav-button gmaps"><i class="fa-solid fa-map-location-dot"></i> Google</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <!-- Map -->
+                    <div class="border-t pt-6">
+                        <h3 class="text-xl font-bold text-slate-700 mb-4">🗺️ מפת המסלול</h3>
+                        <div id="map-container"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <div id="overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
+
     <script>
-        // DOM Elements
-        const amountInput = document.getElementById('amount');
-        const fromSelect = document.getElementById('fromCurrency');
-        const toSelect = document.getElementById('toCurrency');
-        const swapBtn = document.getElementById('swapBtn');
-        const resultDiv = document.getElementById('result');
-        const rateInfoDiv = document.getElementById('rateInfo');
-        const errorDiv = document.getElementById('error');
-        const loader = document.getElementById('loader');
-        const lastUpdatedDiv = document.getElementById('lastUpdated');
-
-        // Global state
-        let rates = {};
-        let symbols = {};
-        const API_BASE_URL = 'https://api.exchangerate.host';
-
-        /**
-         * Fetches currency symbols and latest rates, then initializes the app.
-         */
-        async function initializeApp() {
-            try {
-                // Fetch symbols and rates in parallel for faster loading
-                const [symbolsRes, ratesRes] = await Promise.all([
-                    fetch(`${API_BASE_URL}/symbols`),
-                    fetch(`${API_BASE_URL}/latest?base=USD`) // Using USD as a stable base
-                ]);
-
-                if (!symbolsRes.ok || !ratesRes.ok) {
-                    throw new Error('שגיאה בטעינת הנתונים מהשרת.');
-                }
-
-                const symbolsData = await symbolsRes.json();
-                const ratesData = await ratesRes.json();
-
-                if (!symbolsData.success || !ratesData.success) {
-                    throw new Error('תשובת ה-API אינה תקינה.');
-                }
-
-                symbols = symbolsData.symbols;
-                rates = ratesData.rates;
-                
-                // Add base currency to rates object
-                rates['USD'] = 1;
-
-                populateCurrencies();
-                setupEventListeners();
-                updateConversion();
-                
-                const updateDate = new Date(ratesData.date);
-                lastUpdatedDiv.textContent = `עודכן לאחרונה: ${updateDate.toLocaleString('he-IL')}`;
-
-                // Hide loader after a short delay to prevent flashing
-                setTimeout(() => {
-                    loader.style.opacity = '0';
-                    loader.addEventListener('transitionend', () => loader.style.display = 'none');
-                }, 300);
-
-            } catch (err) {
-                console.error("Initialization Error:", err);
-                loader.innerHTML = `<p class="text-lg text-red-500">${err.message}<br>אנא נסה לרענן את הדף.</p>`;
-            }
-        }
-
-        /**
-         * Populates the currency select dropdowns with options.
-         */
-        function populateCurrencies() {
-            const fragment = document.createDocumentFragment();
-            const sortedSymbols = Object.keys(symbols).sort();
-
-            for (const code of sortedSymbols) {
-                const option = document.createElement('option');
-                option.value = code;
-                option.textContent = `${symbols[code].description} (${code})`;
-                fragment.appendChild(option);
-            }
-
-            fromSelect.appendChild(fragment.cloneNode(true));
-            toSelect.appendChild(fragment);
-
-            // Set default values
-            fromSelect.value = 'USD';
-            toSelect.value = 'ILS';
-        }
-
-        /**
-         * Sets up all necessary event listeners.
-         */
-        function setupEventListeners() {
-            amountInput.addEventListener('input', updateConversion);
-            fromSelect.addEventListener('change', updateConversion);
-            toSelect.addEventListener('change', updateConversion);
-            swapBtn.addEventListener('click', handleSwap);
-        }
-
-        /**
-         * Handles the currency swap logic.
-         */
-        function handleSwap() {
-            const temp = fromSelect.value;
-            fromSelect.value = toSelect.value;
-            toSelect.value = temp;
-            updateConversion();
-        }
-
-        /**
-         * Performs the currency conversion and updates the UI.
-         */
-        function updateConversion() {
-            const amount = parseFloat(amountInput.value);
-            const fromCurrency = fromSelect.value;
-            const toCurrency = toSelect.value;
-
-            errorDiv.textContent = ''; // Clear previous errors
-
-            if (isNaN(amount) || amount < 0) {
-                resultDiv.textContent = '';
-                rateInfoDiv.textContent = '';
-                if (amountInput.value !== '') {
-                   errorDiv.textContent = 'נא להזין סכום חיובי תקין.';
-                }
-                return;
-            }
-
-            if (!rates[fromCurrency] || !rates[toCurrency]) {
-                errorDiv.textContent = 'שער חליפין לא זמין עבור המטבע שנבחר.';
-                return;
-            }
-
-            // Perform conversion using USD as a base
-            const amountInUSD = amount / rates[fromCurrency];
-            const convertedAmount = amountInUSD * rates[toCurrency];
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- DATA ---
+            const siteData = {
+                menu: [
+                    { id: 'israel', page: 'israel.html', title: '🇮🇱 יום היציאה', emoji: '🇮🇱', days: [ { id: 'day-22-12', label: '22/12' } ] },
+                    { id: 'new-york', page: 'new-york.html', title: '🗽 ניו-יורק', emoji: '🗽', days: [
+                        { id: 'day-23-12', label: '23/12' }, { id: 'day-24-12', label: '24/12' }, { id: 'day-25-12', label: '25/12' }, { id: 'day-26-12', label: '26/12' }, { id: 'day-27-12', label: '27/12' }, { id: 'day-28-12', label: '28/12' }, { id: 'day-29-12', label: '29/12' }, { id: 'day-30-12', label: '30/12' }, { id: 'day-31-12', label: '31/12' }
+                    ]},
+                    { id: 'niagara', page: 'niagara.html', title: '❄️ מפלי הניאגרה', emoji: '❄️', days: [ { id: 'day-01-01', label: '01/01' }, { id: 'day-02-01', label: '02/01' }, { id: 'day-03-01', label: '03/01' }, { id: 'day-04-01', label: '04/01' } ]},
+                    { id: 'dc', page: 'dc.html', title: '🏛️ וושינגטון די.סי', emoji: '🏛️', days: [ { id: 'day-04-01', label: '04/01' }, { id: 'day-05-01', label: '05/01' }, { id: 'day-06-01', label: '06/01' }, { id: 'day-07-01', label: '07/01' } ]},
+                    { id: 'orlando', page: 'orlando.html', title: '🎢 אורלנדו', emoji: '🎢', days: [ { id: 'day-07-01', label: '07/01' }, { id: 'day-08-01', label: '08/01' }, { id: 'day-09-01', label: '09/01' }, { id: 'day-10-01', label: '10/01' }, { id: 'day-11-01', label: '11/01' }, { id: 'day-12-01', label: '12/01' } ]},
+                    { id: 'miami', page: 'miami.html', title: '🌴 מיאמי', emoji: '🌴', days: [ { id: 'day-12-01', label: '12/01' }, { id: 'day-13-01', label: '13/01' }, { id: 'day-14-01', label: '14/01' }, { id: 'day-15-01', label: '15/01' }, { id: 'day-16-01', label: '16/01' }, { id: 'day-17-01', label: '17/01' }, { id: 'day-18-01', label: '18/01' } ]},
+                    { id: 'punta-cana', page: 'punta-cana.html', title: '🍹 פונטה-קאנה', emoji: '🍹', days: [ { id: 'day-18-01', label: '18/01' }, { id: 'day-19-01', label: '19/01' }, { id: 'day-20-01', label: '20/01' }, { id: 'day-21-01', label: '21/01' }, { id: 'day-22-01', label: '22/01' } ]},
+                    { id: 'houston', page: 'houston.html', title: '🚀 יוסטון', emoji: '🚀', days: [ { id: 'day-22-01', label: '22/01' }, { id: 'day-23-01', label: '23/01' }, { id: 'day-24-01', label: '24/01' }, { id: 'day-25-01', label: '25/01' }, { id: 'day-26-01', label: '26/01' } ]},
+                    { id: 'la', page: 'la.html', title: '🎬 לוס אנג\'לס', emoji: '🎬', days: [ { id: 'day-26-01', label: '26/01' }, { id: 'day-27-01', label: '27/01' }, { id: 'day-28-01', label: '28/01' }, { id: 'day-29-01', label: '29/01' }, { id: 'day-30-01', label: '30/01' }, { id: 'day-31-01', label: '31/01' }, { id: 'day-01-02', label: '01/02' } ]},
+                    { id: 'sf', page: 'sf.html', title: '🌉 סן פרנסיסקו', emoji: '🌉', days: [ { id: 'day-01-02', label: '01/02' }, { id: 'day-02-02', label: '02/02' }, { id: 'day-03-02', label: '03/02' }, { id: 'day-04-02', label: '04/02' }, { id: 'day-05-02', label: '05/02' } ]},
+                ],
+                hotels: [
+                    { name: "TownePlace Suites by Marriott", dest: "ניו יורק", dates: "23-30.12", address: "140 W 28th St, New York, NY 10001" },
+                    { name: "Moxy NYC Chelsea", dest: "ניו יורק", dates: "30.12-01.01", address: "105 W 28th St, New York, NY 10001" },
+                    { name: "Tower Hotel at Fallsview", dest: "מפלי הניאגרה", dates: "01-04.01", address: "6732 Fallsview Blvd, Niagara Falls, ON L2G 3W6, Canada" },
+                    { name: "Hotel Madera", dest: "וושינגטון די.סי.", dates: "04-07.01", address: "1310 New Hampshire Ave NW, Washington, DC 20036" },
+                    { name: "TownePlace Suites Orlando", dest: "אורלנדו", dates: "07-12.01", address: "5801 Universal Blvd, Orlando, FL 32819" },
+                    { name: "Upsun Hotel & Social Club", dest: "מיאמי", dates: "12-15.01", address: "2216 Park Ave, Miami Beach, FL 33139" },
+                    { name: "Fortune House Hotel Suites", dest: "מיאמי", dates: "15-18.01", address: "185 SE 14th Terrace, Miami, FL 33131" },
+                    { name: "Majestic Mirage Punta Cana", dest: "פונטה קאנה", dates: "18-22.01", address: "Playa Arena Gorda, Bavaro, Punta Cana" },
+                    { name: "Hilton University of Houston", dest: "יוסטון", dates: "22-26.01", address: "4450 University Dr, Houston, TX 77204" },
+                    { name: "Sky-Rise Apartments", dest: "לוס אנג'לס", dates: "26.01-01.02", address: "S Hope St, Los Angeles, CA" },
+                    { name: "Marriott Vacation Club SF", dest: "סן פרנסיסקו", dates: "01-05.02", address: "1200 Sutter St, San Francisco, CA 94109" }
+                ],
+                checklist: [
+                    { id: 'passports', text: 'דרכונים (ישראלי, צרפתי, גרמני) בתוקף' },
+                    { id: 'esta', text: 'אישורי כניסה (ESTA) בתוקף' },
+                    { id: 'license', text: 'רישיונות נהיגה (ישראלי + בינלאומי)' },
+                    { id: 'credit_cards', text: 'כרטיסי אשראי (וליידע את החברות)' },
+                    { id: 'cash', text: 'מזומן (לזכור חובת הצהרה מעל 10,000$)' },
+                    { id: 'digital_docs', text: 'מסמכים דיגיטליים (טיסות, מלונות) זמינים אופליין' },
+                    { id: 'insurance', text: 'ביטוח נסיעות (מודפס + דיגיטלי)' },
+                    { id: 'photocopies', text: 'צילומים וגיבויים בענן של כל המסמכים' },
+                ]
+            };
             
-            // Calculate the single unit exchange rate for display
-            const singleUnitRate = (1 / rates[fromCurrency]) * rates[toCurrency];
+            // --- UI Elements ---
+            const sidebar = document.getElementById('sidebar');
+            const hamburgerBtn = document.getElementById('hamburger-btn');
+            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+            const overlay = document.getElementById('overlay');
+            const mainMenu = document.getElementById('main-menu');
+            const navModal = document.getElementById('nav-modal');
+            const navModalClose = document.getElementById('nav-modal-close');
+            const navigateHotelBtn = document.getElementById('navigate-hotel-btn');
 
-            // Display results
-            const formattedAmount = amount.toLocaleString('he-IL');
-            const formattedResult = convertedAmount.toLocaleString('he-IL', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 4
-            });
+            // --- Sidebar and Menu Functions ---
+            function toggleSidebar() { sidebar.classList.toggle('translate-x-full'); overlay.classList.toggle('hidden'); }
+            
+            function buildMenu() {
+                siteData.menu.forEach(destination => {
+                    const destinationDiv = document.createElement('div');
+                    const button = document.createElement('button');
+                    button.className = 'w-full text-right p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-slate-700 flex justify-between items-center transition-colors';
+                    button.innerHTML = `<span>${destination.title}</span> <i class="fas fa-chevron-down transition-transform duration-300"></i>`;
+                    
+                    const submenu = document.createElement('div');
+                    submenu.className = 'submenu mt-1 mr-2 border-r-2 border-slate-200';
+                    
+                    destination.days.forEach(day => {
+                        const dayLink = document.createElement('a');
+                        dayLink.href = `${destination.page}#${day.id}`;
+                        dayLink.className = 'block w-full text-right p-2 pr-4 text-slate-600 hover:bg-sky-100 hover:text-sky-600 rounded-md transition-colors';
+                        dayLink.textContent = `${destination.title.split(' ')[1]} ${day.label} ${destination.emoji}`;
+                        submenu.appendChild(dayLink);
+                    });
 
-            resultDiv.innerHTML = `${formattedResult} <span class="text-2xl text-gray-500 dark:text-gray-400">${toCurrency}</span>`;
-            rateInfoDiv.textContent = `1 ${fromCurrency} = ${singleUnitRate.toFixed(4)} ${toCurrency}`;
-        }
+                    button.addEventListener('click', () => { submenu.classList.toggle('open'); button.querySelector('i').classList.toggle('rotate-180'); });
+                    destinationDiv.appendChild(button);
+                    destinationDiv.appendChild(submenu);
+                    mainMenu.appendChild(destinationDiv);
+                });
+            }
 
-        // Start the application
-        document.addEventListener('DOMContentLoaded', initializeApp);
+            // --- Smart Navigation Functions ---
+            function openNavModal(title, address, message) {
+                document.getElementById('nav-modal-title').textContent = title;
+                const navLinks = document.getElementById('nav-modal-content');
+                const navMessage = document.getElementById('nav-modal-message');
+
+                if (address) {
+                    const encodedAddress = encodeURIComponent(address);
+                    document.getElementById('nav-waze-link').href = `https://waze.com/ul?q=${encodedAddress}`;
+                    document.getElementById('nav-gmaps-link').href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+                    navLinks.classList.remove('hidden');
+                    navMessage.classList.add('hidden');
+                } else {
+                    navLinks.classList.add('hidden');
+                    navMessage.textContent = message;
+                    navMessage.classList.remove('hidden');
+                }
+                
+                navModal.classList.remove('hidden');
+                setTimeout(() => navModal.classList.remove('opacity-0'), 10);
+            }
+
+            function closeNavModal() {
+                navModal.classList.add('opacity-0');
+                setTimeout(() => navModal.classList.add('hidden'), 300);
+            }
+
+            function parseDateRange(dateString) {
+                const year2025 = 2025;
+                const year2026 = 2026;
+                let startDate, endDate;
+
+                const parts = dateString.split('-');
+                
+                try {
+                    if (parts.length === 2 && parts[0].includes('.') && parts[1].includes('.')) { // "DD.MM-DD.MM"
+                        const startParts = parts[0].split('.').map(Number);
+                        const endParts = parts[1].split('.').map(Number);
+                        const startYear = startParts[1] === 12 ? year2025 : year2026;
+                        const endYear = endParts[1] === 12 ? year2025 : year2026;
+                        startDate = new Date(startYear, startParts[1] - 1, startParts[0]);
+                        endDate = new Date(endYear, endParts[1] - 1, endParts[0]);
+                    } else if (parts.length === 2) { // "DD-DD.MM"
+                        const startDay = parseInt(parts[0]);
+                        const [endDay, month] = parts[1].split('.').map(Number);
+                        const year = month === 12 ? year2025 : year2026;
+                        startDate = new Date(year, month - 1, startDay);
+                        endDate = new Date(year, month - 1, endDay);
+                    }
+                    if (endDate) endDate.setHours(23, 59, 59, 999);
+                    return { start: startDate, end: endDate };
+                } catch (e) {
+                    console.error("Could not parse date string:", dateString, e);
+                    return { start: null, end: null };
+                }
+            }
+
+            function navigateToCurrentHotel() {
+                const today = new Date();
+                // For testing: uncomment and set a date
+                // const today = new Date('2026-01-09T10:00:00'); 
+                
+                let targetHotel = null;
+
+                for (const hotel of siteData.hotels) {
+                    const range = parseDateRange(hotel.dates);
+                    if (range.start && range.end) {
+                        if (today <= range.end) {
+                            targetHotel = hotel;
+                            break;
+                        }
+                    }
+                }
+
+                if (targetHotel) {
+                    openNavModal(`נווט אל: ${targetHotel.name}`, targetHotel.address);
+                } else {
+                    openNavModal('המסע הסתיים', null, 'מקווים שנהניתם, הטיול הגיע לסיומו!');
+                }
+            }
+
+            // --- Page Specific Functions ---
+            function buildChecklist() {
+                const container = document.getElementById('checklist');
+                siteData.checklist.forEach(item => {
+                    const itemHTML = `
+                        <div class="checklist-item">
+                            <input type="checkbox" id="${item.id}" class="hidden">
+                            <label for="${item.id}" class="flex items-center gap-3 text-lg text-slate-700 cursor-pointer transition-colors">
+                                <i class="far fa-circle text-sky-500"></i><i class="fas fa-check-circle"></i>
+                                <span>${item.text}</span>
+                            </label>
+                        </div>
+                    `;
+                    container.innerHTML += itemHTML;
+                });
+            }
+
+            function buildMap() {
+                const mapContainer = document.getElementById('map-container');
+                if (!mapContainer || mapContainer._leaflet_id) return;
+                const homeCoords = [31.7630, 35.2045];
+                const shoppingCoords = [31.7875, 35.1800];
+                const airportCoords = [32.0095, 34.8863];
+                
+                const map = L.map('map-container').setView([31.85, 35.0], 9);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+                
+                const createIcon = (fa, co) => L.divIcon({ html: `<i class="${fa} fa-3x" style="color: ${co}; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);"></i>`, className: 'leaflet-div-icon', iconSize: [30, 42], iconAnchor: [15, 42] });
+                
+                L.marker(homeCoords, {icon: createIcon('fa-solid fa-house-chimney', '#0ea5e9')}).addTo(map).bindPopup('<b>🏠 הבית</b>');
+                L.marker(shoppingCoords, {icon: createIcon('fa-solid fa-cart-shopping', '#f97316')}).addTo(map).bindPopup('<b>🛒 אושר עד</b>');
+                L.marker(airportCoords, {icon: createIcon('fa-solid fa-plane-departure', '#10b981')}).addTo(map).bindPopup('<b>✈️ נתב"ג</b>');
+                
+                L.polyline([homeCoords, shoppingCoords], { color: '#f97316', weight: 3, opacity: 0.7, dashArray: '8, 8' }).addTo(map);
+                L.polyline([shoppingCoords, airportCoords], { color: '#10b981', weight: 3, opacity: 0.7, dashArray: '8, 8' }).addTo(map);
+
+                map.fitBounds([homeCoords, shoppingCoords, airportCoords], { padding: [50, 50] });
+            }
+
+            // --- Event Listeners & Initial Load ---
+            hamburgerBtn.addEventListener('click', toggleSidebar);
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
+            navModalClose.addEventListener('click', closeNavModal);
+            navigateHotelBtn.addEventListener('click', navigateToCurrentHotel);
+
+            buildMenu();
+            buildChecklist();
+            buildMap();
+        });
+        
+        if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('SW registered'))
+        .catch(err => console.log('SW failed:', err));
+    });
+  }
+        
     </script>
 </body>
 </html>
