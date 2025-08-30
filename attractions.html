@@ -677,8 +677,9 @@
                             coords: { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() },
                             hours: details.opening_hours ? details.opening_hours.weekday_text.join('\n') : '',
                             link: details.website || details.url || '',
-                            // [FIXED] Store the permanent photo_reference instead of the temporary URL
-                            photoReferences: details.photos ? details.photos.slice(0, 3).map(p => p.photo_reference).filter(Boolean) : [],
+                            // NOTE: We no longer save photo URLs, but keep this here to show the user we got them.
+                            // The real photo URLs will be fetched on demand.
+                            photos: details.photos ? details.photos.slice(0, 3).map(p => p.getUrl({maxWidth: 800})) : [],
                             placeId: place.place_id,
                             rating: details.rating,
                             userRatingsTotal: details.user_ratings_total
@@ -804,8 +805,7 @@
                             if (activeFilters[dest][type].kosher) itemsForType = itemsForType.filter(item => item.isKosher === 'כן');
                             if (activeFilters[dest][type].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest][type].foodType);
                         }
-
-                        // Apply sorting by air distance
+                        
                         if (activeFilters[dest][type].sortByDistance) {
                             itemsForType.sort((a, b) => (a.airDistanceKm ?? Infinity) - (b.airDistanceKm ?? Infinity));
                         }
@@ -890,10 +890,46 @@
             });
         }
         
-        // --- Details Modal Logic ---
+        // --- [CORRECTED] Details Modal Logic ---
         async function openDetailsModal(itemId) {
             const item = allItems.find(i => i.id === itemId);
             if (!item) return;
+
+            // --- START: ON-DEMAND PHOTO FETCHING ---
+            // If the item has a googlePlaceId but no photos array (or an empty one),
+            // it means we need to fetch fresh photo URLs from Google.
+            if (item.googlePlaceId && (!item.photos || item.photos.length === 0)) {
+                console.log("Fetching fresh photos for place ID:", item.googlePlaceId);
+                try {
+                    // PlacesService needs a map object, so we create a temporary, invisible one.
+                    const tempMapDiv = document.createElement('div');
+                    const tempMap = new google.maps.Map(tempMapDiv);
+                    const placesService = new google.maps.places.PlacesService(tempMap);
+                    
+                    // We wrap the callback-based getDetails in a Promise to use async/await.
+                    const placeDetails = await new Promise((resolve, reject) => {
+                        placesService.getDetails({
+                            placeId: item.googlePlaceId,
+                            fields: ['photos'] // We only need the photos for this call.
+                        }, (details, status) => {
+                            if (status === google.maps.places.PlacesServiceStatus.OK && details) {
+                                resolve(details);
+                            } else {
+                                reject(new Error(`Places API failed with status: ${status}`));
+                            }
+                        });
+                    });
+
+                    // If we got photos, we update our local item object with fresh URLs.
+                    if (placeDetails.photos) {
+                        item.photos = placeDetails.photos.slice(0, 3).map(p => p.getUrl({ maxWidth: 800 }));
+                    }
+                } catch (error) {
+                    console.error("Could not fetch fresh photos:", error);
+                    // We continue even if it fails, it will just show no photos.
+                }
+            }
+            // --- END: ON-DEMAND PHOTO FETCHING ---
 
             const modalContent = document.getElementById('details-modal-content');
             
@@ -915,19 +951,12 @@
 
             const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
             
-            // [FIXED] Build photo gallery from photoReferences instead of expired URLs
             let photosHtml = '';
-            if (item.photoReferences && item.photoReferences.length > 0) {
+            // This now uses the `item.photos` array which was just freshly populated if needed.
+            if (item.photos && item.photos.length > 0) {
                 photosHtml = `
-                    <div class="space-y-2">
-                        <h4 class="text-base font-bold text-slate-600">תמונות מהמקום</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            ${item.photoReferences.map(ref => {
-                                // Construct the photo URL on the fly using the photo reference and API key
-                                const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${ref}&key=${firebaseConfig.apiKey}`;
-                                return `<a href="${photoUrl}" target="_blank" rel="noopener noreferrer"><img src="${photoUrl}" alt="Photo of ${item.name}" class="w-full h-24 object-cover rounded-lg shadow-md hover:opacity-80 transition-opacity"></a>`;
-                            }).join('')}
-                        </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        ${item.photos.map(photo => `<a href="${photo}" target="_blank"><img src="${photo}" class="w-full h-24 object-cover rounded-lg shadow-md hover:opacity-80 transition-opacity"></a>`).join('')}
                     </div>
                 `;
             }
@@ -1097,20 +1126,22 @@
             
             const existingItem = editingItemId ? allItems.find(i => i.id === editingItemId) : null;
             let coords = existingItem?.coords || null;
-            // [FIXED] Changed from 'photos' to 'photoReferences' to match new data structure
-            let photoReferences = existingItem?.photoReferences || [];
+            let photos = existingItem?.photos || []; // Default to existing photos
             let googlePlaceId = existingItem?.googlePlaceId || null;
             let rating = existingItem?.rating || null;
             let userRatingsTotal = existingItem?.userRatingsTotal || null;
 
+            // --- START: CORRECTED PHOTO SAVING LOGIC ---
             if (googlePlaceDetails) {
                 coords = googlePlaceDetails.coords;
-                // [FIXED] Get photo references from the details object
-                photoReferences = googlePlaceDetails.photoReferences;
+                // We explicitly DO NOT save the photo URLs.
+                // We save an empty array so our logic in openDetailsModal knows to fetch them.
+                photos = [];
                 googlePlaceId = googlePlaceDetails.placeId;
                 rating = googlePlaceDetails.rating;
                 userRatingsTotal = googlePlaceDetails.userRatingsTotal;
             }
+            // --- END: CORRECTED PHOTO SAVING LOGIC ---
 
             const data = {
                 name: name,
@@ -1126,8 +1157,7 @@
                 reservation: getVal('item-reservation'),
                 author: currentUser.uid,
                 coords: coords,
-                // [FIXED] Save 'photoReferences' instead of the temporary 'photos' URL
-                photoReferences: photoReferences,
+                photos: photos, // This will be [] for new places from Google
                 googlePlaceId: googlePlaceId,
                 rating: rating,
                 userRatingsTotal: userRatingsTotal,
