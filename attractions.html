@@ -247,7 +247,7 @@
         const detailsModal = document.getElementById('details-modal');
         const getLocationBtn = document.getElementById('get-location-btn');
 
-        // --- [REVISED] Location & Distance Calculation ---
+        // --- Location & Distance Calculation ---
 
         /**
          * Calculates the distance between two geographical points in meters using the Haversine formula.
@@ -272,7 +272,7 @@
         }
         
         /**
-         * [NEW] Handles the client-side sorting by air distance.
+         * Handles the client-side sorting by air distance.
          * This function is free and does not call Google's API.
          */
         async function handleSortByAirDistance(destination, type, itemsForType) {
@@ -338,7 +338,7 @@
         }
         
         /**
-         * [NEW] Fetches route information for a single place for multiple travel modes.
+         * Fetches route information for a single place for multiple travel modes.
          * This is called on-demand from the details modal.
          */
         async function getRouteInformation(origin, destinationCoords) {
@@ -461,7 +461,7 @@
             });
         }
 
-        // --- Add/Edit Modal & Form Logic (Largely Unchanged) ---
+        // --- Add/Edit Modal & Form Logic ---
         function openModalHandler(itemId = null) {
             editingItemId = itemId;
             googlePlaceDetails = null;
@@ -677,7 +677,8 @@
                             coords: { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() },
                             hours: details.opening_hours ? details.opening_hours.weekday_text.join('\n') : '',
                             link: details.website || details.url || '',
-                            photos: details.photos ? details.photos.slice(0, 3).map(p => p.getUrl({maxWidth: 800})) : [],
+                            // [FIXED] Store the permanent photo_reference instead of the temporary URL
+                            photoReferences: details.photos ? details.photos.slice(0, 3).map(p => p.photo_reference).filter(Boolean) : [],
                             placeId: place.place_id,
                             rating: details.rating,
                             userRatingsTotal: details.user_ratings_total
@@ -699,7 +700,7 @@
             if (message) setTimeout(() => { modalError.textContent = ''; }, 4000);
         }
 
-        // --- [REVISED] Rendering Logic ---
+        // --- Rendering Logic ---
         function renderAllItems() {
             if (!itemsContainer) return;
             if (allItems.length === 0 && !isInitialLoad) {
@@ -804,7 +805,7 @@
                             if (activeFilters[dest][type].foodType) itemsForType = itemsForType.filter(item => item.foodType === activeFilters[dest][type].foodType);
                         }
 
-                        // [REVISED] Apply sorting by air distance
+                        // Apply sorting by air distance
                         if (activeFilters[dest][type].sortByDistance) {
                             itemsForType.sort((a, b) => (a.airDistanceKm ?? Infinity) - (b.airDistanceKm ?? Infinity));
                         }
@@ -834,7 +835,6 @@
                                     `;
                                 }
                                 
-                                // [REVISED] Air distance display
                                 let distanceHtml = '';
                                 if (activeFilters[dest][type].sortByDistance && item.airDistanceKm !== undefined && item.airDistanceKm !== Infinity) {
                                     distanceHtml = `
@@ -890,7 +890,7 @@
             });
         }
         
-        // --- [REVISED] Details Modal Logic ---
+        // --- Details Modal Logic ---
         async function openDetailsModal(itemId) {
             const item = allItems.find(i => i.id === itemId);
             if (!item) return;
@@ -915,16 +915,23 @@
 
             const navLink = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
             
+            // [FIXED] Build photo gallery from photoReferences instead of expired URLs
             let photosHtml = '';
-            if (item.photos && item.photos.length > 0) {
+            if (item.photoReferences && item.photoReferences.length > 0) {
                 photosHtml = `
-                    <div class="grid grid-cols-3 gap-2">
-                        ${item.photos.map(photo => `<a href="${photo}" target="_blank"><img src="${photo}" class="w-full h-24 object-cover rounded-lg shadow-md hover:opacity-80 transition-opacity"></a>`).join('')}
+                    <div class="space-y-2">
+                        <h4 class="text-base font-bold text-slate-600">תמונות מהמקום</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            ${item.photoReferences.map(ref => {
+                                // Construct the photo URL on the fly using the photo reference and API key
+                                const photoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${ref}&key=${firebaseConfig.apiKey}`;
+                                return `<a href="${photoUrl}" target="_blank" rel="noopener noreferrer"><img src="${photoUrl}" alt="Photo of ${item.name}" class="w-full h-24 object-cover rounded-lg shadow-md hover:opacity-80 transition-opacity"></a>`;
+                            }).join('')}
+                        </div>
                     </div>
                 `;
             }
 
-            // [NEW] Route calculation section
             let routeCalculationHtml = '';
             if (item.coords) {
                 routeCalculationHtml = `
@@ -975,7 +982,6 @@
 
             if (item.coords) {
                 initDetailsMap(item.coords);
-                // [NEW] Add event listener for the new route calculation button
                 const calcBtn = document.getElementById('calculate-route-btn');
                 if (calcBtn) {
                     calcBtn.addEventListener('click', async () => {
@@ -1091,14 +1097,16 @@
             
             const existingItem = editingItemId ? allItems.find(i => i.id === editingItemId) : null;
             let coords = existingItem?.coords || null;
-            let photos = existingItem?.photos || [];
+            // [FIXED] Changed from 'photos' to 'photoReferences' to match new data structure
+            let photoReferences = existingItem?.photoReferences || [];
             let googlePlaceId = existingItem?.googlePlaceId || null;
             let rating = existingItem?.rating || null;
             let userRatingsTotal = existingItem?.userRatingsTotal || null;
 
             if (googlePlaceDetails) {
                 coords = googlePlaceDetails.coords;
-                photos = googlePlaceDetails.photos;
+                // [FIXED] Get photo references from the details object
+                photoReferences = googlePlaceDetails.photoReferences;
                 googlePlaceId = googlePlaceDetails.placeId;
                 rating = googlePlaceDetails.rating;
                 userRatingsTotal = googlePlaceDetails.userRatingsTotal;
@@ -1118,7 +1126,8 @@
                 reservation: getVal('item-reservation'),
                 author: currentUser.uid,
                 coords: coords,
-                photos: photos,
+                // [FIXED] Save 'photoReferences' instead of the temporary 'photos' URL
+                photoReferences: photoReferences,
                 googlePlaceId: googlePlaceId,
                 rating: rating,
                 userRatingsTotal: userRatingsTotal,
@@ -1181,7 +1190,6 @@
             }
         });
         
-        // [REVISED] Event listener for all filters and sorting toggles
         itemsContainer.addEventListener('change', async e => {
             const target = e.target;
             const dest = target.dataset.destination;
@@ -1203,7 +1211,6 @@
                     const itemsForType = allItems.filter(item => item.destination === dest && item.type === type);
                     await handleSortByAirDistance(dest, type, itemsForType);
                 } else {
-                    // Just re-render without the sorting
                     renderAllItems();
                 }
             }
